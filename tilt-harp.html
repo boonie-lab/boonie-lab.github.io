@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>傾きハープ</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: #0b0d18; color: #e8eaf6;
+    font-family: -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif; overflow: hidden; touch-action: none; }
+  #app { position: fixed; inset: 0; display: flex; flex-direction: column;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+  canvas { flex: 1; width: 100%; min-height: 0; display: block; }
+  #hud { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 14px 10px; }
+  #info { font-size: 13px; line-height: 1.5; opacity: .85; }
+  #info b { white-space: nowrap; font-size: 22px; font-weight: 600; letter-spacing: .02em; }
+  .btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  button { font: inherit; font-size: 14px; color: #e8eaf6; background: #1c2040; border: 1px solid #343a70;
+    border-radius: 999px; padding: 9px 14px; }
+  button:active { background: #2a3066; }
+  #overlay { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 18px; background: rgba(11,13,24,.92); text-align: center; padding: 24px; z-index: 5; }
+  #overlay h1 { margin: 0; font-size: 28px; font-weight: 600; }
+  #overlay p { margin: 0; font-size: 14px; line-height: 1.7; opacity: .8; max-width: 330px; }
+  #start { font-size: 18px; padding: 14px 34px; background: #5b6cff; border-color: #8a96ff; }
+  #msg { font-size: 12px; opacity: .7; min-height: 1.4em; }
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="c"></canvas>
+  <div id="hud">
+    <div id="info"><b id="note">–</b><br><span id="tone">傾けて、点に合わせてみよう</span></div>
+    <div class="btns">
+      <button id="center">真ん中に合わせる</button>
+      <button id="scale">ドレミ</button>
+      <button id="mode">指で操作</button>
+      <button id="stop">止める</button>
+    </div>
+  </div>
+</div>
+
+<div id="overlay">
+  <h1>傾きハープ</h1>
+  <p>iPhoneを傾けて、光る玉を動かそう。<br>
+     <b>点に玉が入ると</b>、その音が鳴るよ。<br>
+     傾けるほど玉が速く動いて、水平に戻すと止まる。<br>
+     少しだけ傾けると、ゆっくり動かせるよ。</p>
+  <button id="start">はじめる</button>
+  <div id="msg">音が出るので、音量に注意してね（消音スイッチはオフに）</div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const canvas = $('c'), ctx = canvas.getContext('2d');
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+  // ---- 状態 ----
+  let mode = 'sensor';          // 'sensor'（傾き） | 'touch'（指）
+  let running = false, gotSensor = false, sensorErr = '';
+  let centerBeta = null, centerGamma = null;   // 「水平」とみなす角度
+  let rawBeta = 0, rawGamma = 0;
+  let nx = 0.5, ny = 0.5;       // 玉の位置 (0..1)
+  let tx = 0.5, ty = 0.5;       // 指操作のときの目標位置
+  const trail = [];
+
+  // 傾きの調整（ここを変えると操作感が変わる）
+  const DEADZONE = 3;           // これより小さい傾きは「水平」とみなして止まる（度）
+  const MAX_TILT = 35;          // この角度で最高速（度）
+  const CURVE = 1.6;            // 1より大きいほど、小さい傾きがゆっくりになる
+  const MAX_SPEED = 0.8;        // 最高速（1秒に画面の横幅の何倍進むか）
+
+  // ---- 音階 ----
+  const SCALES = {
+    penta: { label: 'ペンタ', semi: [0, 2, 4, 7, 9],         names: ['ド','レ','ミ','ソ','ラ'] },
+    major: { label: 'ドレミ', semi: [0, 2, 4, 5, 7, 9, 11],  names: ['ド','レ','ミ','ファ','ソ','ラ','シ'] },
+  };
+  let scaleKey = 'major';
+  const ROW_BASE = [72, 60, 48];   // 上の段→下の段：ド(C5)・ド(C4)・ド(C3)
+  const freqOf = m => 440 * Math.pow(2, (m - 69) / 12);
+
+  // ---- オーディオ（ハープ＝はじいた弦の音） ----
+  let ac, master, comp, delay, fb, wet;
+  const strings = new Map();    // midi番号 → 弦の音のデータ
+
+  // Karplus-Strong法：ノイズを弦の長さでぐるぐる回して、少しずつ弱める
+  function makeString(freq) {
+    const sr = ac.sampleRate;
+    const N = Math.max(2, Math.round(sr / freq - 0.5));
+    const actual = sr / (N + 0.5);
+    const len = Math.floor(sr * 3.5);
+    const ring = new Float32Array(N);
+    let prev = 0;
+    for (let i = 0; i < N; i++) { prev = prev * 0.6 + (Math.random() * 2 - 1) * 0.4; ring[i] = prev; }
+    const buf = ac.createBuffer(1, len, sr);
+    const d = buf.getChannelData(0);
+    const g = 0.9989;
+    let idx = 0, peak = 0;
+    for (let i = 0; i < len; i++) {
+      const cur = ring[idx], nxt = ring[(idx + 1) % N];
+      d[i] = cur;
+      ring[idx] = g * 0.5 * (cur + nxt);
+      idx = (idx + 1) % N;
+      const a = Math.abs(cur); if (a > peak) peak = a;
+    }
+    const k = 0.9 / (peak || 1), fade = Math.floor(sr * 0.3);
+    for (let i = 0; i < len; i++) {
+      let s = d[i] * k;
+      if (i > len - fade) s *= (len - i) / fade;
+      d[i] = s;
+    }
+    return { buf, rate: freq / actual };
+  }
+
+  function initAudio() {
+    ac = new (window.AudioContext || window.webkitAudioContext)();
+    master = ac.createGain(); master.gain.value = 0;
+    comp = ac.createDynamicsCompressor();          // 音が重なっても割れにくくする
+    delay = ac.createDelay(1); delay.delayTime.value = 0.3;
+    fb = ac.createGain(); fb.gain.value = 0.3;
+    wet = ac.createGain(); wet.gain.value = 0.22;
+    master.connect(comp);
+    master.connect(delay); delay.connect(fb).connect(delay); delay.connect(wet).connect(comp);
+    comp.connect(ac.destination);
+    for (const base of ROW_BASE)
+      for (const s of SCALES.major.semi) {
+        const m = base + s;
+        if (!strings.has(m)) strings.set(m, makeString(freqOf(m)));
+      }
+  }
+
+  function pluck(midi, vel) {
+    const s = strings.get(midi);
+    if (!s) return;
+    const src = ac.createBufferSource();
+    src.buffer = s.buf; src.playbackRate.value = s.rate;
+    const g = ac.createGain(); g.gain.value = 0.5 * vel;
+    src.connect(g).connect(master);
+    src.start();
+  }
+
+  // ---- 点（音の出る場所）の配置 ----
+  let dots = [], inside = [];
+  function buildDots(W, H) {
+    const sc = SCALES[scaleKey], cols = sc.semi.length;
+    const mx = 18, top = 10, bottom = 10;
+    const sx = (W - mx * 2) / cols, sy = (H - top - bottom) / ROW_BASE.length;
+    const r = Math.min(sx, sy) * 0.42;
+    const out = [];
+    ROW_BASE.forEach((base, row) => {
+      for (let c = 0; c < cols; c++) {
+        out.push({
+          x: mx + sx * (c + 0.5), y: top + sy * (row + 0.5), r,
+          midi: base + sc.semi[c], name: sc.names[c], hue: (c * 360 / cols + 200) % 360,
+          oct: row, lit: 0,
+        });
+      }
+    });
+    dots = out; inside = new Array(out.length).fill(false);
+  }
+
+  // ---- センサー ----
+  function onOrient(e) {
+    if (e.beta == null || e.gamma == null) return;
+    gotSensor = true;
+    rawBeta = e.beta; rawGamma = e.gamma;
+    if (centerBeta === null) { centerBeta = rawBeta; centerGamma = rawGamma; }
+  }
+  async function requestSensor() {
+    try {
+      if (typeof DeviceOrientationEvent !== 'undefined' &&
+          typeof DeviceOrientationEvent.requestPermission === 'function') {
+        const r = await DeviceOrientationEvent.requestPermission();
+        if (r !== 'granted') return false;
+      }
+      window.addEventListener('deviceorientation', onOrient);
+      return true;
+    } catch (err) { sensorErr = (err && (err.name + ': ' + err.message)) || String(err); return false; }
+  }
+  // 傾き（度）→ 速さ（-1..1）。小さい傾きほどゆっくり、水平付近は止まる
+  function tiltToSpeed(deg) {
+    const a = Math.abs(deg);
+    if (a < DEADZONE) return 0;
+    const s = Math.pow(clamp((a - DEADZONE) / (MAX_TILT - DEADZONE), 0, 1), CURVE);
+    return deg < 0 ? -s : s;
+  }
+
+  // ---- 指・マウス操作（センサーが使えない時の代わり） ----
+  let dragging = false;
+  function pointerSet(ev) {
+    const r = canvas.getBoundingClientRect();
+    tx = clamp((ev.clientX - r.left) / r.width, 0, 1);
+    ty = clamp((ev.clientY - r.top) / r.height, 0, 1);
+  }
+  canvas.addEventListener('pointerdown', ev => { if (mode === 'touch') { dragging = true; pointerSet(ev); } });
+  canvas.addEventListener('pointermove', ev => { if (mode === 'touch' && dragging) pointerSet(ev); });
+  window.addEventListener('pointerup', () => { dragging = false; });
+
+  function setMode(m) {
+    mode = m;
+    $('mode').textContent = m === 'sensor' ? '指で操作' : '傾きで操作';
+    $('center').style.display = m === 'sensor' ? '' : 'none';
+  }
+
+  // ---- 描画・更新 ----
+  function resize() {
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = canvas.clientWidth * dpr;
+    canvas.height = canvas.clientHeight * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildDots(canvas.clientWidth, canvas.clientHeight);
+  }
+  window.addEventListener('resize', resize);
+
+  let lastT = 0;
+  function frame(now) {
+    const W = canvas.clientWidth, H = canvas.clientHeight;
+    const dt = lastT ? Math.min(0.05, (now - lastT) / 1000) : 1 / 60;
+    lastT = now;
+    const ox = nx, oy = ny;
+
+    // 玉を動かす
+    if (mode === 'sensor') {
+      if (gotSensor && centerBeta !== null) {
+        const vx = tiltToSpeed(rawGamma - centerGamma) * MAX_SPEED;            // 右に傾ける→右へ
+        const vy = tiltToSpeed(rawBeta - centerBeta) * MAX_SPEED * (W / H);    // 手前に起こす→下へ
+        nx = clamp(nx + vx * dt, 0, 1);
+        ny = clamp(ny + vy * dt, 0, 1);
+      }
+    } else {
+      nx += (tx - nx) * 0.3; ny += (ty - ny) * 0.3;
+    }
+    const px = nx * W, py = ny * H;
+    const speed = Math.hypot((nx - ox) * W, (ny - oy) * H) / dt;   // 玉の速さ（px/秒）
+
+    // 点に入ったら鳴らす（出る時は少し余裕を持たせて、ふちでの連打を防ぐ）
+    dots.forEach((d, i) => {
+      const dist = Math.hypot(px - d.x, py - d.y);
+      if (!inside[i] && dist < d.r) {
+        inside[i] = true; d.lit = 1;
+        if (running && ac) {
+          pluck(d.midi, clamp(0.6 + speed / 900, 0.6, 1));
+          $('note').textContent = d.name + (d.oct === 0 ? '↑' : d.oct === 2 ? '↓' : '');
+        }
+      } else if (inside[i] && dist > d.r * 1.25) inside[i] = false;
+      d.lit *= 0.93;
+    });
+
+    // 描画
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#0f1226'; ctx.fillRect(0, 0, W, H);
+
+    dots.forEach(d => {
+      const base = d.oct === 0 ? 62 : d.oct === 1 ? 55 : 48;     // 高い段ほど明るい色
+      ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(${d.hue},60%,${base - 18}%,${0.35 + d.lit * 0.5})`;
+      ctx.fill();
+      ctx.lineWidth = 1.5 + d.lit * 2;
+      ctx.strokeStyle = `hsla(${d.hue},85%,${60 + d.lit * 25}%,${0.55 + d.lit * 0.45})`;
+      ctx.stroke();
+      if (d.lit > 0.05) {
+        ctx.shadowColor = `hsl(${d.hue},100%,70%)`; ctx.shadowBlur = 24 * d.lit;
+        ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+        ctx.strokeStyle = `hsla(${d.hue},100%,80%,${d.lit})`; ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+      ctx.fillStyle = 'rgba(255,255,255,.85)';
+      ctx.font = `${Math.max(11, Math.min(16, d.r * 0.55))}px sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(d.name, d.x, d.y);
+    });
+
+    // 玉
+    trail.push({ x: px, y: py });
+    if (trail.length > 24) trail.shift();
+    for (let i = 0; i < trail.length; i++) {
+      const a = i / trail.length;
+      ctx.beginPath(); ctx.arc(trail[i].x, trail[i].y, 2 + a * 7, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,240,200,${a * 0.3})`; ctx.fill();
+    }
+    const rg = ctx.createRadialGradient(px - 3, py - 3, 1, px, py, 13);
+    rg.addColorStop(0, '#fff'); rg.addColorStop(.5, '#ffe9a8'); rg.addColorStop(1, '#f0b84a');
+    ctx.shadowColor = '#ffd36b'; ctx.shadowBlur = 18;
+    ctx.beginPath(); ctx.arc(px, py, 11, 0, Math.PI * 2); ctx.fillStyle = rg; ctx.fill();
+    ctx.shadowBlur = 0;
+
+    requestAnimationFrame(frame);
+  }
+
+  // ---- ボタン ----
+  $('start').addEventListener('click', async () => {
+    $('start').disabled = true;
+    const sensorPromise = requestSensor();        // iPhoneは「タップの直後」に許可を頼む必要がある
+    if (!ac) initAudio();
+    try { await ac.resume(); } catch (e) {}
+    const ok = await sensorPromise;
+    running = true;
+    master.gain.setTargetAtTime(0.8, ac.currentTime, 0.05);
+    $('overlay').style.display = 'none';
+    setTimeout(() => {
+      if (!gotSensor) { setMode('touch'); $('tone').textContent = '画面をなぞってね（傾きセンサーが使えない）' + (sensorErr ? ' [' + sensorErr + ']' : ''); }
+    }, 1500);
+    if (!ok) { setMode('touch'); if (sensorErr) $('tone').textContent = '画面をなぞってね [' + sensorErr + ']'; }
+  });
+  $('center').addEventListener('click', () => { centerBeta = rawBeta; centerGamma = rawGamma; });
+  $('scale').addEventListener('click', () => {
+    scaleKey = scaleKey === 'major' ? 'penta' : 'major';
+    $('scale').textContent = SCALES[scaleKey === 'major' ? 'penta' : 'major'].label;   // 押すと切り替わる先を表示
+    buildDots(canvas.clientWidth, canvas.clientHeight);
+  });
+  $('mode').addEventListener('click', () => setMode(mode === 'sensor' ? 'touch' : 'sensor'));
+  $('stop').addEventListener('click', () => {
+    if (!ac) return;
+    running = !running;
+    master.gain.setTargetAtTime(running ? 0.8 : 0, ac.currentTime, 0.05);
+    $('stop').textContent = running ? '止める' : '再開';
+  });
+  // 別の画面から戻ってきたら、音を復活させる
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && ac && ac.state !== 'running') ac.resume().catch(() => {}); });
+
+  $('scale').textContent = 'ペンタ';   // いまは「ドレミ」なので、押すと「ペンタ」になる
+  resize(); requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
