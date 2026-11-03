@@ -41,10 +41,11 @@
 </div>
 
 <div id="overlay">
-  <h1>傾き音楽</h1>
-  <p>iPhoneを傾けると音が変わるよ。<br>
-     <b>前後</b>の傾き → 音の高さ（上が高い）<br>
-     <b>左右</b>の傾き → 音色（左：やわらかい → 右：キラキラ）</p>
+  <h1>傾き音楽（ハープ）</h1>
+  <p>iPhoneを傾けると、ハープの弦をはじくよ。<br>
+     <b>前後</b>の傾き → 弦（上が高い音）<br>
+     <b>左右</b>の傾き → 音色（左：やわらかい → 右：明るい）<br>
+     すばやく傾けると、ハープのグリッサンド（ぽろろろん）になるよ</p>
   <button id="start">はじめる</button>
   <div id="msg">音が出るので、音量に注意してね</div>
 </div>
@@ -62,60 +63,116 @@
   let rawBeta = 0, rawGamma = 0;
   let nx = 0.5, ny = 0.5;       // 画面上の点の位置 (0..1) 右・下がプラス
   let tx = 0.5, ty = 0.5;       // 目標位置（なめらかに追従させる）
-  const RANGE_BETA = 35, RANGE_GAMMA = 40; // 何度傾けたら端まで行くか
+  const RANGE_BETA = 50, RANGE_GAMMA = 55; // 何度傾けたら端まで行くか（大きいほどゆっくり）
+  const FOLLOW = 0.07;                     // 点が追いかける速さ（小さいほどゆっくり）
   const trail = [];
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
   // ---- 音階（ペンタトニック＝どう弾いても気持ちいい5音階） ----
   const NAMES = ['ド','レ','ミ','ソ','ラ'];
   const SEMI  = [0, 2, 4, 7, 9];
-  const STEPS = 10;             // 2オクターブ分
+  const STEPS = 10;             // 2オクターブ分（＝ハープの弦10本）
   const baseMidi = 60;          // ド(C4)
   const midiOf = i => baseMidi + 12 * Math.floor(i / 5) + SEMI[i % 5];
   const freqOf = m => 440 * Math.pow(2, (m - 69) / 12);
 
-  // ---- オーディオ ----
-  let ac, oscSine, oscSaw, gSine, gSaw, filt, master, delay, fb, wet;
+  // ---- オーディオ（ハープ＝はじいた弦の音） ----
+  let ac, filt, master, delay, fb, wet;
+  const strings = [];           // 弦ごとの音のデータ
+
+  // はじいた弦の音を計算でつくる（Karplus-Strong法：ノイズを弦の長さでぐるぐる回して、少しずつ弱める）
+  function makeString(freq) {
+    const sr = ac.sampleRate;
+    const N = Math.max(2, Math.round(sr / freq - 0.5));
+    const actual = sr / (N + 0.5);                // 実際にできる音の高さ
+    const len = Math.floor(sr * 4);
+    const ring = new Float32Array(N);
+    let prev = 0;
+    for (let i = 0; i < N; i++) {                 // やわらかい「はじき」＝なめらかにしたノイズ
+      prev = prev * 0.6 + (Math.random() * 2 - 1) * 0.4;
+      ring[i] = prev;
+    }
+    const buf = ac.createBuffer(1, len, sr);
+    const d = buf.getChannelData(0);
+    const g = 0.9989;                             // 1周ごとに弱まる割合（大きいほど長く響く）
+    let idx = 0, peak = 0;
+    for (let i = 0; i < len; i++) {
+      const cur = ring[idx], nx2 = ring[(idx + 1) % N];
+      d[i] = cur;
+      ring[idx] = g * 0.5 * (cur + nx2);
+      idx = (idx + 1) % N;
+      const a = Math.abs(cur); if (a > peak) peak = a;
+    }
+    const k = 0.9 / (peak || 1), fade = Math.floor(sr * 0.3);
+    for (let i = 0; i < len; i++) {
+      let s = d[i] * k;
+      if (i > len - fade) s *= (len - i) / fade;
+      d[i] = s;
+    }
+    return { buf, rate: freq / actual };          // 再生速度で音の高さをぴったり合わせる
+  }
+
   function initAudio() {
     ac = new (window.AudioContext || window.webkitAudioContext)();
     master = ac.createGain(); master.gain.value = 0;
-    filt = ac.createBiquadFilter(); filt.type = 'lowpass'; filt.Q.value = 3; filt.frequency.value = 800;
-    oscSine = ac.createOscillator(); oscSine.type = 'sine';
-    oscSaw  = ac.createOscillator(); oscSaw.type = 'sawtooth';
-    gSine = ac.createGain(); gSaw = ac.createGain();
-    oscSine.connect(gSine).connect(filt);
-    oscSaw.connect(gSaw).connect(filt);
+    filt = ac.createBiquadFilter(); filt.type = 'lowpass'; filt.Q.value = 0.5; filt.frequency.value = 2500;
     filt.connect(master);
-    // ほんのりエコー
-    delay = ac.createDelay(1); delay.delayTime.value = 0.28;
-    fb = ac.createGain(); fb.gain.value = 0.35;
-    wet = ac.createGain(); wet.gain.value = 0.3;
+    // ほんのりエコー（響き）
+    delay = ac.createDelay(1); delay.delayTime.value = 0.3;
+    fb = ac.createGain(); fb.gain.value = 0.3;
+    wet = ac.createGain(); wet.gain.value = 0.22;
     master.connect(delay); delay.connect(fb).connect(delay); delay.connect(wet);
     master.connect(ac.destination); wet.connect(ac.destination);
-    oscSine.start(); oscSaw.start();
+    for (let i = 0; i < STEPS; i++) strings.push(makeString(freqOf(midiOf(i))));
   }
 
-  let lastStep = -1;
+  // 弦を1本はじく
+  function pluck(step, vel, delaySec) {
+    const s = strings[step];
+    const src = ac.createBufferSource();
+    src.buffer = s.buf; src.playbackRate.value = s.rate;
+    const g = ac.createGain(); g.gain.value = 0.5 * vel;
+    src.connect(g).connect(filt);
+    src.start(ac.currentTime + delaySec);
+  }
+
+  let lastStep = -1, prevNx = 0.5, prevNy = 0.5, lastT = 0;
   function updateSound() {
     if (!ac) return;
     const t = ac.currentTime;
-    const pitchNorm = 1 - ny;                       // 上ほど高い
-    const step = Math.min(STEPS - 1, Math.max(0, Math.floor(pitchNorm * STEPS)));
-    const midi = midiOf(step);
-    const f = freqOf(midi);
-    oscSine.frequency.setTargetAtTime(f, t, 0.025);
-    oscSaw.frequency.setTargetAtTime(f, t, 0.025);
-    // 音色：左=サイン波でやわらかい、右=ノコギリ波＋フィルター全開でキラキラ
-    gSine.gain.setTargetAtTime(0.6 * (1 - nx) + 0.05, t, 0.05);
-    gSaw.gain.setTargetAtTime(0.28 * nx, t, 0.05);
-    filt.frequency.setTargetAtTime(400 + 5200 * nx * nx, t, 0.05);
+    const step = Math.min(STEPS - 1, Math.max(0, Math.floor((1 - ny) * STEPS)));
+
+    // 左右＝音色：左はやわらかく、右は明るく
+    filt.frequency.setTargetAtTime(1000 + 6500 * nx * nx, t, 0.08);
+
+    // 動いた速さ（速いほど強くはじく）
+    const now = performance.now();
+    const dt = lastT ? Math.min(0.1, (now - lastT) / 1000) : 1 / 60;
+    lastT = now;
+    const speed = Math.hypot(nx - prevNx, ny - prevNy) / dt;
+    prevNx = nx; prevNy = ny;
+
+    // 弦をまたいだら、その弦をはじく（またいだ弦が複数ならグリッサンド）
     if (step !== lastStep) {
+      const vel = clamp(0.55 + speed * 1.2, 0.55, 1);
+      if (lastStep < 0) {
+        pluck(step, vel, 0);
+      } else {
+        const dir = step > lastStep ? 1 : -1;
+        let k = 0;
+        for (let s = lastStep + dir; s !== step + dir; s += dir) {
+          pluck(s, vel, Math.min(k, 7) * 0.035);
+          k++;
+        }
+      }
       lastStep = step;
       $('note').textContent = NAMES[step % 5] + (step >= 5 ? '↑' : '');
     }
-    $('tone').textContent = nx < .25 ? 'やわらかい' : nx < .5 ? 'まるい' : nx < .75 ? 'ざらっ' : 'キラキラ';
+    $('tone').textContent = nx < .25 ? 'やわらかい' : nx < .5 ? 'まるい' : nx < .75 ? '明るい' : 'はっきり';
   }
 
   // ---- センサー ----
+  let sensorErr = '';
   function onOrient(e) {
     if (e.beta == null || e.gamma == null) return;
     gotSensor = true;
@@ -127,7 +184,6 @@
     ty = clamp(0.5 + dy / 2, 0, 1);
     tx = clamp(0.5 + dx / 2, 0, 1);
   }
-  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
   async function requestSensor() {
     try {
@@ -140,7 +196,6 @@
       return true;
     } catch (err) { sensorErr = (err && (err.name + ': ' + err.message)) || String(err); return false; }
   }
-  let sensorErr = '';
 
   // ---- 指・マウス操作（センサーが使えない時の代わり） ----
   let dragging = false;
@@ -170,8 +225,7 @@
 
   function draw() {
     const W = canvas.clientWidth, H = canvas.clientHeight;
-    // なめらかに追従
-    nx += (tx - nx) * 0.18; ny += (ty - ny) * 0.18;
+    nx += (tx - nx) * FOLLOW; ny += (ty - ny) * FOLLOW;
     ctx.clearRect(0, 0, W, H);
 
     // 背景：左→右で色が変わる（音色の見える化）
@@ -179,15 +233,19 @@
     g.addColorStop(0, '#12183a'); g.addColorStop(1, '#3a1650');
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
 
-    // 音階の帯（上が高い音）
+    // 弦（横線）を10本。いま鳴らした弦は明るく光る
     const step = Math.min(STEPS - 1, Math.max(0, Math.floor((1 - ny) * STEPS)));
     for (let i = 0; i < STEPS; i++) {
       const y0 = H * (1 - (i + 1) / STEPS), h = H / STEPS;
-      ctx.fillStyle = i === step ? 'rgba(255,255,255,.14)' : (i % 2 ? 'rgba(255,255,255,.03)' : 'rgba(255,255,255,0)');
+      ctx.fillStyle = i === step ? 'rgba(255,255,255,.10)' : (i % 2 ? 'rgba(255,255,255,.025)' : 'rgba(255,255,255,0)');
       ctx.fillRect(0, y0, W, h);
-      ctx.fillStyle = 'rgba(255,255,255,.35)';
+      const yl = y0 + h / 2;
+      ctx.strokeStyle = i === step ? 'rgba(255,240,200,.85)' : 'rgba(255,255,255,.22)';
+      ctx.lineWidth = i === step ? 2 : 1;
+      ctx.beginPath(); ctx.moveTo(34, yl); ctx.lineTo(W - 10, yl); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,.4)';
       ctx.font = '12px sans-serif';
-      ctx.fillText(NAMES[i % 5], 10, y0 + h / 2 + 4);
+      ctx.fillText(NAMES[i % 5], 10, yl + 4);
     }
 
     const px = nx * W, py = ny * H;
@@ -221,7 +279,7 @@
     try { await ac.resume(); } catch (e) {}
     const ok = await sensorPromise;
     running = true;
-    master.gain.setTargetAtTime(0.5, ac.currentTime, 0.05);
+    master.gain.setTargetAtTime(0.8, ac.currentTime, 0.05);
     $('overlay').style.display = 'none';
     // 1.5秒たってもセンサーの値が来なければ、指で操作モードに切り替える
     setTimeout(() => {
@@ -234,7 +292,7 @@
   $('stop').addEventListener('click', () => {
     if (!ac) return;
     running = !running;
-    master.gain.setTargetAtTime(running ? 0.5 : 0, ac.currentTime, 0.05);
+    master.gain.setTargetAtTime(running ? 0.8 : 0, ac.currentTime, 0.05);
     $('stop').textContent = running ? '止める' : '再開';
   });
 
