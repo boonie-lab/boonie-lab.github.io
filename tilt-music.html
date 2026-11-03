@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>傾き音楽</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: #0b0d18; color: #e8eaf6;
+    font-family: -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif; overflow: hidden; touch-action: none; }
+  #app { position: fixed; inset: 0; display: flex; flex-direction: column;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+  canvas { flex: 1; width: 100%; min-height: 0; display: block; }
+  #hud { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 14px; }
+  #info { font-size: 13px; line-height: 1.5; opacity: .85; }
+  #info b { white-space: nowrap; font-size: 22px; font-weight: 600; letter-spacing: .02em; }
+  .btns { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+  button { font: inherit; font-size: 14px; color: #e8eaf6; background: #1c2040; border: 1px solid #343a70;
+    border-radius: 999px; padding: 9px 14px; }
+  button:active { background: #2a3066; }
+  #overlay { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 18px; background: rgba(11,13,24,.92); text-align: center; padding: 24px; z-index: 5; }
+  #overlay h1 { margin: 0; font-size: 28px; font-weight: 600; }
+  #overlay p { margin: 0; font-size: 14px; line-height: 1.7; opacity: .8; max-width: 320px; }
+  #start { font-size: 18px; padding: 14px 34px; background: #5b6cff; border-color: #8a96ff; }
+  #msg { font-size: 12px; opacity: .7; min-height: 1.4em; }
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="c"></canvas>
+  <div id="hud">
+    <div id="info"><b id="note">–</b><br><span id="tone">–</span></div>
+    <div class="btns">
+      <button id="center">真ん中に合わせる</button>
+      <button id="mode">指で操作</button>
+      <button id="stop">止める</button>
+    </div>
+  </div>
+</div>
+
+<div id="overlay">
+  <h1>傾き音楽</h1>
+  <p>iPhoneを傾けると音が変わるよ。<br>
+     <b>前後</b>の傾き → 音の高さ（上が高い）<br>
+     <b>左右</b>の傾き → 音色（左：やわらかい → 右：キラキラ）</p>
+  <button id="start">はじめる</button>
+  <div id="msg">音が出るので、音量に注意してね</div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const canvas = $('c'), ctx = canvas.getContext('2d');
+
+  // ---- 状態 ----
+  let mode = 'sensor';          // 'sensor' | 'touch'
+  let running = false;
+  let gotSensor = false;
+  let centerBeta = null;        // 「真ん中」とみなす前後の傾き
+  let rawBeta = 0, rawGamma = 0;
+  let nx = 0.5, ny = 0.5;       // 画面上の点の位置 (0..1) 右・下がプラス
+  let tx = 0.5, ty = 0.5;       // 目標位置（なめらかに追従させる）
+  const RANGE_BETA = 35, RANGE_GAMMA = 40; // 何度傾けたら端まで行くか
+  const trail = [];
+
+  // ---- 音階（ペンタトニック＝どう弾いても気持ちいい5音階） ----
+  const NAMES = ['ド','レ','ミ','ソ','ラ'];
+  const SEMI  = [0, 2, 4, 7, 9];
+  const STEPS = 10;             // 2オクターブ分
+  const baseMidi = 60;          // ド(C4)
+  const midiOf = i => baseMidi + 12 * Math.floor(i / 5) + SEMI[i % 5];
+  const freqOf = m => 440 * Math.pow(2, (m - 69) / 12);
+
+  // ---- オーディオ ----
+  let ac, oscSine, oscSaw, gSine, gSaw, filt, master, delay, fb, wet;
+  function initAudio() {
+    ac = new (window.AudioContext || window.webkitAudioContext)();
+    master = ac.createGain(); master.gain.value = 0;
+    filt = ac.createBiquadFilter(); filt.type = 'lowpass'; filt.Q.value = 3; filt.frequency.value = 800;
+    oscSine = ac.createOscillator(); oscSine.type = 'sine';
+    oscSaw  = ac.createOscillator(); oscSaw.type = 'sawtooth';
+    gSine = ac.createGain(); gSaw = ac.createGain();
+    oscSine.connect(gSine).connect(filt);
+    oscSaw.connect(gSaw).connect(filt);
+    filt.connect(master);
+    // ほんのりエコー
+    delay = ac.createDelay(1); delay.delayTime.value = 0.28;
+    fb = ac.createGain(); fb.gain.value = 0.35;
+    wet = ac.createGain(); wet.gain.value = 0.3;
+    master.connect(delay); delay.connect(fb).connect(delay); delay.connect(wet);
+    master.connect(ac.destination); wet.connect(ac.destination);
+    oscSine.start(); oscSaw.start();
+  }
+
+  let lastStep = -1;
+  function updateSound() {
+    if (!ac) return;
+    const t = ac.currentTime;
+    const pitchNorm = 1 - ny;                       // 上ほど高い
+    const step = Math.min(STEPS - 1, Math.max(0, Math.floor(pitchNorm * STEPS)));
+    const midi = midiOf(step);
+    const f = freqOf(midi);
+    oscSine.frequency.setTargetAtTime(f, t, 0.025);
+    oscSaw.frequency.setTargetAtTime(f, t, 0.025);
+    // 音色：左=サイン波でやわらかい、右=ノコギリ波＋フィルター全開でキラキラ
+    gSine.gain.setTargetAtTime(0.6 * (1 - nx) + 0.05, t, 0.05);
+    gSaw.gain.setTargetAtTime(0.28 * nx, t, 0.05);
+    filt.frequency.setTargetAtTime(400 + 5200 * nx * nx, t, 0.05);
+    if (step !== lastStep) {
+      lastStep = step;
+      $('note').textContent = NAMES[step % 5] + (step >= 5 ? '↑' : '');
+    }
+    $('tone').textContent = nx < .25 ? 'やわらかい' : nx < .5 ? 'まるい' : nx < .75 ? 'ざらっ' : 'キラキラ';
+  }
+
+  // ---- センサー ----
+  function onOrient(e) {
+    if (e.beta == null || e.gamma == null) return;
+    gotSensor = true;
+    rawBeta = e.beta; rawGamma = e.gamma;
+    if (centerBeta === null) centerBeta = rawBeta;
+    if (mode !== 'sensor') return;
+    const dy = (rawBeta - centerBeta) / RANGE_BETA;   // 上を手前に起こす→プラス→点は下（低い音）
+    const dx = rawGamma / RANGE_GAMMA;                // 右を下げる→プラス→点は右
+    ty = clamp(0.5 + dy / 2, 0, 1);
+    tx = clamp(0.5 + dx / 2, 0, 1);
+  }
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+  async function requestSensor() {
+    try {
+      if (typeof DeviceOrientationEvent !== 'undefined' &&
+          typeof DeviceOrientationEvent.requestPermission === 'function') {
+        const r = await DeviceOrientationEvent.requestPermission(); // iPhone：許可ダイアログが出る
+        if (r !== 'granted') return false;
+      }
+      window.addEventListener('deviceorientation', onOrient);
+      return true;
+    } catch (err) { return false; }
+  }
+
+  // ---- 指・マウス操作（センサーが使えない時の代わり） ----
+  let dragging = false;
+  function pointerSet(ev) {
+    const r = canvas.getBoundingClientRect();
+    tx = clamp((ev.clientX - r.left) / r.width, 0, 1);
+    ty = clamp((ev.clientY - r.top) / r.height, 0, 1);
+  }
+  canvas.addEventListener('pointerdown', ev => { if (mode === 'touch') { dragging = true; pointerSet(ev); } });
+  canvas.addEventListener('pointermove', ev => { if (mode === 'touch' && dragging) pointerSet(ev); });
+  window.addEventListener('pointerup', () => { dragging = false; });
+
+  function setMode(m) {
+    mode = m;
+    $('mode').textContent = m === 'sensor' ? '指で操作' : '傾きで操作';
+    $('center').style.display = m === 'sensor' ? '' : 'none';
+  }
+
+  // ---- 描画 ----
+  function resize() {
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = canvas.clientWidth * dpr;
+    canvas.height = canvas.clientHeight * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+
+  function draw() {
+    const W = canvas.clientWidth, H = canvas.clientHeight;
+    // なめらかに追従
+    nx += (tx - nx) * 0.18; ny += (ty - ny) * 0.18;
+    ctx.clearRect(0, 0, W, H);
+
+    // 背景：左→右で色が変わる（音色の見える化）
+    const g = ctx.createLinearGradient(0, 0, W, 0);
+    g.addColorStop(0, '#12183a'); g.addColorStop(1, '#3a1650');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+    // 音階の帯（上が高い音）
+    const step = Math.min(STEPS - 1, Math.max(0, Math.floor((1 - ny) * STEPS)));
+    for (let i = 0; i < STEPS; i++) {
+      const y0 = H * (1 - (i + 1) / STEPS), h = H / STEPS;
+      ctx.fillStyle = i === step ? 'rgba(255,255,255,.14)' : (i % 2 ? 'rgba(255,255,255,.03)' : 'rgba(255,255,255,0)');
+      ctx.fillRect(0, y0, W, h);
+      ctx.fillStyle = 'rgba(255,255,255,.35)';
+      ctx.font = '12px sans-serif';
+      ctx.fillText(NAMES[i % 5], 10, y0 + h / 2 + 4);
+    }
+
+    const px = nx * W, py = ny * H;
+    const hue = 210 + nx * 130;
+    trail.push({ x: px, y: py });
+    if (trail.length > 40) trail.shift();
+    for (let i = 0; i < trail.length; i++) {
+      const a = i / trail.length;
+      ctx.beginPath();
+      ctx.arc(trail[i].x, trail[i].y, 4 + a * 12, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(${hue},90%,65%,${a * 0.35})`;
+      ctx.fill();
+    }
+    // 点（ビー玉みたいな丸）
+    const rg = ctx.createRadialGradient(px - 6, py - 6, 2, px, py, 30);
+    rg.addColorStop(0, '#fff'); rg.addColorStop(.3, `hsl(${hue},95%,70%)`); rg.addColorStop(1, `hsl(${hue},90%,45%)`);
+    ctx.shadowColor = `hsl(${hue},100%,65%)`; ctx.shadowBlur = 30;
+    ctx.beginPath(); ctx.arc(px, py, 22, 0, Math.PI * 2); ctx.fillStyle = rg; ctx.fill();
+    ctx.shadowBlur = 0;
+
+    if (running) updateSound();
+    requestAnimationFrame(draw);
+  }
+
+  // ---- ボタン ----
+  $('start').addEventListener('click', async () => {
+    $('start').disabled = true;
+    if (!ac) initAudio();
+    try { await ac.resume(); } catch (e) {}
+    const ok = await requestSensor();
+    running = true;
+    master.gain.setTargetAtTime(0.5, ac.currentTime, 0.05);
+    $('overlay').style.display = 'none';
+    // 1.5秒たってもセンサーの値が来なければ、指で操作モードに切り替える
+    setTimeout(() => {
+      if (!gotSensor) { setMode('touch'); $('tone').textContent = '画面をなぞってね（傾きセンサーが使えない環境）'; }
+    }, 1500);
+    if (!ok) setMode('touch');
+  });
+  $('center').addEventListener('click', () => { centerBeta = rawBeta; });
+  $('mode').addEventListener('click', () => setMode(mode === 'sensor' ? 'touch' : 'sensor'));
+  $('stop').addEventListener('click', () => {
+    if (!ac) return;
+    running = !running;
+    master.gain.setTargetAtTime(running ? 0.5 : 0, ac.currentTime, 0.05);
+    $('stop').textContent = running ? '止める' : '再開';
+  });
+
+  resize(); draw();
+})();
+</script>
+</body>
+</html>
