@@ -138,8 +138,9 @@
       }
       window.addEventListener('deviceorientation', onOrient);
       return true;
-    } catch (err) { return false; }
+    } catch (err) { sensorErr = (err && (err.name + ': ' + err.message)) || String(err); return false; }
   }
+  let sensorErr = '';
 
   // ---- 指・マウス操作（センサーが使えない時の代わり） ----
   let dragging = false;
@@ -214,17 +215,19 @@
   // ---- ボタン ----
   $('start').addEventListener('click', async () => {
     $('start').disabled = true;
+    // iPhoneは「タップの直後」にしか許可ダイアログを出せないので、最初に呼ぶ
+    const sensorPromise = requestSensor();
     if (!ac) initAudio();
     try { await ac.resume(); } catch (e) {}
-    const ok = await requestSensor();
+    const ok = await sensorPromise;
     running = true;
     master.gain.setTargetAtTime(0.5, ac.currentTime, 0.05);
     $('overlay').style.display = 'none';
     // 1.5秒たってもセンサーの値が来なければ、指で操作モードに切り替える
     setTimeout(() => {
-      if (!gotSensor) { setMode('touch'); $('tone').textContent = '画面をなぞってね（傾きセンサーが使えない環境）'; }
+      if (!gotSensor) { setMode('touch'); $('tone').textContent = '画面をなぞってね（傾きセンサーが使えない）' + (sensorErr ? ' [' + sensorErr + ']' : ''); }
     }, 1500);
-    if (!ok) setMode('touch');
+    if (!ok) { setMode('touch'); if (sensorErr) $('tone').textContent = '画面をなぞってね [' + sensorErr + ']'; }
   });
   $('center').addEventListener('click', () => { centerBeta = rawBeta; });
   $('mode').addEventListener('click', () => setMode(mode === 'sensor' ? 'touch' : 'sensor'));
