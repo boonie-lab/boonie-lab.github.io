@@ -12,7 +12,7 @@
   --blue:#e3eefb; --pink:#fbe4e8; --lime:#e4f3dc; --gold:#f4c542;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:var(--paper);color:var(--ink);
+html,body{margin:0;overscroll-behavior:none;background:var(--paper);color:var(--ink);
   font-family:"Hiragino Maru Gothic ProN","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",system-ui,sans-serif}
 body{min-height:100vh;min-height:100dvh;touch-action:manipulation;-webkit-text-size-adjust:100%}
 .felt{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
@@ -82,8 +82,8 @@ details p,details li{line-height:1.7;font-size:.92rem}
 .grp .gl{font-size:.68rem;text-align:center;margin-bottom:3px;opacity:.95}
 .grp .cells{display:grid;gap:3px}
 .grp.g2 .cells{grid-template-columns:repeat(2,1fr)} .grp.g3 .cells{grid-template-columns:repeat(3,1fr)}
-.cell{aspect-ratio:3/4;border:2px dashed rgba(255,255,255,.55);border-radius:7px;display:block;touch-action:none}
-.cell .tile{height:100%}
+.cell{aspect-ratio:3/4;border:2px dashed rgba(255,255,255,.55);border-radius:7px;display:block;touch-action:none;position:relative;min-width:0}
+.cell .tile{position:absolute;inset:0;width:100%;height:100%;aspect-ratio:auto}
 .btns{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
 .btns button{border:0;background:#fff;color:var(--ink);border-radius:10px;padding:10px 2px;font-weight:700;font-size:.85rem;box-shadow:0 2px 0 rgba(0,0,0,.25)}
 .btns button:disabled{opacity:.4}
@@ -290,7 +290,7 @@ function newGame(){
   S.screen = "play";
   const meFirst = Math.random() < 0.5;
   setMsg(meFirst ? "じゃんけんで あなたが先攻！" : "じゃんけんで CPUが先攻！");
-  render();
+  render(); window.scrollTo(0, 0);
   const gid = G.gid;
   sleep(1100).then(()=>{ if(!G || G.gid!==gid) return; meFirst ? myTurn() : cpuTurn(); });
 }
@@ -531,7 +531,7 @@ $app.addEventListener("click", e => {
   if(a==="level"){ S.level = el.dataset.v; store.set("level", S.level); render(); }
   else if(a==="cpuhand"){ S.showCpu = el.dataset.v==="1"; store.set("showCpu", S.showCpu); render(); }
   else if(a==="start" || a==="again"){ newGame(); }
-  else if(a==="title"){ if(G) G.gid++; S.screen="title"; render(); }
+  else if(a==="title"){ if(G) G.gid++; S.screen="title"; render(); window.scrollTo(0, 0); }
   else if(a==="place"){ placeCard(Number(el.dataset.id)); }
   else if(a==="unplace"){ unplace(Number(el.dataset.i)); }
   else if(a==="hint"){ hint(); }
@@ -608,46 +608,93 @@ function dropTo(d, t){
     G.pendingDiscard = d.id;
   }
 }
-function endDrag(e, cancel){
-  const d = DRAG; DRAG = null; if(!d) return;
-  if(!d.on) return;                     // ただのタップ → click に任せる
+const DEBUG = /[?&]debug/.test(location.search);
+let dbgEl = null;
+function dbg(m){
+  if(!DEBUG) return;
+  if(!dbgEl){ dbgEl = document.createElement("div");
+    dbgEl.style.cssText = "position:fixed;left:0;right:0;bottom:0;max-height:28vh;overflow:auto;background:rgba(0,0,0,.82);color:#9f9;font:11px/1.4 monospace;padding:4px;z-index:99;pointer-events:none;white-space:pre-wrap";
+    document.body.appendChild(dbgEl); }
+  dbgEl.textContent = (m + "\n" + dbgEl.textContent).slice(0, 1200);
+}
+const canDrag = t => t && G && G.phase === "act" && !G.discardMode && !G.confirm && !G.result;
+const mkDrag = (t, x, y) => ({el:t, id:Number(t.dataset.id), from:t.dataset.from, i:t.dataset.i,
+                              x0:x, y0:y, on:false, ghost:null, w:t.offsetWidth, h:t.offsetHeight});
+function beginGhost(d){
+  d.on = true;
+  const g = d.el.cloneNode(true);
+  g.className = d.el.className.replace(/\b(new|pop|lift)\b/g, "") + " ghost";
+  g.removeAttribute("data-act"); g.removeAttribute("data-drag");
+  g.style.width = d.w + "px"; g.style.height = d.h + "px";
+  document.body.appendChild(g); d.ghost = g;
+  d.el.classList.add("lift"); document.body.classList.add("dragging");
+  const dp = $app.querySelector(".dpile"); if(dp) dp.classList.add("zone");
+  dbg("drag start " + d.from + " " + d.id);
+}
+function moveDrag(x, y){
+  const d = DRAG; if(!d.on) beginGhost(d);
+  d.ghost.style.left = x + "px"; d.ghost.style.top = y + "px";
+  const pt = hitPoint({clientX:x, clientY:y}, d);
+  const t = overTarget(pt.x, pt.y);
+  if(lastOver && (!t || t.el !== lastOver)) lastOver.classList.remove("over");
+  if(t){ t.el.classList.add("over"); lastOver = t.el; } else lastOver = null;
+}
+function finishDrag(x, y, cancel){
+  const d = DRAG; DRAG = null; if(!d || !d.on) return;
   if(d.ghost) d.ghost.remove();
   document.body.classList.remove("dragging");
   suppressUntil = Date.now() + 350;
-  if(!cancel){ const pt = hitPoint(e, d); const t = overTarget(pt.x, pt.y); if(t) dropTo(d, t); }
+  let t = null;
+  if(!cancel){ const pt = hitPoint({clientX:x, clientY:y}, d); t = overTarget(pt.x, pt.y); if(t) dropTo(d, t); }
+  dbg("drop " + (cancel ? "CANCEL" : (t ? t.type : "none")));
   lastOver = null;
   if(G && G.pendingDiscard != null){ const id = G.pendingDiscard; G.pendingDiscard = null; return discardCard(id); }
   render();
 }
+
+// マウス：pointer イベント
 $app.addEventListener("pointerdown", e => {
-  if(e.pointerType === "mouse" && e.button !== 0) return;
-  const t = e.target.closest(".tile[data-drag]");
-  if(!t || !G || G.phase !== "act" || G.discardMode || G.confirm || G.result) return;
-  DRAG = {pid:e.pointerId, el:t, id:Number(t.dataset.id), from:t.dataset.from, i:t.dataset.i,
-          x0:e.clientX, y0:e.clientY, on:false, ghost:null, w:t.offsetWidth, h:t.offsetHeight};
+  if(e.pointerType === "touch" || e.button !== 0 || DRAG) return;
+  const t = e.target.closest(".tile[data-drag]"); if(!canDrag(t)) return;
+  DRAG = mkDrag(t, e.clientX, e.clientY); DRAG.pid = e.pointerId;
 });
 window.addEventListener("pointermove", e => {
-  if(!DRAG || e.pointerId !== DRAG.pid) return;
-  if(!DRAG.on){
-    if(Math.hypot(e.clientX-DRAG.x0, e.clientY-DRAG.y0) < 8) return;
-    DRAG.on = true;
-    const g = DRAG.el.cloneNode(true);
-    g.className = DRAG.el.className.replace(/\b(new|pop|lift)\b/g,"") + " ghost";
-    g.removeAttribute("data-act"); g.removeAttribute("data-drag");
-    g.style.width = DRAG.w + "px"; g.style.height = DRAG.h + "px";
-    document.body.appendChild(g); DRAG.ghost = g;
-    DRAG.el.classList.add("lift"); document.body.classList.add("dragging");
-    const dp = $app.querySelector(".dpile"); if(dp) dp.classList.add("zone");
-  }
-  e.preventDefault();
-  DRAG.ghost.style.left = e.clientX + "px"; DRAG.ghost.style.top = e.clientY + "px";
-  const pt = hitPoint(e, DRAG);
-  const t = overTarget(pt.x, pt.y);
-  if(lastOver && (!t || t.el !== lastOver)) lastOver.classList.remove("over");
-  if(t){ t.el.classList.add("over"); lastOver = t.el; } else lastOver = null;
+  if(!DRAG || DRAG.pid !== e.pointerId) return;
+  if(!DRAG.on && Math.hypot(e.clientX-DRAG.x0, e.clientY-DRAG.y0) < 8) return;
+  e.preventDefault(); moveDrag(e.clientX, e.clientY);
 }, {passive:false});
-window.addEventListener("pointerup", e => { if(DRAG && e.pointerId === DRAG.pid) endDrag(e, false); });
-window.addEventListener("pointercancel", e => { if(DRAG && e.pointerId === DRAG.pid) endDrag(e, true); });
+window.addEventListener("pointerup", e => {
+  if(!DRAG || DRAG.pid !== e.pointerId) return;
+  if(DRAG.on) finishDrag(e.clientX, e.clientY, false); else DRAG = null;
+});
+window.addEventListener("pointercancel", e => { if(DRAG && DRAG.pid === e.pointerId){ if(DRAG.on) finishDrag(e.clientX, e.clientY, true); else DRAG = null; } });
+
+// 指：touch イベント（iPhoneのSafariで、スクロールやバウンスを確実にとめるため）
+$app.addEventListener("touchstart", e => {
+  if(DRAG || e.touches.length !== 1) return;
+  const t = e.target.closest(".tile[data-drag]"); if(!canDrag(t)) return;
+  const tc = e.touches[0];
+  DRAG = mkDrag(t, tc.clientX, tc.clientY); DRAG.touch = tc.identifier;
+  dbg("touchstart");
+}, {passive:true});
+window.addEventListener("touchmove", e => {
+  if(!DRAG || DRAG.touch === undefined) return;
+  const tc = Array.from(e.touches).find(x => x.identifier === DRAG.touch); if(!tc) return;
+  if(e.cancelable) e.preventDefault();               // ← ページが動かないように
+  if(!DRAG.on && Math.hypot(tc.clientX-DRAG.x0, tc.clientY-DRAG.y0) < 6) return;
+  moveDrag(tc.clientX, tc.clientY);
+}, {passive:false});
+function touchEnd(e, cancel){
+  if(!DRAG || DRAG.touch === undefined) return;
+  const tc = Array.from(e.changedTouches).find(x => x.identifier === DRAG.touch); if(!tc) return;
+  const d = DRAG;
+  if(e.cancelable) e.preventDefault();                // ネイティブの click は止めて、タップは自分で処理する
+  if(d.on) finishDrag(tc.clientX, tc.clientY, cancel);
+  else { DRAG = null; if(!cancel){ dbg("tap"); d.el.click(); } }
+}
+window.addEventListener("touchend", e => touchEnd(e, false), {passive:false});
+window.addEventListener("touchcancel", e => touchEnd(e, true), {passive:false});
+$app.addEventListener("contextmenu", e => { if(e.target.closest(".tile")) e.preventDefault(); });
 render();
 </script>
 </body>
