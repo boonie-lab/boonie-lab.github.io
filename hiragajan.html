@@ -62,6 +62,22 @@ details p,details li{line-height:1.7;font-size:.92rem}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
 .chip{border:1px solid var(--tile-edge);background:var(--tile);border-radius:999px;padding:4px 10px;font-size:.9rem}
 .chips + .two button{padding:8px}
+.title .big{margin-bottom:10px;line-height:1.3}
+.title .big small{display:block;font-size:.76rem;font-weight:500;opacity:.92;margin-top:2px}
+.title .big.alt{background:var(--felt);box-shadow:0 3px 0 var(--felt-dark)}
+.title .big.alt2{background:#4a6fa5;box-shadow:0 3px 0 #355079}
+.hdr .hb{display:flex;gap:6px}
+.hdr .hb button{min-width:38px}
+/* 一人用：カードを大きく、枠を3段に */
+.felt.bigmode{--cw:min(17vw,9.5vh,80px)}
+.felt.bigmode .slots{display:flex;flex-direction:column;gap:6px;margin:6px 0 8px}
+.felt.bigmode .grp{display:flex;align-items:center;gap:8px;padding:5px 8px}
+.felt.bigmode .grp .gl{flex:none;width:3.2em;margin:0;text-align:left;font-size:.8rem}
+.felt.bigmode .grp .cells{display:flex;gap:6px}
+.felt.bigmode .cell{width:var(--cw);flex:none}
+.felt.bigmode .row.hand{grid-template-columns:repeat(4,var(--cw));justify-content:center;gap:8px;min-height:calc(var(--cw)*2.7 + 8px)}
+.felt.bigmode .hand .tile,.felt.bigmode .cell .tile{font-size:calc(var(--cw)*.52)}
+.felt.bigmode .msg{font-size:1.02rem}
 
 /* table */
 .hdr{display:flex;justify-content:space-between;align-items:center;font-size:.85rem;color:#555;margin-bottom:6px}
@@ -107,6 +123,8 @@ details p,details li{line-height:1.7;font-size:.92rem}
 <div id="app"></div>
 <script>
 const DICT = {"w2":["あい","あお","あか","あき","あご","あさ","あし","あす","あせ","あな","あに","あね","あま","あみ","あめ","あゆ","あり","ある","あん","いえ","いか","いき","いく","いけ","いし","いす","いた","いち","いと","いぬ","いね","いま","いも","いや","いる","いろ","いわ","いん","うえ","うお","うし","うじ","うそ","うた","うつ","うで","うど","うに","うね","うま","うみ","うめ","うら","うり","うる","うん","えい","えき","えさ","えだ","えと","えび","えら","えり","える","えん","おい","おう","おか","おき","おく","おけ","おじ","おす","おと","おに","おの","おば","おび","おや","おり","おる","おん","かい","かう","かお","かき","かぎ","かく","かげ","かご","かさ","かし","かす","かぜ","かた","かつ","かて","かど","かに","かね","かば","かび","かぶ","かべ","かま","かみ","かむ","かめ","かも","かや","かゆ","から","かり","かる","かれ","かわ","かん","がむ","きく","きし","きじ","きず","きた","きど","きぬ","きね","きみ","きも","きり","きる","きん","ぎり","ぎん","くい","くう","くが","くき","くげ","くさ","くし","くじ","くず","くせ","くだ","くち","くつ","くど","くに","くび","くぼ","くま","くみ","くも","くら","くり","くる","くろ","くわ","くん","ぐみ","けい","けが","けさ","けた","けむ","けん","げき","げた","げん","こい","こう","こえ","こぐ","こけ","ここ","こし","こじ","こす","こそ","こぞ","こと","この","こま","こみ","こむ","こめ","こも","こや","こり","これ","ころ","こん","ごい","ごう","ごく","ごご","ごと","ごま","ごみ","さい","さえ","さお","さか","さが","さき","さく","さけ","さじ","さす","さた","さつ","さと","さび","さま","さむ","さめ","さや","さら","さる","さん","ざる","ざん","しい","しお","しか","しき","した","しだ","しち","しつ","しぬ","しば","しぶ","しま","しみ","しめ","しも","しる","しろ","しわ","しん","じい","じか","じき","じこ","じん","すい","すう","すえ","すき","すぐ","すげ","すし","すじ","すす","すず","すな","すね","すべ","すみ","すむ","すり","する","せい","せき","せこ","せつ","せみ","せめ","せる","せん","ぜい","ぜひ","ぜろ","ぜん","そう","そこ","そで","そと","その","そば","そふ","そぼ","そめ","そら","それ","そん","ぞう","ぞく","たい","たか","たが","たき","たく","たけ","たこ","たす","たつ","たて","たな","たに","たね","たび","たま","たみ","たら","たる","たれ","たん","だい","だし","だめ","だれ","だん","ちえ","ちか","ちず","ちち","ちり","ちる","ちん","つい","つう","つえ","つか","つき","つぎ","つく","つぐ","つけ","つげ","つた","つち","つな","つの","つぶ","つぼ","つま","つみ","つむ","つめ","つや","つゆ","つる","てい","てき","てこ","てつ","てら","てる","てん","でる","でん","とい","とう","とお","とか","とが","とく","とげ","とこ","とし","とじ","とち","とび","とめ","とも","とら","とり","とる","とん","どう","どく","どこ","どじ","どて","どぶ","どれ","どろ","どん","ない","なか","なぎ","なぐ","なし","なす","なぜ","なぞ","なた","なつ","なな","なに","なべ","なま","なみ","なら","なり","なる","なわ","なん","にい","にく","にし","にじ","にせ","にち","にる","にわ","にん","ぬう","ぬか","ぬき","ぬく","ぬし","ぬた","ぬの","ぬま","ぬる","ねえ","ねぎ","ねこ","ねじ","ねた","ねつ","ねる","ねん","のう","のき","のこ","のし","のち","のど","のび","のべ","のみ","のむ","のり","のる","のろ","はい","はう","はえ","はか","はぎ","はく","はけ","はげ","はこ","はし","はず","はた","はだ","はち","はつ","はて","はと","はな","はね","はは","はば","はぶ","はま","はむ","はも","はら","はり","はる","はれ","はん","ばい","ばか","ばく","ばち","ばつ","ばね","ばら","ばん","ぱん","ひえ","ひげ","ひざ","ひし","ひじ","ひだ","ひと","ひな","ひび","ひま","ひめ","ひも","ひら","ひる","ひれ","ひん","びり","びん","ぴざ","ふい","ふう","ふえ","ふき","ふく","ふぐ","ふけ","ふじ","ふた","ふち","ふで","ふな","ふね","ふみ","ふむ","ふゆ","ふり","ふる","ふろ","ふん","ぶす","ぶた","ぶり","ぶん","へい","へそ","へた","へび","へや","へら","へる","へん","べに","ぺん","ほう","ほか","ほこ","ほし","ほぞ","ほど","ほね","ほほ","ほや","ほら","ほり","ほる","ほろ","ほん","ぼう","ぼく","ぼん","ぽん","まあ","まい","まえ","まき","まく","まご","まし","まじ","まず","まだ","まち","まつ","まと","まど","まま","まめ","まゆ","まり","まる","まん","みえ","みお","みき","みぎ","みこ","みず","みせ","みそ","みち","みつ","みな","みの","みみ","みや","みる","みん","むぎ","むく","むこ","むし","むす","むね","むら","むり","めい","めし","めす","めど","めん","もう","もぐ","もし","もず","もち","もつ","もと","もの","もむ","もも","もや","もり","もる","もん","やぎ","やく","やし","やど","やね","やば","やま","やみ","やめ","やり","やる","ゆう","ゆえ","ゆか","ゆき","ゆげ","ゆず","ゆば","ゆび","ゆめ","ゆり","よい","よう","よく","よこ","よし","よそ","よつ","よど","よび","よぶ","よむ","よめ","よる","よん","らい","らく","らむ","らん","りか","りく","りす","りん","るい","るす","るり","れい","れき","れつ","れん","ろう","ろく","ろじ","ろば","ろん","わき","わく","わけ","わざ","わし","わた","わな","わに","わび","わら","わり","わる","われ","わん"],"w3":["あいこ","あいす","あいず","あいて","あいま","あおい","あかい","あかご","あかり","あきち","あくま","あける","あげる","あさい","あさひ","あさり","あした","あずき","あせる","あそこ","あそぶ","あたま","あたる","あつい","あとで","あなた","あびる","あぶら","あまい","あまり","あまる","あみど","あやめ","あらい","あらう","あらし","あられ","あるく","あるじ","あれる","あわび","あんこ","あんず","あーと","いえる","いかす","いかだ","いきる","いくら","いける","いしゃ","いじる","いずみ","いそぐ","いたい","いたす","いたち","いちご","いちば","いつか","いつつ","いつも","いとこ","いなか","いなご","いなり","いのち","いのる","いびき","いもの","いもり","いやな","いらい","いるか","いれる","いわし","いんく","うえき","うえる","うかぶ","うがい","うきわ","うける","うごく","うさぎ","うしろ","うすい","うずら","うたう","うちわ","うつる","うでわ","うどん","うなぎ","うなる","うばう","うまい","うまる","うみべ","うれる","うわさ","えあー","えかき","えがお","えがく","えくぼ","えのぐ","えほん","えらい","えらぶ","えんぎ","おうち","おうむ","おえる","おかき","おかげ","おかし","おかす","おかず","おかゆ","おきる","おくる","おこす","おこめ","おこる","おさけ","おしえ","おしお","おしむ","おしろ","おすし","おせち","おそい","おたく","おたま","おちゃ","おちる","おっと","おでん","おとこ","おとな","おどる","おなか","おなら","おはぎ","おへそ","おぼん","おもい","おもう","おもち","おもて","おやつ","およぐ","おりる","おろす","おわり","おわる","おんな","かいこ","かえで","かえる","かかし","かかと","かかる","かがみ","かぎる","かくす","かける","かざる","かじる","かすむ","かぞく","かたい","かたち","かたつ","かたる","かっぱ","かつお","かつぐ","かなう","かなり","かばん","かぶと","かぶる","かまう","かめら","かもめ","かゆい","かよう","からい","からし","からす","からだ","からて","かりる","かりん","かるい","かるた","かれい","かれる","かれー","かわく","かわす","かわべ","かわら","かんじ","かんな","かーど","かーぶ","がたん","がちゃ","がらん","きいろ","きうい","きえる","きおく","きかい","きかす","きそく","きたす","きって","きっと","きつい","きつね","きなこ","きのう","きのこ","きめる","きもち","きもの","きょう","きらう","きらり","きりん","きれい","きんし","ぎたー","ぎふと","ぎゅう","ぎゅっ","ぎんが","くいる","くがつ","くさい","くじら","くすり","くずす","くだす","くつう","くばる","くふう","くもり","くらい","くらげ","くらす","くらぶ","くるう","くるま","くるみ","くるり","くれる","くろい","ぐるり","けいと","けしき","けずる","けむい","けむり","けやき","けれど","けーき","げんか","げんき","こあら","こいぬ","こうし","こうじ","こうば","こうふ","こうべ","こえる","こおり","こがす","こけし","こげる","ここあ","こころ","こさめ","こじか","こじる","こたえ","こたつ","こだま","こっち","こっぷ","こつん","ことし","ことば","ことり","こども","こなす","こねこ","こぶた","こぼす","こむぎ","こめる","こやぎ","こらす","これら","ころす","ころぶ","ころも","ころり","こわい","こわす","こんど","こんぶ","こんや","こーす","こーち","こーど","こーら","ごがつ","ごくり","ごくん","ごぜん","ごとん","ごはん","ごばん","ごぼう","ごりら","ごるふ","ごろり","さいご","さいふ","さかな","さかや","さかる","さがす","さくや","さくら","さけぶ","さげる","ささる","さざえ","さしみ","さそう","さっき","さとう","さばく","さびる","さます","さむい","さめる","さらだ","さらり","さわぐ","さわる","さんた","さんま","ざくろ","ざぶん","しあい","しいる","しいん","しかく","しかる","しがつ","しけん","しごと","しじみ","しずか","しずく","しずむ","しだい","しっぽ","しばる","しぼる","しまう","しめす","しめる","しゃち","しゃつ","しゅう","しょう","しるこ","しるし","しるす","しろい","しんと","じかん","じゃむ","すいか","すえる","すかす","すがた","すきま","すきー","すくう","すぐに","すこし","すごい","すすき","すすむ","すずめ","すずり","すたー","すだち","すっと","すてき","すてる","すなお","すべて","すべる","すます","すみれ","すもう","すもも","すわる","すーつ","すーぷ","ずかん","ずしん","ずっと","ずばり","ずぼん","せいと","せかい","せなか","せまい","せまる","せめる","せんす","せんた","せーた","ぜりー","そうじ","そそぐ","そだつ","そっと","そぼろ","そむく","そろう","そーす","そーだ","ぞうり","たいこ","たいや","たおす","たおる","たかい","たから","たがう","たくし","たくす","たくむ","たすく","たたく","たたみ","たたむ","たてる","たとう","たどる","たにま","たぬき","たのむ","たばこ","たぶん","たべる","たまご","たまに","たまる","ためす","ためる","たもつ","たより","たらこ","たりる","たると","たれる","たんす","たんぼ","だいく","だいや","だらり","だるい","だんご","だんす","ちかい","ちから","ちがう","ちきん","ちぎる","ちくり","ちくわ","ちしき","ちぢむ","ちっぷ","ちまき","ちょう","ちょこ","ちらし","ちらす","ちらり","ちーず","ちーむ","つうち","つかう","つかむ","つかる","つくえ","つくす","つくる","つげる","つたう","つつむ","つづく","つなぐ","つなみ","つねる","つばき","つばさ","つばめ","つぶす","つまみ","つむぐ","つむじ","つもり","つもる","つよい","つらい","つれる","てがみ","てくび","てじな","てすと","てにす","てほん","てらす","てれび","てーぷ","でんき","でんち","でんわ","でーた","とうふ","とおい","とおか","とかす","とがる","とけい","とける","とこや","とじる","とても","とどく","となり","とばす","とびら","とまと","とまる","とめる","ともに","とれる","とろり","とんび","とんぼ","どうぐ","どうぞ","どかん","どきり","どさり","どしん","どすん","どっと","どなた","どよう","どりる","どれす","ないふ","なおす","なおる","なかす","なかま","ながい","なぎさ","なぐる","なげく","なげる","なごむ","なごや","なじむ","なっと","ななつ","なばな","なまえ","なまこ","なみだ","なやむ","ならう","ならす","ならぶ","なれる","なんで","にがい","にがつ","にぎる","にげる","にこり","にごる","にじむ","にせる","にぶい","にほん","にもつ","にやり","にらむ","にわか","ぬかす","ぬぐう","ぬける","ぬすむ","ぬっと","ぬりえ","ぬるい","ぬれる","ねがう","ねじる","ねずみ","ねたむ","ねだん","ねむい","ねむり","ねむる","ねらい","ねらう","のうふ","のこす","のこり","のこる","のそり","のぞく","のぞむ","のはら","のばす","のびる","のぼる","のりば","のろい","のーと","はえる","はかる","はがき","はこぶ","はさみ","はさむ","はしご","はしる","はじめ","はずす","はずむ","はたき","はたけ","はたす","はっぱ","はつか","はなし","はなす","はなび","はなや","はにわ","はねる","はまる","はめる","はやい","はやし","はやる","はらう","はらり","はるか","はれる","ばたり","ばたん","ばたー","ばっく","ばっぐ","ばった","ばっと","ばなな","ばれー","ばんど","ばーど","ぱいろ","ぱいん","ぱくり","ぱすた","ぱたん","ぱちり","ぱんだ","ぱんつ","ぱんや","ぱーく","ぱーつ","ひかり","ひかる","ひがし","ひくい","ひそむ","ひたい","ひたす","ひだり","ひつじ","ひとつ","ひとみ","ひとり","ひなた","ひねる","ひのき","ひばり","ひびく","ひゃく","ひょい","ひょう","ひよこ","ひらく","ひらめ","ひらり","ひろい","ひろう","ひろば","びでお","びょう","びーる","ぴあの","ぴかり","ぴしゃ","ぴたり","ぴんく","ふえる","ふかい","ふかす","ふくい","ふくむ","ふくろ","ふける","ふしぎ","ふすま","ふせぐ","ふたご","ふたつ","ふたり","ふだん","ふつう","ふとい","ふとる","ふとん","ふぶき","ふやす","ふらい","ふらり","ふるい","ふるう","ふれる","ふろく","ふわり","ぶどう","ぷらん","ぷりん","ぷーる","へだつ","へちま","へらす","へるぷ","へんな","べっど","べーこ","べーす","ぺこり","ぺんき","ほうき","ほこり","ほしい","ほたて","ほたる","ほっけ","ほっと","ほとけ","ほのお","ほんや","ほーむ","ほーる","ぼうし","ぼうや","ぼたん","ぼーる","ぽかん","ぽすと","ぽっと","ぽつり","ぽとり","ぽろり","ぽんと","まいく","まいる","まかす","まかる","まがる","まくら","まぐろ","まこと","まじょ","まじる","まずい","まぜる","まっち","まつり","まとう","まとめ","まどう","まなぶ","まねく","まねる","まぶた","まほう","まもる","まゆげ","まよう","まるい","まわす","まわり","まわる","まんが","まーく","みえる","みかん","みがく","みせる","みだす","みちる","みっか","みっつ","みつば","みつる","みどり","みなと","みなみ","みのる","みみず","みやげ","みやこ","みりん","みるく","みんな","むいか","むかう","むかし","むかで","むくう","むくり","むける","むじな","むすこ","むすぶ","むすめ","むっつ","むらす","めいし","めがね","めぐみ","めぐる","めだか","めろん","めーる","もうふ","もえる","もがく","もぐら","もぐる","もっと","もでる","もどす","もどる","もみじ","もやし","もやす","もらう","もらす","もれる","もろい","やおや","やかん","やきそ","やくす","やさい","やすい","やすむ","やっつ","やっと","やなぎ","やぶる","やまい","やめる","やもり","ゆうひ","ゆうべ","ゆかた","ゆずる","ゆたか","ゆとり","ゆのみ","ゆびわ","ゆらぐ","ゆらり","ゆりね","ゆるい","ゆるす","ゆるむ","ゆるり","ゆれる","ようか","ようじ","ようす","ようち","よごす","よせる","よぞら","よだれ","よっか","よっつ","よどむ","よなか","よゆう","よわい","らいす","らいと","らくだ","らじお","らっこ","らっぱ","らんち","らんぷ","りすと","りずむ","りぼん","りょう","りんく","りんご","るーぷ","るーる","れもん","れーす","ろうか","ろびー","ろーぷ","わいん","わかい","わかす","わかば","わかめ","わかる","わける","わさび","わたし","わたす","わたる","わなげ","わびる","わらう","わらじ","わらび","わるい","われる"]};
+const BUILTIN = [];   // 最初から入れておく「よく使う言葉」（あなた用の辞書にだけ使う）
+const VERSION = "v4.0";
 
 // ==LOGIC-START==
 const BASE = "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわん";
@@ -125,7 +143,7 @@ function mkDict(extra){
 }
 // 基本の辞書 + 追加の言葉で辞書を作る。あなた用（extraMe）とCPU用（extraCpu）は別にできる
 function rebuildDict(extraMe, extraCpu){
-  DME = mkDict(extraMe);
+  DME = mkDict((extraMe||[]).concat(BUILTIN));
   DCPU = extraCpu ? mkDict(extraCpu) : DME;
   SET2 = DME.S2; SET3 = DME.S3;
 }
@@ -210,6 +228,23 @@ function chooseDiscard(hand8, deckCards, level, D){
   return best;
 }
 const NOTICE = {easy:0.5, normal:1, hard:1};
+// 出題パズル：必ず「2・3・3もじ」の言葉が作れる8まいを出す（言葉は、自作の基本の辞書から選ぶ）
+function makePuzzle(){
+  const cap = {}; for(const c of BASE) cap[c] = 2; for(const c of VOICED + SPECIAL) cap[c] = 1;
+  const pick = a => a[Math.floor(Math.random()*a.length)];
+  let last = null;
+  for(let tries=0; tries<5000; tries++){
+    const a = pick(DICT.w2), b = pick(DICT.w3), c = pick(DICT.w3);
+    if(b === c) continue;
+    const cnt = {}; let ok = true;
+    for(const ch of a+b+c){ cnt[ch] = (cnt[ch]||0) + 1; if(cnt[ch] > (cap[ch]||0)){ ok = false; break; } }
+    if(!ok) continue;
+    last = {words:[a,b,c], chars:shuffle(Array.from(a+b+c))};
+    // すぐ並べられてしまう（もとの順のまま）ことを避ける
+    if(last.chars.join("") !== (a+b+c)) return last;
+  }
+  return last;
+}
 // ==LOGIC-END==
 
 // ---------- UI ----------
@@ -221,6 +256,7 @@ const store = {
 };
 let S = { screen:"title", level:store.get("level","normal"), showCpu:store.get("showCpu",true),
           glow:store.get("glow",true), userWords:store.get("userwords",[]),
+          sound:store.get("sound",true), best:store.get("best",0), solved:store.get("solved",0), mode:"cpu",
           wins:store.get("wins",{me:0,cpu:0}) };
 S.userWords = (Array.isArray(S.userWords)?S.userWords:[]).filter(w=>typeof w==="string" && (w.length===2||w.length===3) && Array.from(w).every(c=>(BASE+VOICED+SPECIAL).includes(c)));
 const CARDCH = new Set(Array.from(BASE+VOICED+SPECIAL));
@@ -230,7 +266,7 @@ if(S.big && Array.isArray(S.big.w)) S.big.w = S.big.w.filter(okWord); else S.big
 S.bigMode = "common";
 S.cpuBig = store.get("cpubig", false);
 function allExtra(){ return S.userWords.concat(S.big ? S.big.w : []); }
-function cpuExtra(){ return S.userWords.concat(S.cpuBig && S.big ? S.big.w : []); }
+function cpuExtra(){ return S.userWords.concat(S.cpuBig ? (S.big ? S.big.w : []).concat(BUILTIN) : []); }
 function refreshDict(){ rebuildDict(allExtra(), cpuExtra()); }
 refreshDict();
 function addUserWord(w){
@@ -273,6 +309,44 @@ let G = null;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const LEVELS = {easy:"よわい", normal:"ふつう", hard:"つよい"};
 
+// ---- 効果音（ささやかな音。ブラウザの音づくり機能だけで鳴らすよ）
+let AC = null;
+function unlockAudio(){
+  try{
+    if(!AC){ const C = window.AudioContext || window.webkitAudioContext; if(!C) return; AC = new C(); }
+    if(AC.state === "suspended") AC.resume();
+  }catch(e){}
+}
+["touchend","pointerup","click","keydown"].forEach(ev => window.addEventListener(ev, unlockAudio, {passive:true}));
+function tone(f, t0, dur, type, vol, f2){
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.type = type || "sine"; o.frequency.setValueAtTime(f, t0);
+  if(f2) o.frequency.exponentialRampToValueAtTime(f2, t0 + dur);
+  g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g); g.connect(AC.destination); o.start(t0); o.stop(t0 + dur + 0.03);
+}
+function noise(t0, dur, f, q, vol){
+  const n = Math.max(1, Math.floor(AC.sampleRate * dur)), buf = AC.createBuffer(1, n, AC.sampleRate), d = buf.getChannelData(0);
+  for(let i=0;i<n;i++) d[i] = Math.random()*2 - 1;
+  const src = AC.createBufferSource(); src.buffer = buf;
+  const bp = AC.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = f; bp.Q.value = q;
+  const g = AC.createGain(); g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  src.connect(bp); bp.connect(g); g.connect(AC.destination); src.start(t0);
+}
+function sfx(name){
+  if(!S.sound) return;
+  try{
+    if(!AC || AC.state !== "running") return;
+    const t = AC.currentTime;
+    if(name === "place"){ tone(640, t, 0.07, "triangle", 0.09, 430); noise(t, 0.03, 2600, 1, 0.05); }
+    else if(name === "draw"){ noise(t, 0.12, 1800, 0.8, 0.09); tone(320, t, 0.1, "sine", 0.03, 520); }
+    else if(name === "discard"){ tone(250, t, 0.1, "sine", 0.1, 150); }
+    else if(name === "ok"){ tone(880, t, 0.12, "sine", 0.07); tone(1320, t + 0.08, 0.14, "sine", 0.05); }
+    else if(name === "win"){ [523, 659, 784, 1047].forEach((f, i) => tone(f, t + i*0.11, 0.24, "triangle", 0.09)); }
+    else if(name === "lose"){ tone(392, t, 0.22, "triangle", 0.07); tone(330, t + 0.2, 0.32, "triangle", 0.07); }
+  }catch(e){}
+}
+
 function tileClass(ch){ if(VOICED.includes(ch)) return "d"; if(SPECIAL.includes(ch)) return (ch==="ー"?"l":"s"); return ""; }
 function tileHTML(c, extra="", attrs=""){
   return `<button class="tile ${tileClass(c.ch)} ${extra}" ${attrs}>${c.ch}</button>`;
@@ -282,26 +356,36 @@ function wordHTML(w){
 }
 function setMsg(t){ G.msg = t; }
 
-function newGame(){
+function newGame(mode){
+  mode = mode || S.mode || "cpu"; S.mode = mode;
+  if(mode === "puzzle") return newPuzzle();
   const deck = shuffle(buildDeck());
-  const me = deck.splice(0,7), cpu = deck.splice(0,7);
-  G = { gid:(G?G.gid:0)+1, deck, discard:[], me, cpu, slots:Array(8).fill(null),
-        phase:"idle", newId:null, cpuNewId:null, pop:null, msg:"", discardMode:false, confirm:null, result:null, last:null };
+  const me = deck.splice(0,7), cpu = mode === "cpu" ? deck.splice(0,7) : [];
+  G = { gid:(G?G.gid:0)+1, mode, turn:0, deck, discard:[], me, cpu, slots:Array(8).fill(null),
+        phase:"idle", newId:null, cpuNewId:null, pop:null, msg:"", discardMode:false, confirm:null, result:null, last:null, prevOk:[false,false,false] };
   S.screen = "play";
-  const meFirst = Math.random() < 0.5;
-  setMsg(meFirst ? "じゃんけんで あなたが先攻！" : "じゃんけんで CPUが先攻！");
+  const meFirst = mode === "solo" || Math.random() < 0.5;
+  setMsg(mode === "solo" ? "山札から1まいずつ引くよ。ゆっくり考えてね" : (meFirst ? "じゃんけんで あなたが先攻！" : "じゃんけんで CPUが先攻！"));
   render(); window.scrollTo(0, 0);
   const gid = G.gid;
-  sleep(1100).then(()=>{ if(!G || G.gid!==gid) return; meFirst ? myTurn() : cpuTurn(); });
+  sleep(mode === "solo" ? 700 : 1100).then(()=>{ if(!G || G.gid!==gid) return; meFirst ? myTurn() : cpuTurn(); });
+}
+function newPuzzle(){
+  const pz = makePuzzle();
+  G = { gid:(G?G.gid:0)+1, mode:"puzzle", turn:0, deck:[], discard:[], me:pz.chars.map((ch,i)=>({id:i, ch})), cpu:[], slots:Array(8).fill(null),
+        phase:"act", newId:null, cpuNewId:null, pop:null, msg:"8まいで「2もじ・3もじ・3もじ」の言葉を作ろう。ゆっくり考えてね",
+        discardMode:false, confirm:null, result:null, last:null, sol:pz.words, hinted:[], cheat:false, prevOk:[false,false,false] };
+  S.screen = "play"; sfx("draw"); render(); window.scrollTo(0, 0);
 }
 function drawCard(){
   if(G.deck.length === 0){ G.deck = shuffle(G.discard.splice(0)); }
   return G.deck.shift();
 }
 function myTurn(){
-  const c = drawCard(); G.me.push(c); G.newId = c.id; G.cpuNewId = null; G.pop = c.id;
+  const c = drawCard(); G.me.push(c); G.newId = c.id; G.cpuNewId = null; G.pop = c.id; G.turn++; sfx("draw");
   G.phase = "act"; G.discardMode = false;
-  setMsg(`山札から「${c.ch}」を引いたよ。言葉を作って あがるか、1まい すてよう`);
+  setMsg(G.mode === "solo" ? `${G.turn}ターン目：「${c.ch}」を引いたよ。言葉を作って あがるか、1まい すてよう`
+                           : `山札から「${c.ch}」を引いたよ。言葉を作って あがるか、1まい すてよう`);
   render();
 }
 async function cpuTurn(){
@@ -309,13 +393,13 @@ async function cpuTurn(){
   G.phase = "cpu"; G.discardMode = false; G.newId = null;
   setMsg("CPUの番… 山札から引いてるよ"); render();
   await sleep(900); if(G.gid!==gid) return;
-  const c = drawCard(); G.cpu.push(c); G.cpuNewId = c.id; G.pop = c.id;
+  const c = drawCard(); G.cpu.push(c); G.cpuNewId = c.id; G.pop = c.id; sfx("draw");
   setMsg("CPUが1まい引いたよ。考え中…"); render();
   await sleep(1200); if(G.gid!==gid) return;
   const sol = solve(G.cpu.map(x=>x.ch), DCPU);
   if(sol && Math.random() < NOTICE[S.level]){ return finish("cpu", sol.w, false); }
   const k = chooseDiscard(G.cpu.map(x=>x.ch), G.deck, S.level);
-  const out = G.cpu.splice(k,1)[0]; G.discard.push(out); G.cpuNewId = null; G.last = out.id; G.pop = out.id;
+  const out = G.cpu.splice(k,1)[0]; G.discard.push(out); G.cpuNewId = null; G.last = out.id; G.pop = out.id; sfx("discard");
   setMsg(`CPUは「${out.ch}」をすてたよ。あなたの番！`); render();
   await sleep(900); if(G.gid!==gid) return;
   myTurn();
@@ -323,7 +407,13 @@ async function cpuTurn(){
 
 function finish(who, words, declared){
   G.phase = "over"; G.result = {who, words, declared};
-  S.wins[who === "me" ? "me" : "cpu"]++; store.set("wins", S.wins);
+  if(G.mode === "cpu"){ S.wins[who === "me" ? "me" : "cpu"]++; store.set("wins", S.wins); }
+  else if(G.mode === "solo"){
+    if(!S.best || G.turn < S.best){ S.best = G.turn; store.set("best", S.best); G.result.newBest = true; }
+  } else if(G.mode === "puzzle"){
+    if(!G.cheat){ S.solved++; store.set("solved", S.solved); }
+  }
+  sfx(who === "me" ? "win" : "lose");
   render();
 }
 
@@ -334,7 +424,7 @@ function placeCard(id){
   const card = G.me.find(c=>c.id===id); if(!card) return;
   if(G.discardMode){ return discardCard(id); }
   const i = G.slots.indexOf(null); if(i<0) return;
-  G.slots[i] = card; G.newId = (G.newId===id? null : G.newId);
+  G.slots[i] = card; G.newId = (G.newId===id? null : G.newId); sfx("place");
   render();
 }
 function unplace(i){
@@ -343,12 +433,16 @@ function unplace(i){
   G.slots[i] = null; render();
 }
 function discardCard(id){
+  if(G.mode === "puzzle") return;
   const k = G.me.findIndex(c=>c.id===id); if(k<0) return;
   const out = G.me.splice(k,1)[0];
   G.slots = G.slots.map(c => (c && c.id===id) ? null : c);
-  G.discard.push(out); G.last = out.id; G.pop = out.id; G.discardMode = false; G.newId = null;
+  G.discard.push(out); G.last = out.id; G.pop = out.id; G.discardMode = false; G.newId = null; sfx("discard");
   setMsg(`「${out.ch}」をすてたよ`);
-  cpuTurn();
+  if(G.mode === "cpu") return cpuTurn();
+  G.phase = "idle"; render();                       // 一人で引いてすてる：少し間をおいて、次を引く
+  const gid = G.gid;
+  setTimeout(()=>{ if(G && G.gid===gid && G.phase==="idle") myTurn(); }, 450);
 }
 function wordsInSlots(){
   const ch = G.slots.map(c=>c?c.ch:"");
@@ -365,16 +459,25 @@ function declare(){
   if(unknown.length === 0) return finish("me", [a,b,c], false);
   G.confirm = {unknown, words:[a,b,c]}; render();
 }
+function arrangeWords(words){
+  const pool = G.me.slice(), slots = [];
+  for(const ch of words.join("")){
+    const k = pool.findIndex(c=>c.ch===ch); if(k<0) return false; slots.push(pool.splice(k,1)[0]);
+  }
+  G.slots = slots; G.discardMode = false; return true;
+}
 function hint(){
   if(G.phase!=="act") return;
+  if(G.mode === "puzzle"){
+    const left = [0,1,2].filter(i=>!G.hinted.includes(i));
+    if(left.length === 0){ setMsg("ヒントは ぜんぶ出したよ。どうしても分からないときは「こたえ」を見てね"); return render(); }
+    const i = left[Math.floor(Math.random()*left.length)]; G.hinted.push(i);
+    setMsg(`ヒント：「${G.sol[i]}」が作れるよ（${G.hinted.length}つ目／3つ）`); return render();
+  }
   const chars = G.me.map(c=>c.ch);
   const sol = solve(chars);
   if(sol){
-    const pool = G.me.slice(); const slots = [];
-    for(const ch of sol.w.join("")){
-      const k = pool.findIndex(c=>c.ch===ch); slots.push(pool.splice(k,1)[0]);
-    }
-    G.slots = slots; G.discardMode = false;
+    arrangeWords(sol.w);
     setMsg(`あがれるよ！「${sol.w.join("」「")}」で作ったよ。「あがり！」を押してね`);
   } else {
     const ws = buildable(chars);
@@ -386,15 +489,29 @@ function hint(){
   }
   render();
 }
+function showAnswer(){
+  if(G.mode !== "puzzle" || G.phase !== "act") return;
+  if(G.cheat) return newPuzzle();                    // こたえを見たあとは「つぎの問題」
+  if(arrangeWords(G.sol)){ G.cheat = true; setMsg("こたえを並べたよ。「あがり！」で次へ進めるよ（できた問題には数えないよ）"); }
+  render();
+}
 function sortHand(){
   G.me.sort((a,b)=>ORDER.indexOf(a.ch)-ORDER.indexOf(b.ch)); render();
 }
 function clearSlots(){ G.slots = Array(8).fill(null); G.discardMode=false; render(); }
 function toggleDiscard(){
-  if(G.phase!=="act") return;
+  if(G.phase!=="act" || G.mode==="puzzle") return;
   G.discardMode = !G.discardMode;
   setMsg(G.discardMode ? "すてるカードを タップしてね（もう一度「すてる」で取り消し）" : "すてるのをやめたよ");
   render();
+}
+function exportDict(){
+  const w2 = S.big.w.filter(w=>w.length===2), w3 = S.big.w.filter(w=>w.length===3);
+  const txt = ["# hiragajan dictionary export", "# source: JMdict (EDRDG, CC BY-SA 4.0) mode=" + S.big.mode,
+               "# w2 " + w2.length + " / w3 " + w3.length, "w2: " + w2.join(" "), "w3: " + w3.join(" "), "user: " + S.userWords.join(" ")].join("\n");
+  const url = URL.createObjectURL(new Blob([txt], {type:"text/plain;charset=utf-8"}));
+  const a = document.createElement("a"); a.href = url; a.download = "hiragajan_dict.txt";
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url), 3000);
 }
 
 // --- render
@@ -407,29 +524,35 @@ function renderTitle(){
       ${["ひ","ら","が","じ","ゃ","ん"].map((t,i)=>`<span class="tile ${tileClass(t)}" style="font-size:1.3rem;aspect-ratio:3/4;transform:rotate(${(i-2.5)*4}deg)">${t}</span>`).join("")}
     </div>
     <h1>ひらがじゃん風<br>ことば作りカード</h1>
-    <p class="lead">8まいのひらがなカードで<br><b>「2もじ・3もじ・3もじ」</b>の言葉を作ったら勝ち！<br>CPUと早上がりをきそおう。</p>
-    <div class="panel"><h2>CPUの強さ</h2>
-      <div class="seg" data-seg="level">${Object.entries(LEVELS).map(([k,v])=>`<button data-act="level" data-v="${k}" class="${S.level===k?"on":""}">${v}</button>`).join("")}</div>
-    </div>
-    <div class="panel"><h2>CPUの手札</h2>
-      <div class="seg"><button data-act="cpuhand" data-v="1" class="${S.showCpu?"on":""}">見える（原作どおり）</button><button data-act="cpuhand" data-v="0" class="${!S.showCpu?"on":""}">かくす</button></div>
+    <p class="lead">8まいのひらがなカードで<br><b>「2もじ・3もじ・3もじ」</b>の言葉を作ろう！</p>
+    <button class="big" data-act="start" data-mode="puzzle">🧩 ひとりで 出題パズル<small>かならず作れる8まい。ゆっくり考えよう</small></button>
+    <button class="big alt" data-act="start" data-mode="solo">🃏 ひとりで 引いてすてる<small>CPUなし。何ターンで あがれるかな</small></button>
+    <button class="big alt2" data-act="start" data-mode="cpu">🤖 CPUと対戦<small>早上がりをきそおう</small></button>
+    <p class="small" style="margin-top:6px">できた問題：<b>${S.solved}</b> ／ ひとりのベスト：<b>${S.best?S.best+"ターン":"まだなし"}</b> ／ CPU戦：あなた <b>${w.me}</b> 勝・CPU <b>${w.cpu}</b> 勝</p>
+    <div class="panel"><h2>効果音</h2>
+      <div class="seg"><button data-act="soundset" data-v="1" class="${S.sound?"on":""}">ある（ささやか）</button><button data-act="soundset" data-v="0" class="${!S.sound?"on":""}">なし</button></div>
     </div>
     <div class="panel"><h2>言葉になったら 枠を光らせる</h2>
       <div class="seg"><button data-act="glow" data-v="1" class="${S.glow?"on":""}">光らせる</button><button data-act="glow" data-v="0" class="${!S.glow?"on":""}">光らせない</button></div>
     </div>
-    <button class="big" data-act="start">はじめる</button>
-    <p class="small" style="margin-top:10px">せんせき：あなた <b>${w.me}</b> 勝 ／ CPU <b>${w.cpu}</b> 勝</p>
+    <details class="panel"><summary>CPU対戦の設定</summary>
+      <h2>CPUの強さ</h2>
+      <div class="seg" data-seg="level">${Object.entries(LEVELS).map(([k,v])=>`<button data-act="level" data-v="${k}" class="${S.level===k?"on":""}">${v}</button>`).join("")}</div>
+      <h2 style="margin-top:12px">CPUの手札</h2>
+      <div class="seg"><button data-act="cpuhand" data-v="1" class="${S.showCpu?"on":""}">見える（原作どおり）</button><button data-act="cpuhand" data-v="0" class="${!S.showCpu?"on":""}">かくす</button></div>
+    </details>
     <details class="panel"><summary>あそびかた</summary>
       <ol>
-        <li>最初に7まいずつ配るよ。手札はおたがい見えるよ。</li>
-        <li>自分の番になったら、山札から1まい引いて<b>8まい</b>にする。</li>
-        <li>8まいを使って、<b>2もじ1つ＋3もじ2つ</b>の言葉を作れたら「あがり！」</li>
-        <li>作れなければ、1まい すてて次の人へ。</li>
+        <li>8まいのカードを使って、<b>2もじ1つ＋3もじ2つ</b>の言葉を作れたら「あがり！」</li>
+        <li><b>出題パズル</b>：かならず作れる8まいが配られるよ。ゆっくり考えてね。</li>
+        <li><b>ひとりで引いてすてる</b>：7まいで始めて、1まい引いては、あがるか1まいすてる。何ターンであがれたかを競うよ。</li>
+        <li><b>CPU対戦</b>：おたがいの手札は見えるよ。先にあがった人の勝ち。</li>
         <li>濁音（が・ざ…）、小さい「ゃゅょっ」、のばす「ー」も1まいのカードだよ。</li>
       </ol>
-      <p class="small"><b>ドラッグ</b>でカードを自由に動かせるよ：手札→枠、枠どうしの入れ替え、枠→手札、手札の並べ替え、「すてたカード」の場所に落とすとすてる。タップだと、あいている枠に順番に入るよ。迷ったら「ヒント」！</p>
+      <p class="small"><b>ドラッグ</b>でカードを自由に動かせるよ：手札→枠、枠どうしの入れ替え、枠→手札、手札の並べ替え、（引いてすてる・CPU戦では）「すてたカード」の場所に落とすとすてる。タップだと、あいている枠に順番に入るよ。迷ったら「ヒント」！</p>
     </details>
     <details class="panel" ${S.bigOpen?"open":""}><summary>大きな辞書を読み込む（JMdict）${S.big?` ✓ ${S.big.w.length.toLocaleString()}語`:""}</summary>
+      ${BUILTIN.length?`<p class="small">このアプリには、よく使う言葉 ${BUILTIN.length.toLocaleString()}語が最初から入っているよ。さらに増やしたいときだけ、読み込んでね。</p>`:""}
       <ol class="small" style="padding-left:1.2em">
         <li>公式サイトから、無料の辞書ファイル <b>JMdict_e.gz</b>（10MBほど）をダウンロード：<a href="https://www.edrdg.org/pub/Nihongo/JMdict_e.gz" target="_blank" rel="noopener">edrdg.org</a>（開けないときは「JMdict ダウンロード」で検索）</li>
         <li>読み込む範囲を選ぶ</li>
@@ -439,21 +562,22 @@ function renderTitle(){
       <button class="big" style="font-size:1rem;padding:12px;margin-top:10px" data-act="pickdict">ファイルを選ぶ</button>
       <input id="dictfile" type="file" accept=".gz,.xml,.txt,application/gzip,application/x-gzip,text/xml,application/xml" hidden>
       <p id="dictstatus" class="small">${S.big?`読み込み済み：${S.big.mode==="all"?"ぜんぶ":"よく使う言葉"}（${S.big.w.length.toLocaleString()}語）`:"まだ読み込んでいないよ。"}</p>
-      ${S.big?'<div class="two"><button data-act="delbig">読み込んだ辞書を消す</button><span></span></div>':""}
+      ${S.big?'<div class="two"><button data-act="delbig">読み込んだ辞書を消す</button><button data-act="exportdict">辞書をファイルに書き出す</button></div>':""}
       <h2 style="margin-top:12px">CPUが使う言葉</h2>
       <div class="seg"><button data-act="cpubig" data-v="0" class="${!S.cpuBig?"on":""}">基本の辞書だけ</button><button data-act="cpubig" data-v="1" class="${S.cpuBig?"on":""}">読み込んだ辞書も</button></div>
-      <p class="small">読み込んだ辞書は、あなたの「あがり判定・光る枠・ヒント」に使うよ。CPUは初期設定では基本の辞書だけ。大きな辞書をCPUにも使わせると、数手であがってきて とても強いよ。辞書データは JMdict（EDRDG、CC BY-SA 4.0）。あなたの端末の中だけに保存されるよ。</p>
+      <p class="small">読み込んだ辞書は、あなたの「あがり判定・光る枠・ヒント」に使うよ。CPUは初期設定では基本の辞書だけ。大きな辞書をCPUにも使わせると、数手であがってきて とても強いよ。辞書データは JMdict（EDRDG、CC BY-SA 4.0）。読み込んだ辞書は、あなたの端末の中だけに保存されるよ。</p>
     </details>
     <details class="panel"><summary>あなたが認めた言葉（${S.userWords.length}語）</summary>
       ${S.userWords.length ? `<div class="chips">${S.userWords.map(x=>`<button class="chip" data-act="delword" data-w="${x}">${x} ✕</button>`).join("")}</div>
         <div class="two"><button data-act="copywords">コピーする</button><button data-act="clearwords">ぜんぶ消す</button></div>`
         : `<p class="small">辞書にない言葉で「認める」を押すと、ここに たまっていくよ。たまった言葉は、次から辞書の言葉として光ったり、CPUも使ったりするよ。</p>`}
     </details>
-    <p class="small">あなたの辞書：約${total.toLocaleString()}語（自作の基本 ${(DICT.w2.length+DICT.w3.length).toLocaleString()}語＋読み込み＋あなたが認めた言葉）。載っていない言葉で あがるときは、「認める」を押すと あがれて、その言葉は辞書にたまっていくよ（CPUも使うようになる）。<br>※原作ゲームをもとにした、個人の非公式な遊びアプリです。</p>
+    <p class="small">あなたの辞書：約${total.toLocaleString()}語（自作の基本 ${(DICT.w2.length+DICT.w3.length).toLocaleString()}語${BUILTIN.length?`＋組み込み ${BUILTIN.length.toLocaleString()}語`:""}＋読み込み＋あなたが認めた言葉）。<br>※原作ゲームをもとにした、個人の非公式な遊びアプリです。<br><span style="opacity:.7">ひらがじゃん風 ${VERSION}</span></p>
   </div>`;
 }
 
 function renderPlay(){
+  const solo = G.mode !== "cpu", pz = G.mode === "puzzle";
   const placed = placedIds();
   const hand = G.me.filter(c=>!placed.has(c.id));
   const act = G.phase==="act";
@@ -468,37 +592,46 @@ function renderPlay(){
     const w = cs.map(x=>x.ch).join(""); return (w.length===2?SET2:SET3).has(w);
   };
   const ok2 = okGrp(0,2), ok3a = okGrp(2,5), ok3b = okGrp(5,8);
+  const okNow = [ok2, ok3a, ok3b];
+  if(okNow.some((v,i) => v && !(G.prevOk||[])[i])) sfx("ok");     // 新しく言葉になったら ぴん
+  G.prevOk = okNow;
   const cpuTiles = G.cpu.map(c => S.showCpu
       ? `<span class="tile ${tileClass(c.ch)} mini ${G.cpuNewId===c.id?"new":""} ${G.pop===c.id?"pop":""}">${c.ch}</span>`
       : `<span class="tile back mini ${G.cpuNewId===c.id?"new":""} ${G.pop===c.id?"pop":""}">・</span>`).join("");
   const dis = G.discard.slice(-16).map(c=>`<span class="tile ${tileClass(c.ch)} ${G.last===c.id?"new":""} ${G.pop===c.id?"pop":""}">${c.ch}</span>`).join("");
   const allPlaced = G.slots.every(Boolean);
-  $app.innerHTML = `
-  <div class="hdr"><span>CPU：<b>${LEVELS[S.level]}</b> ／ 勝ち あなた<b>${S.wins.me}</b>-CPU<b>${S.wins.cpu}</b></span>
-    <button data-act="title">もどる</button></div>
-  <div class="felt">
-    <p class="who"><span>CPUの手札（${G.cpu.length}まい）</span></p>
-    <div class="row" style="grid-template-columns:repeat(${Math.max(8,G.cpu.length)},1fr)">${cpuTiles}</div>
-    <div class="mid">
-      <div class="msg">${G.msg}</div>
+  const hdr = G.mode === "cpu" ? `CPU：<b>${LEVELS[S.level]}</b> ／ 勝ち あなた<b>${S.wins.me}</b>-CPU<b>${S.wins.cpu}</b>`
+            : pz ? `ひとりパズル ／ できた問題 <b>${S.solved}</b>`
+            : `引いてすてる ／ <b>${G.turn}</b>ターン目 ／ ベスト <b>${S.best?S.best+"ターン":"なし"}</b>`;
+  const piles = `
       <div class="piles">
         <div class="deck"><span class="tile back mini" style="aspect-ratio:3/4">・</span><div class="cnt">山札 ${G.deck.length}</div></div>
         <div style="flex:1"><div class="dlabel">すてたカード（ここにドラッグでも すてられるよ）</div><div class="dpile">${dis||'<span class="small" style="color:#cfe;opacity:.8">まだ ないよ</span>'}</div></div>
-      </div>
+      </div>`;
+  $app.innerHTML = `
+  <div class="hdr"><span>${hdr}</span>
+    <span class="hb"><button data-act="sound" aria-label="効果音">${S.sound?"🔊":"🔇"}</button><button data-act="title">もどる</button></span></div>
+  <div class="felt ${solo?"bigmode":""}">
+    ${solo?"":`<p class="who"><span>CPUの手札（${G.cpu.length}まい）</span></p>
+    <div class="row" style="grid-template-columns:repeat(${Math.max(8,G.cpu.length)},1fr)">${cpuTiles}</div>`}
+    <div class="mid">
+      <div class="msg">${G.msg}</div>
+      ${pz?"":piles}
     </div>
-    <p class="who"><span>あなた：言葉を作ろう</span></p>
+    <p class="who"><span>${pz?"言葉を作ろう":"あなた：言葉を作ろう"}</span></p>
     <div class="slots">
       <div class="grp g2 ${ok2?"ok":""}"><div class="gl">2もじ${ok2?" ✓":""}</div><div class="cells">${cells(0)}${cells(1)}</div></div>
       <div class="grp g3 ${ok3a?"ok":""}"><div class="gl">3もじ${ok3a?" ✓":""}</div><div class="cells">${cells(2)}${cells(3)}${cells(4)}</div></div>
       <div class="grp g3 ${ok3b?"ok":""}"><div class="gl">3もじ${ok3b?" ✓":""}</div><div class="cells">${cells(5)}${cells(6)}${cells(7)}</div></div>
     </div>
-    <p class="who"><span>あなたの手札</span><span>${G.discardMode?"▼ すてるカードをタップ":""}</span></p>
+    <p class="who"><span>${pz?"手札":"あなたの手札"}</span><span>${G.discardMode?"▼ すてるカードをタップ":""}</span></p>
     <div class="row hand">${hand.map(c=>tileHTML(c, `${G.newId===c.id?"new":""} ${G.pop===c.id?"pop":""} ${G.discardMode?"disc":""}`, `data-act="place" data-id="${c.id}" data-from="hand" ${act?"":"disabled"} ${act&&!G.discardMode?"data-drag=1":""}`)).join("")}</div>
     <div class="btns">
       <button data-act="hint" ${act?"":"disabled"}>ヒント</button>
       <button data-act="sort" ${act?"":"disabled"}>五十音順</button>
       <button data-act="clear" ${act?"":"disabled"}>枠をもどす</button>
-      <button data-act="discard" class="${G.discardMode?"on":""}" ${act?"":"disabled"}>${G.discardMode?"やめる":"すてる"}</button>
+      ${pz ? `<button data-act="answer" ${act?"":"disabled"}>${G.cheat?"つぎの問題":"こたえ"}</button>`
+           : `<button data-act="discard" class="${G.discardMode?"on":""}" ${act?"":"disabled"}>${G.discardMode?"やめる":"すてる"}</button>`}
       <button class="win" data-act="declare" ${act&&allPlaced?"":"disabled"}>あがり！</button>
     </div>
   </div>`;
@@ -515,12 +648,24 @@ function confirmHTML(){
     <div class="two"><button data-act="confirm-no">やめる</button><button class="pri" data-act="confirm-yes">認める</button></div></div></div>`;
 }
 function resultHTML(){
-  const r = G.result, me = r.who==="me";
-  return `<div class="ov"><div class="card"><h2>${me?"あがり！ あなたの勝ち 🎉":"CPUの勝ち…"}</h2>
+  const r = G.result, me = r.who === "me", m = G.mode;
+  let title, extra = "", again = "もう1回";
+  if(m === "cpu"){
+    title = me ? "あがり！ あなたの勝ち 🎉" : "CPUの勝ち…";
+    extra = `<p class="small">せんせき：あなた ${S.wins.me} 勝 ／ CPU ${S.wins.cpu} 勝</p>`;
+  } else if(m === "solo"){
+    title = `あがり！ ${G.turn}ターンで あがれたよ 🎉`;
+    extra = `<p class="small">${r.newBest ? "ベスト記録を こうしんしたよ！" : "ベスト：" + S.best + "ターン"}</p>`;
+  } else {
+    title = G.cheat ? "こたえで あがり！" : "できた！ 🎉";
+    extra = `<p class="small">${G.cheat ? "（こたえを見たので、できた問題には数えないよ）" : "これまでに できた問題：" + S.solved + "問"}</p>`;
+    again = "つぎの問題";
+  }
+  return `<div class="ov"><div class="card"><h2>${title}</h2>
     <div class="words">${r.words.map(wordHTML).join("")}</div>
     ${r.declared?'<p class="small">（自分で言葉と認めたものを含むよ）</p>':""}
-    <p class="small">せんせき：あなた ${S.wins.me} 勝 ／ CPU ${S.wins.cpu} 勝</p>
-    <div class="two"><button data-act="title">もどる</button><button class="pri" data-act="again">もう1回</button></div></div></div>`;
+    ${extra}
+    <div class="two"><button data-act="title">もどる</button><button class="pri" data-act="again">${again}</button></div></div></div>`;
 }
 function render(){ S.screen==="title" ? renderTitle() : renderPlay(); }
 
@@ -530,7 +675,12 @@ $app.addEventListener("click", e => {
   const a = el.dataset.act;
   if(a==="level"){ S.level = el.dataset.v; store.set("level", S.level); render(); }
   else if(a==="cpuhand"){ S.showCpu = el.dataset.v==="1"; store.set("showCpu", S.showCpu); render(); }
-  else if(a==="start" || a==="again"){ newGame(); }
+  else if(a==="start"){ newGame(el.dataset.mode); }
+  else if(a==="again"){ newGame(G.mode); }
+  else if(a==="answer"){ showAnswer(); }
+  else if(a==="sound"){ S.sound = !S.sound; store.set("sound", S.sound); if(S.sound) sfx("place"); render(); }
+  else if(a==="soundset"){ S.sound = el.dataset.v==="1"; store.set("sound", S.sound); if(S.sound) sfx("place"); render(); }
+  else if(a==="exportdict"){ exportDict(); }
   else if(a==="title"){ if(G) G.gid++; S.screen="title"; render(); window.scrollTo(0, 0); }
   else if(a==="place"){ placeCard(Number(el.dataset.id)); }
   else if(a==="unplace"){ unplace(Number(el.dataset.i)); }
@@ -583,13 +733,20 @@ function overTarget(x, y){
   return null;
 }
 // 手札の中で、落とした横位置にカードを差しこむ
-function insertIntoHand(card, x){
+function insertIntoHand(card, x, y){
   const tiles = Array.from(document.querySelectorAll('.hand .tile[data-from="hand"]'))
     .filter(el => Number(el.dataset.id) !== card.id);
   let anchor = null;
-  for(const el of tiles){
-    const r = el.getBoundingClientRect();
-    if(x < r.left + r.width/2){ anchor = Number(el.dataset.id); break; }
+  if(tiles.length){
+    let best = null, bd = Infinity;
+    for(const el of tiles){
+      const r = el.getBoundingClientRect(), cx = r.left + r.width/2, cy = r.top + r.height/2;
+      const dd = (x-cx)*(x-cx) + 2.5*(y-cy)*(y-cy);        // 同じ段のカードを優先
+      if(dd < bd){ bd = dd; best = {el, cx}; }
+    }
+    const idx = tiles.indexOf(best.el);
+    const target = x < best.cx ? tiles[idx] : (tiles[idx+1] || null);
+    anchor = target ? Number(target.dataset.id) : null;
   }
   G.me.splice(G.me.indexOf(card), 1);
   const to = anchor === null ? -1 : G.me.findIndex(c=>c.id===anchor);
@@ -603,9 +760,9 @@ function dropTo(d, t){
     else { G.slots[t.i] = card; }            // 入れ替わった元のカードは手札にもどる
   } else if(t.type === "hand"){
     if(fromSlot) G.slots[si] = null;
-    insertIntoHand(card, t.x);
+    insertIntoHand(card, t.x, t.y);
   } else if(t.type === "discard"){
-    G.pendingDiscard = d.id;
+    if(G.mode !== "puzzle") G.pendingDiscard = d.id;
   }
 }
 const DEBUG = /[?&]debug/.test(location.search);
@@ -645,7 +802,7 @@ function finishDrag(x, y, cancel){
   document.body.classList.remove("dragging");
   suppressUntil = Date.now() + 350;
   let t = null;
-  if(!cancel){ const pt = hitPoint({clientX:x, clientY:y}, d); t = overTarget(pt.x, pt.y); if(t) dropTo(d, t); }
+  if(!cancel){ const pt = hitPoint({clientX:x, clientY:y}, d); t = overTarget(pt.x, pt.y); if(t){ dropTo(d, t); if(t.type !== "discard" && !(G && G.mode==="puzzle" && t.type==="discard")) sfx("place"); } }
   dbg("drop " + (cancel ? "CANCEL" : (t ? t.type : "none")));
   lastOver = null;
   if(G && G.pendingDiscard != null){ const id = G.pendingDiscard; G.pendingDiscard = null; return discardCard(id); }
