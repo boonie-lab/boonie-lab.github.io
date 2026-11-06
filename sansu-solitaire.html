@@ -1,0 +1,1554 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>算数ソリティア</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+  /* レイアウト: 方眼ノートの上に、計算カードを並べる1画面アプリ。
+     上から 見出し / 山札とノルマ / 親枠6つ / 場札6列 / 操作ボタン */
+  :root {
+    --bg: #13212c;
+    --bg-2: #1b2f3e;
+    --line: #1f3443;
+    --paper: #f2f5f7;
+    --ink: #14212c;
+    --ans: #0d7a86;
+    --ans-soft: #7fb4bb;
+    --hi: #ffb703;
+    --warn: #ff6a55;
+    --ok: #5ad1a0;
+    --back: #323f92;
+    --back-2: #4a57b8;
+    --muted: #8ba4b4;
+    --text: #e8f0f5;
+    --font-ui: 'Zen Maru Gothic', 'Hiragino Maru Gothic ProN', 'Hiragino Sans', system-ui, sans-serif;
+    --font-num: 'Barlow Condensed', 'Arial Narrow', 'Roboto Condensed', sans-serif;
+    --gap: 6px;
+    color-scheme: dark;
+  }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; }
+  body {
+    background-color: var(--bg);
+    background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 24px 24px;
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: 14px;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    overflow-x: hidden;
+  }
+  .app {
+    max-width: 480px;
+    margin: 0 auto;
+    padding-top: calc(10px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  button { font-family: inherit; color: inherit; cursor: pointer; }
+  :focus-visible { outline: 3px solid var(--hi); outline-offset: 2px; }
+
+  /* 見出し */
+  .brand { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .brand h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: .06em; }
+  .pill { border: 1px solid var(--line); background: var(--bg-2); border-radius: 999px; padding: 5px 12px; font-size: 12px; font-weight: 700; }
+  .stats { display: grid; grid-template-columns: 1.9fr .9fr 1.1fr; gap: 8px; align-items: end; }
+  .stat { min-width: 0; }
+  .lbl { display: block; font-size: 11px; color: var(--muted); letter-spacing: .08em; }
+  .stat b { font: 700 28px/1.05 var(--font-num); font-variant-numeric: tabular-nums; }
+  .lv { display: flex; align-items: center; gap: 4px; }
+  .lv b { font-size: 21px; white-space: nowrap; letter-spacing: .02em; }
+  .lv button { border: 0; background: transparent; font-size: 22px; line-height: 1; padding: 2px 6px; color: var(--muted); }
+  .lv button:disabled { opacity: .3; cursor: default; }
+  #level { cursor: pointer; text-decoration: underline dotted; text-decoration-color: #58788c; text-underline-offset: 5px; }
+  #level::after { content: ' ▾'; font-size: .6em; color: var(--muted); }
+  /* 問題の一覧・バックアップ */
+  .panel.qp { display: flex; flex-direction: column; max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); }
+  .qp .acts { flex: none; }
+  .qp h2 { flex: none; }
+  .qsub { color: var(--muted); font-size: 14px; margin: 0 0 6px; }
+  #qgrid, .bkbody { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; margin: 0 -6px; padding: 0 6px; }
+  .qg { margin: 0 0 12px; }
+  .qgh { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin: 4px 2px 5px; letter-spacing: .06em; font-variant-numeric: tabular-nums; }
+  .qgh.done { color: var(--hi); font-weight: 700; }
+  .qrow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .qc { position: relative; min-height: 48px; border-radius: 10px; border: 1px solid #2d4658; background: var(--bg); color: var(--text); font: 700 19px/1 var(--font-num); display: flex; align-items: center; justify-content: center; padding: 0; font-variant-numeric: tabular-nums; }
+  .qc.done { background: #14423b; border-color: #2c7a63; color: #c6f3e1; }
+  .qc.done::after { content: '✓'; position: absolute; right: 5px; top: 3px; font: 700 12px/1 var(--font-ui); color: var(--ok); }
+  .qc.cur { box-shadow: 0 0 0 3px var(--hi); }
+  .qc.mid::before { content: '途中'; position: absolute; left: 0; right: 0; bottom: 4px; text-align: center; font: 700 10px/1 var(--font-ui); color: var(--hi); }
+  .qc.pend { outline: 3px dashed var(--warn); outline-offset: 1px; }
+  .big .qc { min-height: 54px; font-size: 22px; }
+  textarea.bk { display: block; width: 100%; box-sizing: border-box; background: var(--bg); color: var(--text); border: 1px solid #2d4658; border-radius: 10px; padding: 8px; font: 12px/1.5 ui-monospace, Menlo, monospace; resize: none; word-break: break-all; -webkit-user-select: all; user-select: all; }
+  textarea.bk.in { font-size: 16px; -webkit-user-select: text; user-select: text; }
+  .stat b.low { color: var(--warn); }
+  .meter { height: 4px; border-radius: 4px; background: var(--bg-2); margin: 8px 0 12px; overflow: hidden; }
+  .meter i { display: block; height: 100%; width: 100%; background: var(--ok); transition: width .25s; }
+  .meter i.low { background: var(--warn); }
+
+  /* 盤面 */
+  .board { --ch: calc(var(--cw) * 1.4); display: flex; flex-direction: column; gap: 14px; min-height: 300px; }
+  .loading { margin: 60px 0; text-align: center; color: var(--muted); }
+  .row { display: grid; grid-template-columns: repeat(var(--nc, 6), var(--cw)); gap: var(--gap); align-items: start; }
+
+  .card {
+    position: absolute; left: 0; right: 0; height: var(--ch);
+    box-sizing: border-box;
+    border-radius: calc(var(--cw) * .1);
+    background: var(--paper);
+    box-shadow: 0 1px 0 rgba(0,0,0,.45), 0 0 0 1px rgba(8,16,22,.35);
+    overflow: hidden;
+  }
+  .pile .card, .slot .card { top: 0; }
+  .card.full { padding: calc(var(--cw) * .07) calc(var(--cw) * .1); }
+  .eq { display: flex; flex-direction: column; align-items: flex-end; font: 700 calc(var(--cw) * .36)/1.02 var(--font-num); color: var(--ink); font-variant-numeric: tabular-nums; }
+  .l2 { display: flex; justify-content: space-between; width: 100%; }
+  .l2 i { font-style: normal; }
+  .rule { height: 2px; background: var(--ink); margin: calc(var(--cw) * .04) 0; }
+  .ans { min-height: calc(var(--cw) * .4); text-align: right; font: 700 calc(var(--cw) * .4)/1 var(--font-num); color: var(--ans); font-variant-numeric: tabular-nums; }
+  .ans.soft { color: var(--ans-soft); }
+  .card.strip { padding-top: calc(var(--cw) * .06); text-align: center; font: 700 calc(var(--cw) * .26)/1 var(--font-num); color: var(--ink); white-space: nowrap; }
+  .card.back {
+    background-color: var(--back);
+    background-image: repeating-linear-gradient(45deg, var(--back-2) 0 2px, transparent 2px 8px), repeating-linear-gradient(-45deg, var(--back-2) 0 2px, transparent 2px 8px);
+  }
+  .card.sel { box-shadow: 0 0 0 3px var(--hi), 0 2px 0 rgba(0,0,0,.4); }
+  .card.parent { background: #efe7ff; }
+  .card.parent .pk { position: absolute; left: calc(var(--cw) * .08); top: calc(var(--cw) * .05); font: 700 calc(var(--cw) * .2)/1 var(--font-num); color: #6a3fd0; font-variant-numeric: tabular-nums; }
+  .pstar { height: calc(var(--cw) * .74); display: grid; place-items: center; }
+  .pstar svg { width: calc(var(--cw) * .5); fill: #8a5cf0; }
+  .card.parent .rule { background: #6a3fd0; }
+  .card.parent .ans { color: #6a3fd0; }
+
+  /* 山札・捨て札 */
+  .tally { min-width: 0; }
+  .tally .lbl { margin-bottom: 5px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+  .chip { font: 700 14px/1 var(--font-num); padding: 4px 7px; border-radius: 999px; background: var(--bg-2); border: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  .chip small { font-size: 11px; color: var(--muted); margin-left: 2px; }
+  .chip em { font-style: normal; font-size: 11px; color: #b79cff; margin-left: 3px; }
+  .chip.on { border-color: var(--ans-soft); background: #21485a; }
+  .chip.done { opacity: .35; text-decoration: line-through; }
+  .pile, .slot, .col { position: relative; height: var(--ch); border-radius: calc(var(--cw) * .1); }
+  .pile.empty, .slot.empty, .col.empty { border: 2px dashed #34546a; box-sizing: border-box; }
+  .pile .cnt { position: absolute; inset: 0; display: grid; place-items: center; font: 700 calc(var(--cw) * .42)/1 var(--font-num); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.5); }
+  .pile svg { position: absolute; left: 50%; top: 50%; width: 46%; transform: translate(-50%, -50%); fill: var(--muted); }
+  .pile.stock .card.back { box-shadow: 2px 2px 0 var(--back-2), 4px 4px 0 #1f2766, 0 0 0 1px rgba(8,16,22,.35); }
+
+  /* 親枠 */
+  .fs { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .badge { font: 700 12px/1 var(--font-num); padding: 3px 7px; border-radius: 999px; background: #3d3470; color: #e4dcff; font-variant-numeric: tabular-nums; }
+  .badge.none { background: transparent; color: var(--muted); font-family: var(--font-ui); font-weight: 500; }
+  .slot { width: 100%; }
+  .slot.empty { border: 2px solid #2a475c; background: #162838; }
+  .slot .ph { position: absolute; inset: 0; display: grid; place-items: center; }
+  .slot .ph svg { width: 46%; fill: #2d4d63; }
+  .slot.locked { box-sizing: border-box; border: 2px dashed #2a3f50; opacity: .5; }
+  .slot .card.full { background: #f5efff; }
+  .slot .ans { color: #6a3fd0; }
+
+  .tgt { outline: 2px dashed var(--hi); outline-offset: 2px; }
+  .hint-s .card, .hint-t { animation: pulse 1s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 2px var(--hi); } 50% { box-shadow: 0 0 0 6px rgba(255,183,3,.45); } }
+  .hint-t { outline: 2px solid var(--hi); outline-offset: 2px; }
+  .shake { animation: shake .3s; }
+  @keyframes shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+  @media (prefers-reduced-motion: reduce) {
+    .hint-s .card, .hint-t, .shake { animation: none; }
+    .hint-s .card { box-shadow: 0 0 0 4px var(--hi); }
+    .meter i { transition: none; }
+  }
+
+  /* 操作ボタン */
+  .foot { position: sticky; bottom: 0; display: flex; gap: 8px; padding-top: 16px; padding-bottom: 6px; margin-top: 10px; background: linear-gradient(to bottom, transparent, var(--bg) 40%); }
+  .btn { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 2px 7px; border-radius: 14px; background: var(--bg-2); border: 1px solid var(--line); font-size: 11px; font-weight: 700; }
+  .btn svg { width: 22px; height: 22px; fill: currentColor; }
+  .btn:disabled { opacity: .4; }
+  .btn .st { font: 700 15px/22px var(--font-num); height: 22px; }
+  .btn.on { border-color: var(--ans-soft); color: var(--ans-soft); }
+
+  /* ダイアログ・トースト */
+  .ov { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; background: rgba(8,16,22,.76);
+        padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+  .panel { width: 100%; max-width: 340px; box-sizing: border-box; background: var(--bg-2); border: 1px solid #2d4658; border-radius: 18px; padding: 20px; max-height: 100%; overflow-y: auto; }
+  .panel h2 { margin: 0 0 10px; font-size: 22px; letter-spacing: .04em; text-wrap: balance; }
+  .panel p, .panel li { line-height: 1.7; margin: 0 0 8px; }
+  .panel ol { margin: 0 0 10px; padding-left: 20px; }
+  .panel .acts { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+  .go { flex: 1; min-width: 120px; border: 0; border-radius: 12px; padding: 12px 10px; font-size: 14px; font-weight: 700; background: var(--hi); color: #2a1d00; }
+  .go.sub { background: transparent; color: var(--text); border: 1px solid #3a566a; }
+  .toast { position: fixed; left: 50%; bottom: calc(92px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 40; max-width: min(88vw, 400px); padding: 9px 16px; border-radius: 999px; background: #0b151d; border: 1px solid #36566b; font-weight: 700; font-size: 13px; text-align: center; pointer-events: none; opacity: 0; transition: opacity .2s; }
+  .toast.show { opacity: 1; }
+
+  /* 演出：めくり・そろったときの粒 */
+  .fx { position: fixed; inset: 0; z-index: 60; pointer-events: none; overflow: hidden; }
+  .pt { position: absolute; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 2px; animation: burst .85s cubic-bezier(.15,.7,.3,1) forwards; }
+  @keyframes burst { from { transform: translate(0, 0) rotate(0) scale(1); opacity: 1; } to { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(.4); opacity: 0; } }
+  .ring { position: absolute; border-radius: 50%; border: 3px solid var(--hi); box-sizing: border-box; animation: ring .6s ease-out forwards; }
+  @keyframes ring { from { transform: translate(-50%, -50%) scale(.4); opacity: .9; } to { transform: translate(-50%, -50%) scale(1.8); opacity: 0; } }
+  .flipin { animation: flipin .38s ease-out; }
+  @keyframes flipin { from { transform: perspective(400px) rotateY(90deg); } to { transform: perspective(400px) rotateY(0); } }
+  @media (prefers-reduced-motion: reduce) { .flipin { animation: none; } .ring { animation: none; opacity: 0; } }
+
+  /* コース選択 */
+  .pills { display: flex; gap: 6px; }
+  .cbtn { display: block; width: 100%; text-align: left; padding: 12px 14px; margin-bottom: 8px; border-radius: 14px; background: var(--bg); border: 1px solid #2d4658; color: var(--text); font-size: 14px; }
+  .cbtn b { font-size: 17px; }
+  .cbtn small { display: block; margin-top: 3px; color: var(--muted); line-height: 1.5; font-size: 12px; }
+  .cbtn.on { border-color: var(--hi); }
+  .cbtn .ok { font-size: 11px; color: var(--ok); margin-left: 6px; }
+  .cbtn .cur { font-size: 11px; color: var(--hi); margin-left: 6px; }
+  .note { color: var(--muted); font-size: 12px; line-height: 1.6; min-height: 1em; }
+
+  /* ゆったりコース：文字・ボタンを大きく */
+  .big .brand { flex-wrap: wrap; gap: 8px; }
+  .big .brand h1 { font-size: 20px; white-space: nowrap; }
+  .big .pill { font-size: 15px; padding: 8px 14px; white-space: nowrap; }
+  .big .stats { grid-template-columns: 2.3fr .8fr 1fr; }
+  .big .lbl { font-size: 13px; }
+  .big .stat b { font-size: 36px; }
+  .big .lv b { font-size: 21px; }
+  .big .lv button { font-size: 26px; padding: 4px 8px; }
+  .big .chip { font-size: 19px; padding: 6px 10px; }
+  .big .chip small { font-size: 14px; }
+  .big .badge { font-size: 16px; padding: 4px 10px; }
+  .big .btn { font-size: 13px; padding: 12px 2px 10px; }
+  .big .btn svg { width: 28px; height: 28px; }
+  .big .btn .st { font-size: 20px; height: 28px; line-height: 28px; }
+  .big .toast { font-size: 17px; bottom: calc(112px + env(safe-area-inset-bottom, 0px)); }
+  .big .panel { font-size: 16px; }
+  .big .go { font-size: 16px; padding: 14px 10px; }
+
+  /* あそびかた（ゆったりコース）：本物そっくりのミニ盤面を台本どおりに動かす */
+  #rules-slides { position: relative; }
+  .sl-title { margin: 0 44px 4px 0; font-size: 20px; letter-spacing: .03em; line-height: 1.4; }
+  .sl-stage { background: var(--bg); border: 1px solid #2d4658; border-radius: 14px; margin: 8px 0 6px; padding: 8px 0 10px; }
+  .sl-txt { font-size: 17px; line-height: 1.7; margin: 0 0 6px; }
+  .sl-note { font-size: 15px; color: var(--muted); line-height: 1.6; margin: 0; }
+  .sl-bar { display: flex; align-items: center; justify-content: space-between; margin: 10px 0 0; }
+  .sl-dots { display: flex; gap: 8px; }
+  .sl-dots i { width: 10px; height: 10px; border-radius: 50%; background: #34546a; }
+  .sl-dots i.on { background: var(--hi); }
+  .sl-acts { display: flex; gap: 8px; margin-top: 12px; }
+  .sl-acts .go { min-width: 0; }
+  .sl-close { position: absolute; top: -6px; right: -6px; width: 38px; height: 38px; border-radius: 50%; border: 1px solid #3a566a; background: transparent; color: var(--muted); font-size: 20px; line-height: 1; padding: 0; }
+  .sl-replay { border: 1px solid #3a566a; background: transparent; color: var(--text); border-radius: 999px; padding: 6px 12px; font-size: 14px; }
+  .dm-wrap { --cw: 52px; --ch: calc(var(--cw) * 1.4); --nc: 4; --gap: 8px; position: relative; width: calc(var(--cw) * 4 + var(--gap) * 3); margin: 0 auto; }
+  .dm { display: flex; flex-direction: column; gap: 9px; }
+  .bub { min-height: 2.7em; margin: 0 0 8px; padding: 6px 10px; box-sizing: border-box; border-radius: 12px; background: #0b151d; border: 1px solid #36566b; font-size: 16px; font-weight: 700; line-height: 1.45; text-align: center; display: flex; align-items: center; justify-content: center; }
+  .dm-fg { position: absolute; left: 50%; top: 100%; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%; box-sizing: border-box; background: rgba(255,183,3,.5); border: 3px solid var(--hi); box-shadow: 0 0 0 2px rgba(0,0,0,.35); opacity: 0; transition: left .75s ease, top .75s ease, opacity .3s; pointer-events: none; z-index: 200; }
+  .dm-fg.tap { animation: dmt .45s ease-out; }
+  @keyframes dmt { 0% { transform: scale(1); } 40% { transform: scale(.7); } 100% { transform: scale(1); } }
+  .dm-x { position: absolute; z-index: 210; font: 700 64px/1 var(--font-num); color: var(--warn); text-shadow: 0 2px 6px rgba(0,0,0,.6); transform: translate(-50%, -50%); pointer-events: none; }
+  .dm-x[hidden] { display: none; }
+  .vanish .card { animation: dmv .6s ease-in forwards; }
+  @keyframes dmv { to { transform: scale(.7); opacity: 0; } }
+  .dm-ring { position: absolute; width: 70px; height: 70px; margin: -35px 0 0 -35px; border-radius: 50%; box-sizing: border-box; border: 3px solid var(--hi); pointer-events: none; animation: dmr .7s ease-out forwards; z-index: 150; }
+  @keyframes dmr { from { transform: scale(.4); opacity: .9; } to { transform: scale(1.8); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .dm-fg, .dm-ring { display: none; } .vanish .card { animation: none; } }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <h1>算数ソリティア</h1>
+      <div class="pills">
+        <button id="btn-course" class="pill" type="button">ふつう ▾</button>
+        <button id="btn-help" class="pill" type="button">あそびかた</button>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat">
+        <span class="lbl">問題</span>
+        <div class="lv"><button id="prev" type="button" aria-label="前の問題">‹</button><b id="level" role="button" tabindex="0" aria-label="問題の一覧を開く">--</b><button id="next" type="button" aria-label="次の問題">›</button></div>
+      </div>
+      <div class="stat"><span class="lbl">スコア</span><b id="score">0</b></div>
+      <div class="stat"><span class="lbl">のこり手数</span><b id="left">--</b></div>
+    </div>
+    <div class="meter"><i id="meter"></i></div>
+  </header>
+
+  <main id="board" class="board"><p class="loading">盤面を作っています…</p></main>
+
+  <footer class="foot">
+    <button id="btn-undo" class="btn" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>もどす</button>
+    <button id="btn-hint" class="btn" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/></svg><span id="hint-lbl">ヒント 3</span></button>
+    <button id="btn-ans" class="btn" type="button" aria-pressed="false"><span class="st" id="ans-st">×</span>答え表示</button>
+    <button id="btn-snd" class="btn" type="button" aria-pressed="true"><svg id="snd-ico" viewBox="0 0 24 24" aria-hidden="true"></svg><span id="snd-lbl">音 オン</span></button>
+    <button id="btn-retry" class="btn" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>やり直し</button>
+  </footer>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<div id="fx" class="fx" aria-hidden="true"></div>
+
+<div id="end" class="ov" hidden>
+  <div class="panel" role="dialog" aria-labelledby="end-title">
+    <h2 id="end-title"></h2>
+    <p id="end-body"></p>
+    <button id="end-copy" class="go sub" type="button" style="width:100%;margin-top:10px" hidden>記録のコードをコピー</button>
+    <div class="acts">
+      <button id="end-retry" class="go sub" type="button">もう一度</button>
+      <button id="end-next" class="go" type="button">つぎの問題へ</button>
+    </div>
+  </div>
+</div>
+
+<div id="courses" class="ov" hidden>
+  <div class="panel" role="dialog" aria-labelledby="courses-title">
+    <h2 id="courses-title">コースをえらぶ</h2>
+    <div id="course-list"></div>
+    <p id="course-note" class="note"></p>
+    <div class="acts"><button id="course-backup" class="go sub" type="button">記録のバックアップ</button><button id="course-close" class="go sub" type="button">とじる</button></div>
+  </div>
+</div>
+
+<div id="qlist" class="ov" hidden>
+  <div class="panel qp" role="dialog" aria-labelledby="qlist-title">
+    <h2 id="qlist-title">問題をえらぶ</h2>
+    <p id="qlist-sub" class="qsub"></p>
+    <div id="qgrid"></div>
+    <p id="qlist-note" class="note"></p>
+    <div class="acts"><button id="qlist-close" class="go sub" type="button">とじる</button></div>
+  </div>
+</div>
+
+<div id="backup" class="ov" hidden>
+  <div class="panel qp" role="dialog" aria-labelledby="bk-title">
+    <h2 id="bk-title">記録のバックアップ</h2>
+    <div class="bkbody">
+      <p id="bk-state" class="qsub"></p>
+      <p>いまの記録をコードにします。コピーして、メッセージなどに送っておくと、記録が消えても戻せます。</p>
+      <textarea id="bk-code" class="bk" readonly rows="4" aria-label="記録のコード"></textarea>
+      <div class="acts"><button id="bk-copy" class="go sub" type="button">コードをコピー</button></div>
+      <p>コードから戻す</p>
+      <textarea id="bk-in" class="bk in" rows="3" placeholder="ここにコードをはりつけ" aria-label="戻すコード"></textarea>
+      <p id="bk-msg" class="note"></p>
+    </div>
+    <div class="acts"><button id="bk-restore" class="go" type="button">この記録を戻す</button><button id="bk-close" class="go sub" type="button">とじる</button></div>
+  </div>
+</div>
+
+<div id="rules" class="ov" hidden>
+  <div id="rules-panel" class="panel" role="dialog" aria-labelledby="rules-title">
+    <div id="rules-text">
+      <h2 id="rules-title">あそびかた</h2>
+      <ol id="rules-list"></ol>
+      <p id="rules-extra"></p>
+      <div class="acts"><button id="rules-ok" class="go" type="button">はじめる</button></div>
+    </div>
+    <div id="rules-slides" hidden></div>
+  </div>
+</div>
+
+<script>'use strict';
+/* 算数ソリティア ゲームエンジン（見た目に依存しない純粋なロジック） */
+var N_COLS = 6, N_SLOTS = 6;
+var DEFAULT_CFG = { cols: 6, slots: 4, K: 8, minN: 4, maxN: 6, down: [1, 2, 3, 3, 4, 5], slackR: 0.3, slackMin: 8, penalty: true, hints: 3 };
+/* コース：盤面の大きさ・計算の種類・手数の余裕・まちがいのペナルティ・ヒント数 */
+var COURSES = {
+  gentle: { name: 'ゆったり', desc: '足し算と引き算だけ。カードが少なく、大きく表示。まちがえても手数は減らず、ヒントは何回でも',
+    cfg: { cols: 4, slots: 4, K: 4, minN: 3, maxN: 4, down: [0, 1, 1, 2], vmin: 6, vmax: 30, ops: ['+', '−'], maxOp: 40, subMax: 15, slackR: 0.6, slackMin: 15, penalty: false, hints: 99, big: true } },
+  easy: { name: 'やさしい', desc: '足し算・引き算・かけ算。カードは少なめ',
+    cfg: { cols: 5, slots: 5, K: 6, minN: 3, maxN: 5, down: [0, 1, 2, 2, 3], vmin: 6, vmax: 40, ops: ['+', '−', '×'], maxOp: 50, subMax: 15, slackR: 0.5, slackMin: 12, penalty: true, hints: 3 } },
+  normal: { name: 'ふつう', desc: '4つの計算がそろう標準のコース。親枠は4つ', cfg: DEFAULT_CFG },
+  hard: { name: 'むずかしい', desc: '親枠は5つ。数の種類が多く、手数の余裕はわずか',
+    cfg: { cols: 6, slots: 5, K: 13, minN: 4, maxN: 7, down: [2, 3, 4, 4, 5, 5], slackR: 0.08, slackMin: 3, penalty: true, hints: 3 } }
+};
+
+/* 作り置きの問題集：むずかしいの1〜100問。rows は [やり直しの番号, ボットの解の手数]。
+   事前に全問をボットで解いて確認ずみ。コースの設定が変わったら（sigが合わなくなったら）使わず、その場で作る。
+   新しい問題集に差し替えるときは id を変えて rows を入れ替える（✓の記録は問題集ごとに別になる） */
+var PACKS = { hard: { id: 'p1', sig: '963053896', rows: [[0,132],[0,129],[1,147],[0,146],[1,146],[0,148],[1,149],[0,153],[0,137],[0,134],[0,137],[0,150],[0,156],[2,147],[0,150],[1,136],[0,160],[0,152],[0,134],[0,148],[0,149],[1,152],[0,131],[1,149],[2,155],[1,150],[0,144],[1,143],[1,134],[0,155],[0,139],[1,149],[0,133],[2,152],[0,139],[0,139],[0,148],[0,148],[0,139],[0,145],[0,154],[0,162],[1,140],[1,145],[0,140],[0,158],[0,134],[0,148],[0,137],[0,144],[0,143],[0,146],[0,146],[0,147],[0,144],[0,158],[0,160],[1,144],[0,139],[0,146],[1,144],[0,153],[0,148],[0,151],[1,133],[0,159],[0,127],[0,143],[0,158],[0,145],[0,149],[1,143],[0,138],[0,136],[0,147],[1,149],[0,157],[0,129],[0,152],[0,155],[0,143],[0,137],[0,156],[0,126],[0,138],[0,133],[0,136],[0,145],[0,157],[0,163],[0,150],[0,138],[0,141],[0,148],[1,149],[1,152],[0,140],[0,143],[0,153],[0,143]] } };
+var MAXQ = 100;
+function levelKey(course, n) { var pk = PACKS[course]; return pk ? course + '|' + pk.id + '|' + n : course + '|' + n; }
+function levelFromPack(course, n, cfg) {
+  var pk = PACKS[course];
+  if (!pk || pk.sig !== String(hashStr(JSON.stringify(cfg))) || !pk.rows[n - 1]) return null;
+  var r = pk.rows[n - 1], deal = genDeal(hashStr(levelKey(course, n) + '#' + r[0]), cfg);
+  return { state: deal, solLen: r[1], limit: r[1] + Math.max(cfg.slackMin || 8, Math.ceil(r[1] * (cfg.slackR || 0.3))), attempt: r[0] };
+}
+
+function hashStr(str) {
+  var h = 2166136261 >>> 0;
+  for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return h >>> 0;
+}
+function makeRng(seed) {
+  var a = seed >>> 0;
+  return function () {
+    a = (a + 0x6D2B79F5) >>> 0;
+    var t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function shuffle(arr, r) {
+  for (var i = arr.length - 1; i > 0; i--) {
+    var j = Math.floor(r() * (i + 1));
+    var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+  }
+  return arr;
+}
+
+/* 答えが v になる式の候補 */
+function candidates(v, cfg) {
+  var allow = cfg.ops || ['+', '−', '×', '÷'], maxOp = cfg.maxOp || 60, subMax = cfg.subMax || 20, c = {}, a, b;
+  allow.forEach(function (o) { c[o] = []; });
+  if (c['+']) for (a = 2; a <= v - 2; a++) c['+'].push([a, v - a]);
+  if (c['−']) for (b = 1; b <= subMax; b++) if (v + b <= maxOp) c['−'].push([v + b, b]);
+  if (c['×']) for (a = 2; a < v; a++) if (v % a === 0 && v / a >= 2) c['×'].push([a, v / a]);
+  if (c['÷']) for (b = 2; b <= 9; b++) if (v * b <= maxOp) c['÷'].push([v * b, b]);
+  return c;
+}
+var OPW = { '+': 3, '−': 3, '×': 2, '÷': 2 };
+function pickOp(cand, r) {
+  var ops = [], tot = 0, o;
+  for (o in cand) if (cand[o].length) { ops.push(o); tot += OPW[o]; }
+  var x = r() * tot;
+  for (var i = 0; i < ops.length; i++) { x -= OPW[ops[i]]; if (x <= 0) return ops[i]; }
+  return ops[ops.length - 1];
+}
+
+function genDeal(seed, cfg) {
+  cfg = cfg || DEFAULT_CFG;
+  var r = makeRng(seed), pool = [], v, i;
+  for (v = cfg.vmin || 6; v <= (cfg.vmax || 48); v++) pool.push(v);
+  shuffle(pool, r);
+  var vals = pool.slice(0, cfg.K).sort(function (x, y) { return x - y; });
+  var need = {}, cards = [], id = 0;
+  vals.forEach(function (v) {
+    var n = cfg.minN + Math.floor(r() * (cfg.maxN - cfg.minN + 1));
+    need[v] = n;
+    var cand = candidates(v, cfg);
+    for (var k = 0; k < n; k++) {
+      var op = pickOp(cand, r);
+      var idx = Math.floor(r() * cand[op].length);
+      var pair = cand[op].splice(idx, 1)[0];
+      cards.push({ id: id++, a: pair[0], op: op, b: pair[1], v: v });
+    }
+    cards.push({ id: id++, v: v, p: true }); /* 親カード（その数を集めるベース） */
+  });
+  shuffle(cards, r);
+  var cols = [], p = 0;
+  for (i = 0; i < (cfg.cols || N_COLS); i++) {
+    var d = cfg.down[i];
+    var down = cards.slice(p, p + d); p += d;
+    cols.push({ down: down, up: [cards[p++]] });
+  }
+  var fnd = []; for (i = 0; i < (cfg.slots || N_SLOTS); i++) fnd.push(null);
+  return { cols: cols, stock: cards.slice(p), waste: [], fnd: fnd, need: need, vals: vals, moves: 0, score: 0 };
+}
+
+function cloneState(s) {
+  return {
+    cols: s.cols.map(function (c) { return { down: c.down.slice(), up: c.up.slice() }; }),
+    stock: s.stock.slice(), waste: s.waste.slice(),
+    fnd: s.fnd.map(function (f) { return f ? { v: f.v, k: f.k, top: f.top } : null; }),
+    need: s.need, vals: s.vals, moves: s.moves, score: s.score
+  };
+}
+
+function srcList(s) {
+  var a = [];
+  if (s.waste.length) a.push({ k: 'waste' });
+  for (var i = 0; i < s.cols.length; i++) if (s.cols[i].up.length) a.push({ k: 'col', i: i });
+  return a;
+}
+function runOf(s, f) {
+  return f.k === 'waste' ? [s.waste[s.waste.length - 1]] : s.cols[f.i].up;
+}
+function srcTop(s, f) {
+  if (f.k === 'waste') return s.waste[s.waste.length - 1];
+  var u = s.cols[f.i].up; return u[u.length - 1];
+}
+function foundationOf(s, v) {
+  for (var j = 0; j < s.fnd.length; j++) if (s.fnd[j] && s.fnd[j].v === v) return j;
+  return -1;
+}
+
+/* canon=true: 空き枠・空き列は先頭の1つだけ（ボット用） */
+function legalMoves(s, canon) {
+  var ms = [], srcs = srcList(s), i, j;
+  var emptySlots = [], emptyCols = [];
+  for (j = 0; j < s.fnd.length; j++) if (!s.fnd[j]) emptySlots.push(j);
+  for (i = 0; i < s.cols.length; i++) if (!s.cols[i].up.length && !s.cols[i].down.length) emptyCols.push(i);
+  srcs.forEach(function (from) {
+    var R = runOf(s, from), v = R[0].v, hasP = R[R.length - 1].p;
+    var fj = foundationOf(s, v);
+    /* 親枠：親カードがある枠には計算カードを。空き枠には親カード（を含む山）だけ */
+    if (fj >= 0) { if (!hasP) ms.push({ t: 'F', from: from, to: fj }); }
+    else if (hasP && emptySlots.length) (canon ? [emptySlots[0]] : emptySlots).forEach(function (e) { ms.push({ t: 'F', from: from, to: e }); });
+    /* 列：同じ答えの計算カードの上にだけ置ける（親カードの上には何も置けない） */
+    for (var c = 0; c < s.cols.length; c++) {
+      if (from.k === 'col' && from.i === c) continue;
+      var up = s.cols[c].up;
+      if (up.length) { var T = up[up.length - 1]; if (!T.p && T.v === v) ms.push({ t: 'C', from: from, to: c }); }
+    }
+    var useful = from.k === 'waste' || s.cols[from.i].down.length > 0;
+    if (useful && emptyCols.length) (canon ? [emptyCols[0]] : emptyCols).forEach(function (e) { ms.push({ t: 'C', from: from, to: e }); });
+  });
+  if (s.stock.length > 0 || s.waste.length > 1) ms.push({ t: 'D' });
+  return ms;
+}
+
+/* 1手を適用（sを直接書き換える）。戻り値は演出用の情報 */
+function applyMove(s, m) {
+  s.moves++;
+  if (m.t === 'D') {
+    if (s.stock.length) s.waste.push(s.stock.pop());
+    else { s.stock = s.waste.slice().reverse(); s.waste = []; s.waste.push(s.stock.pop()); }
+    return { draw: true };
+  }
+  var run, flipped = false;
+  if (m.from.k === 'waste') run = [s.waste.pop()];
+  else {
+    var c = s.cols[m.from.i];
+    run = c.up; c.up = [];
+    if (c.down.length) { c.up = [c.down.pop()]; flipped = true; }
+  }
+  var info = { moved: run.length, v: run[0].v, done: false, flip: flipped, parent: m.t === 'F' && !!run[run.length - 1].p };
+  if (m.t === 'C') {
+    var dc = s.cols[m.to];
+    for (var i = 0; i < run.length; i++) dc.up.push(run[i]);
+  } else {
+    var hasP = run[run.length - 1].p, calcs = run.length - (hasP ? 1 : 0);
+    var f = s.fnd[m.to];
+    if (!f) f = s.fnd[m.to] = { v: run[0].v, k: 0, top: run[run.length - 1] };
+    f.k += calcs; if (calcs) f.top = run[calcs - 1];
+    info.moved = calcs;
+    s.score += 10 * calcs;
+    if (f.k >= s.need[f.v]) { s.fnd[m.to] = null; s.score += 30; info.done = true; }
+  }
+  return info;
+}
+
+function isWin(s) {
+  if (s.stock.length || s.waste.length) return false;
+  for (var i = 0; i < s.cols.length; i++) if (s.cols[i].up.length || s.cols[i].down.length) return false;
+  return true;
+}
+
+/* 必ず得になる手（ボット用）：同じ数の親があるならそこへ／山が全部そろっているなら親にする */
+function autoSafe(s, log) {
+  for (;;) {
+    var did = false, srcs = srcList(s);
+    for (var n = 0; n < srcs.length; n++) {
+      var from = srcs[n], R = runOf(s, from), v = R[0].v, hasP = R[R.length - 1].p, cnt = R.length - (hasP ? 1 : 0);
+      var fj = foundationOf(s, v), m = null;
+      if (fj >= 0) { if (!hasP) m = { t: 'F', from: from, to: fj }; }
+      else if (hasP && cnt === s.need[v]) {
+        var e = -1; for (var j = 0; j < s.fnd.length; j++) if (!s.fnd[j]) { e = j; break; }
+        if (e >= 0) m = { t: 'F', from: from, to: e };
+      }
+      if (m) { applyMove(s, m); log.push(m); did = true; break; }
+    }
+    if (!did) break;
+  }
+}
+
+function tk(x) { return x.v + (x.p ? 'p' : ''); }
+function keyOf(s) {
+  var cs = s.cols.map(function (c) {
+    return c.down.map(tk).join(',') + '|' + (c.up.length ? c.up[0].v + 'x' + c.up.length + (c.up[c.up.length - 1].p ? 'p' : '') : '');
+  }).sort().join(';');
+  var f = s.fnd.filter(Boolean).map(function (x) { return x.v + ':' + x.k; }).sort().join(',');
+  return cs + '#' + s.stock.map(tk).join(',') + '#' + s.waste.map(tk).join(',') + '#' + f;
+}
+function heur(s) {
+  var d = 0, u = 0;
+  for (var i = 0; i < s.cols.length; i++) { d += s.cols[i].down.length; if (s.cols[i].up.length) u++; }
+  return d + s.stock.length + s.waste.length + u * 0.5;
+}
+
+function Heap() { this.a = []; }
+Heap.prototype.push = function (x) {
+  var a = this.a; a.push(x);
+  var i = a.length - 1;
+  while (i > 0) {
+    var p = (i - 1) >> 1;
+    if (a[p].f <= a[i].f) break;
+    var t = a[p]; a[p] = a[i]; a[i] = t; i = p;
+  }
+};
+Heap.prototype.pop = function () {
+  var a = this.a, top = a[0], last = a.pop();
+  if (a.length) {
+    a[0] = last;
+    var i = 0;
+    for (;;) {
+      var l = 2 * i + 1, r = l + 1, m = i;
+      if (l < a.length && a[l].f < a[m].f) m = l;
+      if (r < a.length && a[r].f < a[m].f) m = r;
+      if (m === i) break;
+      var t = a[m]; a[m] = a[i]; a[i] = t; i = m;
+    }
+  }
+  return top;
+};
+Object.defineProperty(Heap.prototype, 'size', { get: function () { return this.a.length; } });
+
+/* ボット：解が見つかれば手の配列、なければ null。stats に探索数を入れる */
+function solve(start, opts, stats) {
+  opts = opts || {};
+  var maxNodes = opts.maxNodes || 40000, W = opts.w || 2;
+  var root = cloneState(start); root.moves = 0;
+  var rootLog = []; autoSafe(root, rootLog);
+  if (isWin(root)) return rootLog;
+  var heap = new Heap(), seen = new Map();
+  var n0 = { s: root, g: rootLog.length, parent: null, mv: rootLog, f: 0 };
+  n0.f = n0.g + W * heur(root);
+  heap.push(n0); seen.set(keyOf(root), n0.g);
+  var nodes = 0;
+  function build(n, last) {
+    var chain = [last];
+    while (n) { chain.push(n.mv); n = n.parent; }
+    chain.reverse();
+    return [].concat.apply([], chain);
+  }
+  while (heap.size && nodes < maxNodes) {
+    var n = heap.pop(); nodes++;
+    var ms = legalMoves(n.s, true);
+    for (var i = 0; i < ms.length; i++) {
+      var s2 = cloneState(n.s), log = [ms[i]];
+      applyMove(s2, ms[i]); autoSafe(s2, log);
+      var g = n.g + log.length;
+      if (isWin(s2)) { if (stats) stats.nodes = nodes; return build(n, log); }
+      var k = keyOf(s2), pg = seen.get(k);
+      if (pg !== undefined && pg <= g) continue;
+      seen.set(k, g);
+      heap.push({ s: s2, g: g, parent: n, mv: log, f: g + W * heur(s2) });
+    }
+  }
+  if (stats) stats.nodes = nodes;
+  return null;
+}
+
+/* その日のレベルを作る：ボットが解ける盤面だけを採用し、手数制限を決める */
+function makeLevel(label, cfg) {
+  cfg = cfg || DEFAULT_CFG;
+  for (var attempt = 0; attempt < 40; attempt++) {
+    var deal = genDeal(hashStr(label + '#' + attempt), cfg);
+    var sol = solve(deal, { maxNodes: 30000 });
+    if (sol) {
+      var len = sol.length;
+      return { state: deal, solLen: len, limit: len + Math.max(cfg.slackMin || 8, Math.ceil(len * (cfg.slackR || 0.3))), attempt: attempt };
+    }
+  }
+  return null;
+}
+
+if (typeof module !== 'undefined') {
+  module.exports = { COURSES: COURSES, genDeal: genDeal, cloneState: cloneState, legalMoves: legalMoves, applyMove: applyMove, isWin: isWin, solve: solve, makeLevel: makeLevel, hashStr: hashStr, DEFAULT_CFG: DEFAULT_CFG, PACKS: PACKS, MAXQ: MAXQ, levelKey: levelKey, levelFromPack: levelFromPack };
+}
+</script>
+<script>
+(function () {
+  'use strict';
+  var GAP = 6;
+  var $ = function (id) { return document.getElementById(id); };
+  var LV = null, S = null, HIST = [], sel = null, hint = null, hintsLeft = 3, over = false;
+  var label = '', qNo = 1, MEM = {}, showAns = false, shakeKey = null, navArm = 0, toastTimer = 0, COURSE = 'normal';
+  function cfgNow() { return COURSES[COURSE].cfg; }
+
+  function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  /* 進み具合：クリアした問題は ks_best_<スコープ>_<番号>（中身はベストスコア）に保存する。
+     スコープ＝コース名（むずかしいは問題集ごとに別：hard.p1）。保存できない環境でも、開いている間は MEM で進められる */
+  function getKey(k) { return MEM[k] != null ? MEM[k] : lsGet(k); }
+  function setKey(k, v) { MEM[k] = v; lsSet(k, v); }
+  function scopeOf(course) { var pk = PACKS[course]; return pk ? course + '.' + pk.id : course; }
+  function isDoneS(scope, n) { return getKey('ks_best_' + scope + '_' + n) != null; }
+  function isDone(course, n) { return isDoneS(scopeOf(course), n); }
+  function doneCount(course) { var c = 0, s = scopeOf(course); for (var n = 1; n <= MAXQ; n++) if (isDoneS(s, n)) c++; return c; }
+  /* from の次から数えて、まだ終えていない最初の番号（一周して探す。全部終えていたら 0） */
+  function nextUnsolved(course, from) {
+    for (var i = 1; i <= MAXQ; i++) { var n = ((from - 1 + i) % MAXQ + MAXQ) % MAXQ + 1; if (!isDone(course, n)) return n; }
+    return 0;
+  }
+  function lastKey(course) { return 'ks_last_' + scopeOf(course); }
+  function qText(n) { return '第' + n + '問'; }
+
+  /* ---------- 途中の盤面の保存（コースごとに1つ）----------
+     盤面は「コース＋番号」で決まるので、いまの盤面・手数・ヒント数だけ保存すれば再開できる。
+     コースの設定が変わっていたり、中身が合わないときは捨てて、最初からにする */
+  var SAVE_V = 1;
+  function saveKey(c) { return 'ks_save_' + scopeOf(c); }
+  function cfgSig(c) { return String(hashStr(JSON.stringify(COURSES[c].cfg))); }
+  function readSave(c) {
+    var raw = lsGet(saveKey(c));
+    if (!raw) return null;
+    try {
+      var o = JSON.parse(raw);
+      if (!o || o.v !== SAVE_V || o.sig !== cfgSig(c) || !(o.n >= 1) || !o.S) return null;
+      return o;
+    } catch (e) { return null; }
+  }
+  function clearSave(c) { try { localStorage.removeItem(saveKey(c)); } catch (e) {} }
+  function saveGame() {
+    if (!S || !LV || over || S.moves <= 0) return;
+    lsSet(saveKey(COURSE), JSON.stringify({ v: SAVE_V, sig: cfgSig(COURSE), n: qNo, lim: LV.limit, hl: hintsLeft, S: S }));
+  }
+  /* 開き直したときの再開位置：途中の盤面があればその番号、なければ最後にクリアした問題の次の、まだ終えていない問題 */
+  function resumeTarget(c) {
+    var sv = readSave(c);
+    if (sv && sv.n <= MAXQ) return sv.n;
+    var last = +getKey(lastKey(c)) || 0, n = nextUnsolved(c, last);
+    return n || last || 1;
+  }
+  function restoreSave(sv) {
+    try {
+      var st = sv.S, base = LV.state;
+      if (sv.lim !== LV.limit || !st || !Array.isArray(st.cols) || st.cols.length !== base.cols.length ||
+          !Array.isArray(st.fnd) || st.fnd.length !== base.fnd.length || !Array.isArray(st.stock) || !Array.isArray(st.waste) ||
+          JSON.stringify(st.vals) !== JSON.stringify(base.vals) || typeof st.moves !== 'number') return false;
+      S = st; HIST = []; sel = null; hint = null; over = false;
+      hintsLeft = typeof sv.hl === 'number' ? sv.hl : cfgNow().hints;
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function toast(msg) {
+    var t = $('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove('show'); }, 1900);
+  }
+
+  /* ---------- 効果音（ブラウザで作る簡単な音。音声ファイルは使わない） ---------- */
+  var AC = null, soundOn = lsGet('ks_snd') !== '0';
+  /* iPhoneは「消音(サイレント)スイッチ」を尊重する設定を試す（対応ブラウザのみ。ダメでも害はない） */
+  try { if (navigator.audioSession) navigator.audioSession.type = 'ambient'; } catch (e) {}
+  function mkctx() {
+    try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { AC = false; }
+    return AC || null;
+  }
+  function actx() {
+    if (AC === null || (AC && AC.state === 'closed')) mkctx();
+    if (AC && AC.state !== 'running') { try { var r = AC.resume(); if (r && r.catch) r.catch(function () {}); } catch (e) {} }
+    return AC || null;
+  }
+  /* 他のアプリから戻った直後は音が止まっていることがあるので、動き出してから鳴らす */
+  function ready(cb) {
+    var ac = actx(); if (!ac) return;
+    if (ac.state === 'running' || typeof ac.resume !== 'function') { cb(); return; }
+    var done = false, go = function () { if (done) return; done = true; cb(); };
+    try {
+      var r = ac.resume();
+      if (r && r.then) r.then(go, function () { if (mkctx()) go(); }); else go();
+    } catch (e) { if (mkctx()) go(); }
+  }
+  /* 画面に戻ったとき・次のタップのときに、止まった音の仕組みを動かし直す */
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) actx(); });
+  window.addEventListener('pageshow', function () { if (soundOn && AC) actx(); });
+  document.addEventListener('pointerdown', function () { if (soundOn && AC) actx(); }, true);
+  function tone(freq, t0, dur, type, vol, to) {
+    var ac = AC; if (!ac) return;
+    var t = ac.currentTime + t0, o = ac.createOscillator(), g = ac.createGain();
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(freq, t);
+    if (to) o.frequency.exponentialRampToValueAtTime(to, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol || 0.15, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(ac.destination);
+    o.start(t); o.stop(t + dur + 0.02);
+  }
+  function noise(t0, dur, vol, freq) {
+    var ac = AC; if (!ac) return;
+    var n = Math.floor(ac.sampleRate * dur), buf = ac.createBuffer(1, n, ac.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+    var src = ac.createBufferSource(); src.buffer = buf;
+    var f = ac.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq || 2500;
+    var g = ac.createGain(); g.gain.setValueAtTime(vol, ac.currentTime + t0);
+    src.connect(f); f.connect(g); g.connect(ac.destination);
+    src.start(ac.currentTime + t0);
+  }
+  var SFX = {
+    flip: function () { tone(2200, 0, 0.018, 'sine', 0.09, 1200); tone(1000, 0.008, 0.03, 'triangle', 0.05, 700); },
+    place: function () { tone(659, 0, 0.07, 'sine', 0.12); tone(988, 0.065, 0.14, 'sine', 0.12); },
+    parent: function () { tone(523, 0, 0.09, 'triangle', 0.13); tone(784, 0.09, 0.09, 'triangle', 0.13); tone(1047, 0.18, 0.2, 'triangle', 0.13); },
+    clear: function () { [523, 659, 784, 1047, 1319].forEach(function (f, i) { tone(f, i * 0.08, 0.24, 'sine', 0.14); }); tone(2093, 0.42, 0.3, 'sine', 0.05); },
+    miss: function () { tone(190, 0, 0.2, 'sawtooth', 0.07, 120); },
+    undo: function () { tone(440, 0, 0.07, 'triangle', 0.1, 330); },
+    hint: function () { tone(880, 0, 0.12, 'sine', 0.1); tone(1175, 0.1, 0.14, 'sine', 0.08); },
+    win: function () { [523, 659, 784, 1047, 784, 1047, 1319].forEach(function (f, i) { tone(f, i * 0.12, 0.28, 'triangle', 0.14); }); },
+    lose: function () { [392, 330, 262].forEach(function (f, i) { tone(f, i * 0.2, 0.34, 'triangle', 0.12); }); }
+  };
+  function sfx(name, delay) {
+    if (!soundOn) return;
+    var run = function () { if (!soundOn) return; ready(function () { try { SFX[name](); } catch (e) {} }); };
+    if (delay) setTimeout(run, delay); else run();
+  }
+  var ICO_ON = 'M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z';
+  var ICO_OFF = 'M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z';
+  function sndUI() {
+    $('snd-ico').innerHTML = '<path d="' + (soundOn ? ICO_ON : ICO_OFF) + '"/>';
+    $('snd-lbl').textContent = soundOn ? '音 オン' : '音 オフ';
+    $('btn-snd').classList.toggle('on', soundOn);
+    $('btn-snd').setAttribute('aria-pressed', soundOn ? 'true' : 'false');
+  }
+
+  /* ---------- 演出 ---------- */
+  var FX_COLORS = ['#ffb703', '#5ad1a0', '#8a5cf0', '#7fb4bb', '#ff6a55'];
+  function reduceMotion() { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+  function fxAdd(el) { $('fx').appendChild(el); setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 1000); }
+  function burstAt(x, y, ringSize, n) {
+    if (ringSize) {
+      var ring = document.createElement('i'); ring.className = 'ring';
+      ring.style.left = x + 'px'; ring.style.top = y + 'px'; ring.style.width = ring.style.height = ringSize + 'px';
+      fxAdd(ring);
+    }
+    if (reduceMotion()) return;
+    for (var i = 0; i < n; i++) {
+      var p = document.createElement('i'), a = Math.random() * Math.PI * 2, d = 40 + Math.random() * 90;
+      p.className = 'pt'; p.style.left = x + 'px'; p.style.top = y + 'px';
+      p.style.background = FX_COLORS[i % FX_COLORS.length];
+      p.style.setProperty('--dx', (Math.cos(a) * d).toFixed(0) + 'px');
+      p.style.setProperty('--dy', (Math.sin(a) * d - 20).toFixed(0) + 'px');
+      p.style.setProperty('--rot', (Math.random() * 540 - 270).toFixed(0) + 'deg');
+      fxAdd(p);
+    }
+  }
+  function burstSlot(j) {
+    var el = document.querySelector('[data-a="fnd:' + j + '"]');
+    if (!el) return;
+    var r = el.getBoundingClientRect();
+    burstAt(r.left + r.width / 2, r.top + r.height / 2, r.width * 1.3, 26);
+  }
+  /* level 0: ふつうのクリア / 1: 10問ごと / 2: 全問クリア */
+  function confetti(level) {
+    var w = window.innerWidth, h = window.innerHeight, rounds = level === 2 ? 4 : level === 1 ? 2 : 1;
+    for (var r = 0; r < rounds; r++) for (var k = 0; k < 4; k++) (function (r, k) {
+      setTimeout(function () { burstAt(w * (0.2 + 0.2 * k), h * (0.28 + 0.14 * r), 0, level ? 44 : 30); }, r * 650 + k * 220);
+    })(r, k);
+  }
+  function animCard(q) {
+    if (reduceMotion()) return;
+    var el = document.querySelector(q);
+    if (el) el.classList.add('flipin');
+  }
+  /* 1手ごとの音とアニメーション */
+  function fx(m, info) {
+    if (m.t === 'D') { sfx('flip'); animCard('[data-a="waste"] .card'); return; }
+    if (info.done) { sfx('clear'); burstSlot(m.to); }
+    else if (info.parent) sfx('parent');
+    else sfx('place');
+    if (info.flip) { sfx('flip', 90); animCard('[data-a="col:' + m.from.i + '"] .card:last-child'); }
+  }
+
+  /* ---------- レベル開始 ---------- */
+  function startLevel(n) {
+    n = Math.min(MAXQ, Math.max(1, Math.floor(+n) || 1));
+    qNo = n; label = String(n); over = false; S = null;
+    $('end').hidden = true; $('qlist').hidden = true;
+    $('level').textContent = qText(n);
+    $('board').innerHTML = '<p class="loading">盤面を作っています…</p>';
+    var cfg = cfgNow(), key = levelKey(COURSE, n);
+    document.body.classList.toggle('big', !!cfg.big);
+    $('btn-course').textContent = COURSES[COURSE].name + ' ▾';
+    setTimeout(function () {
+      LV = levelFromPack(COURSE, qNo, cfg) || makeLevel(key, cfg) || makeLevel(key + '+', cfg) || { state: genDeal(hashStr(key), cfg), solLen: 80, limit: 120 };
+      var sv = readSave(COURSE);
+      if (sv && sv.n === qNo && restoreSave(sv)) { $('end').hidden = true; render(); toast('続きから始めます（' + qText(qNo) + '）'); }
+      else reset();
+    }, 20);
+  }
+  function reset() {
+    clearSave(COURSE);
+    S = cloneState(LV.state); HIST = []; sel = null; hint = null; hintsLeft = cfgNow().hints; over = false;
+    $('end').hidden = true;
+    render();
+  }
+
+  /* ---------- 描画 ---------- */
+  function full(c, mode, cls, style) {
+    var a = mode === 'hidden' ? '' : c.v;
+    return '<div class="card full ' + (cls || '') + '"' + (style ? ' style="' + style + '"' : '') + '><div class="eq"><span>' + c.a +
+      '</span><span class="l2"><i>' + c.op + '</i><span>' + c.b + '</span></span></div><div class="rule"></div><div class="ans ' +
+      (mode === 'soft' ? 'soft' : '') + '">' + a + '</div></div>';
+  }
+  function pcard(c, cnt, cls, style) {
+    return '<div class="card full parent ' + (cls || '') + '"' + (style ? ' style="' + style + '"' : '') + '><span class="pk">' + (cnt || '') +
+      '</span><div class="pstar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01z"/></svg></div><div class="rule"></div><div class="ans">' + c.v + '</div></div>';
+  }
+  function hiddenWaste() {
+    var w = S.waste[S.waste.length - 1];
+    return !showAns && !!w && !w.p;
+  }
+  function strip(c, cls, style) {
+    return '<div class="card strip ' + (cls || '') + '" style="' + style + '">' + c.a + ' ' + c.op + ' ' + c.b + '</div>';
+  }
+
+  function targets() {
+    var T = { cols: {}, fnd: {} };
+    if (!sel || (sel.k === 'waste' && hiddenWaste())) return T;
+    legalMoves(S, false).forEach(function (m) {
+      if (m.t === 'D' || m.from.k !== sel.k || (m.from.k === 'col' && m.from.i !== sel.i)) return;
+      if (m.t === 'C') T.cols[m.to] = 1; else T.fnd[m.to] = 1;
+    });
+    return T;
+  }
+  function tally() {
+    var rem = {}, par = {};
+    S.vals.forEach(function (v) { rem[v] = 0; par[v] = 0; });
+    function cnt(c) { if (c.p) par[c.v]++; else rem[c.v]++; }
+    S.stock.forEach(cnt); S.waste.forEach(cnt);
+    S.cols.forEach(function (c) { c.down.forEach(cnt); c.up.forEach(cnt); });
+    return S.vals.map(function (v) {
+      var inF = foundationOf(S, v) >= 0, done = rem[v] === 0 && !par[v] && !inF;
+      return '<span class="chip' + (done ? ' done' : inF ? ' on' : '') + '">' + v + '<small>×' + rem[v] + '</small>' + (par[v] ? '<em>★</em>' : '') + '</span>';
+    }).join('');
+  }
+
+  function render() {
+    if (!S) return;
+    var board = $('board');
+    var nc = Math.max(S.cols.length, S.fnd.length), gap = cfgNow().big ? 10 : GAP;
+    var cw = ((board.clientWidth || 358) - (nc - 1) * gap) / nc;
+    board.style.setProperty('--cw', cw.toFixed(2) + 'px');
+    board.style.setProperty('--nc', nc);
+    board.style.setProperty('--gap', gap + 'px');
+    var step = cw * 0.2, ustep = cw * 0.36, ch = cw * 1.4;
+    var T = targets(), i, k;
+    var hs = hint && hint.t !== 'D' ? hint.from : null;
+
+    /* 山札 / 捨て札 */
+    var stock = '<div class="pile stock' + (S.stock.length ? '' : ' empty') + (hint && hint.t === 'D' ? ' hint-t' : '') +
+      '" role="button" tabindex="0" aria-label="山札をめくる" data-a="stock">' +
+      (S.stock.length ? '<div class="card back"></div><span class="cnt">' + S.stock.length + '</span>' :
+        (S.waste.length > 1 ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>' : '')) + '</div>';
+    var wsel = sel && sel.k === 'waste', wh = hs && hs.k === 'waste';
+    var wcard = S.waste.length ? S.waste[S.waste.length - 1] : null;
+    var waste = '<div class="pile waste' + (wcard ? '' : ' empty') + (wh ? ' hint-s' : '') + '" role="button" tabindex="0" aria-label="めくったカード" data-a="waste">' +
+      (wcard ? (wcard.p ? pcard(wcard, '', wsel ? 'sel' : '') : full(wcard, showAns ? 'soft' : 'hidden', wsel ? 'sel' : '')) : '') + '</div>';
+    var deck = '<div class="row"><div class="tally" style="grid-column:1 / ' + (nc - 1) + '"><span class="lbl">のこりのカード（答え × 枚数）</span><div class="chips">' + tally() + '</div></div>' + waste + stock + '</div>';
+
+    /* 親枠 */
+    var fnd = '<div class="row">';
+    for (i = 0; i < S.fnd.length; i++) {
+      var f = S.fnd[i];
+      var ht = hint && hint.t === 'F' && hint.to === i;
+      fnd += '<div class="fs"><span class="badge' + (f ? '' : ' none') + '">' + (f ? f.k + '/' + S.need[f.v] : '親枠') + '</span>' +
+        '<div class="slot' + (f ? '' : ' empty') + (T.fnd[i] ? ' tgt' : '') + (ht ? ' hint-t' : '') + '" role="button" tabindex="0" aria-label="親枠' + (i + 1) + '" data-a="fnd:' + i + '">' +
+        (f ? (f.top.p ? pcard(f.top, '') : full(f.top, 'strong')) : '<span class="ph"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01z"/></svg></span>') + '</div></div>';
+    }
+    for (i = S.fnd.length; i < nc; i++) fnd += '<div class="fs"><span class="badge none">&nbsp;</span><div class="slot locked" aria-hidden="true"></div></div>';
+    fnd += '</div>';
+
+    /* 場札 */
+    var tab = '<div class="row">';
+    for (i = 0; i < S.cols.length; i++) {
+      var c = S.cols[i], d = c.down.length, u = c.up.length;
+      var ct = hint && hint.t === 'C' && hint.to === i;
+      var cs = sel && sel.k === 'col' && sel.i === i, chs = hs && hs.k === 'col' && hs.i === i;
+      if (!d && !u) {
+        tab += '<div class="col empty' + (T.cols[i] ? ' tgt' : '') + (ct ? ' hint-t' : '') + '" role="button" tabindex="0" aria-label="空き列" data-a="col:' + i + '"></div>';
+        continue;
+      }
+      var h = d * step + (u ? (u - 1) * ustep + ch : 0);
+      var html = '';
+      for (k = 0; k < d; k++) html += '<div class="card back" style="top:' + (k * step).toFixed(1) + 'px;z-index:' + k + '"></div>';
+      for (k = 0; k < u; k++) {
+        var st = 'top:' + (d * step + k * ustep).toFixed(1) + 'px;z-index:' + (d + k);
+        if (k < u - 1) html += strip(c.up[k], cs ? 'sel' : '', st);
+        else if (c.up[k].p) html += pcard(c.up[k], (u - 1) + '/' + S.need[c.up[k].v], cs ? 'sel' : '', st);
+        else html += full(c.up[k], 'soft', cs ? 'sel' : '', st);
+      }
+      tab += '<div class="col' + (T.cols[i] ? ' tgt' : '') + (ct ? ' hint-t' : '') + (chs ? ' hint-s' : '') + '" role="button" tabindex="0" aria-label="場札の列' + (i + 1) + '" data-a="col:' + i + '" style="height:' + h.toFixed(1) + 'px">' + html + '</div>';
+    }
+    tab += '</div>';
+    board.innerHTML = deck + fnd + tab;
+
+    if (shakeKey) {
+      var el = board.querySelector('[data-a="' + shakeKey + '"]');
+      if (el) el.classList.add('shake');
+      shakeKey = null;
+    }
+
+    /* 見出し・ボタン */
+    var left = Math.max(0, LV.limit - S.moves);
+    $('level').textContent = qText(qNo);
+    $('prev').disabled = qNo <= 1;
+    $('next').disabled = qNo >= MAXQ;
+    $('score').textContent = S.score;
+    $('left').textContent = left;
+    $('left').classList.toggle('low', left <= 8);
+    var m = $('meter'); m.style.width = (100 * left / LV.limit) + '%'; m.classList.toggle('low', left <= 8);
+    $('hint-lbl').textContent = 'ヒント ' + (hintsLeft > 50 ? '∞' : hintsLeft);
+    $('btn-hint').disabled = hintsLeft <= 0 || over;
+    $('btn-undo').disabled = !HIST.length || over;
+    $('ans-st').textContent = showAns ? '○' : '×';
+    $('btn-ans').classList.toggle('on', showAns);
+    $('btn-ans').setAttribute('aria-pressed', showAns ? 'true' : 'false');
+  }
+
+  /* ---------- 操作 ---------- */
+  function findMove(kind, to) {
+    var ms = legalMoves(S, false);
+    for (var i = 0; i < ms.length; i++) {
+      var m = ms[i];
+      if (m.t === kind && m.to === to && m.from.k === sel.k && (sel.k === 'waste' || m.from.i === sel.i)) return m;
+    }
+    return null;
+  }
+  function doMove(m) {
+    HIST.push(cloneState(S)); if (HIST.length > 80) HIST.shift();
+    var info = applyMove(S, m);
+    sel = null; hint = null;
+    if (info.done) toast('「' + info.v + '」がそろった！ +30');
+    checkEnd(); saveGame(); render();
+    fx(m, info);
+  }
+  function checkEnd() {
+    if (over) return;
+    if (isWin(S)) { over = true; showEnd(true); }
+    else if (S.moves >= LV.limit) { over = true; showEnd(false, 'moves'); }
+    else if (legalMoves(S, false).length === 0) { over = true; showEnd(false, 'stuck'); }
+  }
+  var endNext = 0;
+  function showEnd(win, why) {
+    var left = Math.max(0, LV.limit - S.moves), html, title, lv = 0;
+    clearSave(COURSE);
+    if (win) {
+      var bonus = left * 5, fin = S.score + bonus, key = 'ks_best_' + scopeOf(COURSE) + '_' + label, raw = getKey(key), prev = +raw || 0, first = raw == null;
+      if (first || fin > prev) setKey(key, String(fin));
+      setKey(lastKey(COURSE), String(qNo));
+      var cnt = doneCount(COURSE), all = first && cnt >= MAXQ, mile = first && !all && cnt % 10 === 0;
+      lv = all ? 2 : mile ? 1 : 0;
+      title = all ? '全問クリア！' : mile ? cnt + '問 クリア！' : qText(qNo) + ' クリア！';
+      html = (all ? '<b>' + MAXQ + '問ぜんぶ クリアしました。おめでとう！</b><br>' : mile ? '<b>ここまで ' + cnt + '問 クリア！</b>（' + qText(qNo) + '）<br>' : '') +
+        'スコア <b>' + fin + '</b>（残り手数ボーナス +' + bonus + '）<br>残り手数 <b>' + left + '</b>' +
+        (prev > 1 ? (fin > prev ? '<br>この問題のベストを更新しました' : '<br>この問題のベスト ' + prev) : '') +
+        '<br><small>クリア済み ' + cnt + ' / ' + MAXQ + '問</small>';
+      endNext = nextUnsolved(COURSE, qNo);
+    } else {
+      title = 'ゲームオーバー';
+      html = why === 'stuck' ? '動かせるカードがなくなりました。' : '手数を使い切りました。';
+      endNext = 0;
+    }
+    $('end-title').textContent = title;
+    /* 勝ったら「つぎの問題へ」（まだ解いていない次の問題）。負けたら「もう一度」を目立たせて、「問題をえらぶ」 */
+    $('end-retry').className = win ? 'go sub' : 'go';
+    $('end-next').className = win ? 'go' : 'go sub';
+    $('end-next').textContent = endNext ? 'つぎの問題へ' : '問題をえらぶ';
+    $('end-body').innerHTML = html;
+    $('end-copy').hidden = !win; $('end-copy').textContent = '記録のコードをコピー';
+    $('end').hidden = false;
+    if (win) {
+      sfx('win', 500); confetti(lv);
+      if (lv) sfx('clear', 1700);
+      if (lv === 2) sfx('win', 2500);
+      persistAsk();
+    } else sfx('lose', 300);
+  }
+
+  function tap(a) {
+    if (over || !S) return;
+    hint = null;
+    var p = a.split(':'), kind = p[0], n = +p[1];
+    if (kind === 'stock') {
+      sel = null;
+      var ms = legalMoves(S, false);
+      if (!ms.some(function (m) { return m.t === 'D'; })) { render(); return; }
+      doMove({ t: 'D' }); return;
+    }
+    if (kind === 'waste') {
+      sel = (sel && sel.k === 'waste') || !S.waste.length ? null : { k: 'waste' };
+      render(); return;
+    }
+    if (kind === 'fnd') {
+      if (!sel) { render(); return; }
+      var m = findMove('F', n);
+      if (m) { doMove(m); return; }
+      miss(a); return;
+    }
+    if (kind === 'col') {
+      var col = S.cols[n];
+      if (!sel) { if (col.up.length) sel = { k: 'col', i: n }; render(); return; }
+      if (sel.k === 'col' && sel.i === n) { sel = null; render(); return; }
+      var mv = findMove('C', n);
+      if (mv) { doMove(mv); return; }
+      if (sel.k === 'waste' && hiddenWaste()) { miss(a); return; }
+      if (col.up.length) { sel = { k: 'col', i: n }; render(); return; }
+      miss(a);
+    }
+  }
+  /* 置けないところをタップしたとき。答えが隠れているカードなら手数を1つ使う */
+  function miss(key) {
+    shakeKey = key; sfx('miss');
+    if (sel && sel.k === 'waste' && hiddenWaste()) {
+      if (cfgNow().penalty) { S.moves++; toast('答えがちがうみたい（手数 −1）'); checkEnd(); saveGame(); }
+      else toast('答えがちがうみたい。もう一度考えてみましょう');
+    } else toast('そこには置けません');
+    render();
+  }
+
+  function undo() {
+    if (over) return;
+    if (!HIST.length) { toast('もどせる手がありません'); return; }
+    var mv = S.moves;
+    S = HIST.pop(); S.moves = mv; sel = null; hint = null;
+    saveGame(); render(); sfx('undo'); toast('盤面をもどしました（手数はそのまま）');
+  }
+  function doHint() {
+    if (over) return;
+    if (hintsLeft <= 0) { toast('ヒントはもうありません'); return; }
+    var sol = solve(S, { maxNodes: 20000 }), m = null;
+    if (sol && sol.length) m = sol[0];
+    else {
+      var ls = legalMoves(S, true);
+      m = ls.filter(function (x) { return x.t !== 'D'; })[0] || ls[0];
+    }
+    if (!m) { toast('動かせる手がありません'); return; }
+    if (hintsLeft < 50) hintsLeft--;
+    hint = m; sel = null;
+    saveGame(); render(); sfx('hint');
+    toast(m.t === 'D' ? '山札をめくってみましょう' : '光っているカードを、光っている場所へ');
+  }
+  /* ‹ ›：1〜MAXQ のあいだを前後に動く */
+  function nav(d) {
+    var to = qNo + d;
+    if (to < 1) { toast('ここが 第1問です'); return; }
+    if (to > MAXQ) { toast('ここが 第' + MAXQ + '問です'); return; }
+    if (S && S.moves > 0 && !over && Date.now() > navArm) {
+      navArm = Date.now() + 3000;
+      toast('プレイ中です。もう一度タップすると問題を変えます');
+      return;
+    }
+    startLevel(to);
+  }
+
+  /* ---------- 問題の一覧（✓・いまの問題・途中・10問ごとの★） ---------- */
+  var pendQ = 0;
+  function drawList() {
+    var sv = readSave(COURSE), playing = S && S.moves > 0 && !over, mid = playing ? qNo : (sv ? sv.n : 0), h = '', g, n;
+    $('qlist-sub').textContent = COURSES[COURSE].name + '　' + doneCount(COURSE) + ' / ' + MAXQ + ' 問クリア';
+    for (g = 0; g < MAXQ / 10; g++) {
+      var from = g * 10 + 1, c10 = 0, cells = '';
+      for (n = from; n < from + 10; n++) {
+        var d = isDone(COURSE, n); if (d) c10++;
+        cells += '<button type="button" class="qc' + (d ? ' done' : '') + (n === qNo ? ' cur' : '') + (n === mid ? ' mid' : '') + (n === pendQ ? ' pend' : '') +
+          '" data-q="' + n + '" aria-label="' + qText(n) + (d ? ' クリア済み' : '') + (n === mid ? ' 途中' : '') + '">' + n + '</button>';
+      }
+      h += '<section class="qg"><div class="qgh' + (c10 === 10 ? ' done' : '') + '"><span>' + from + '〜' + (from + 9) + '</span><span>' + c10 + ' / 10' + (c10 === 10 ? ' ★' : '') + '</span></div><div class="qrow">' + cells + '</div></section>';
+    }
+    $('qgrid').innerHTML = h;
+  }
+  function openList() {
+    pendQ = 0; $('qlist-note').textContent = '';
+    drawList(); $('qlist').hidden = false;
+    var cur = $('qgrid').querySelector('.cur');
+    if (cur && cur.scrollIntoView) try { cur.scrollIntoView({ block: 'center' }); } catch (e) {}
+  }
+
+  /* ---------- 記録のバックアップ（コード）と「消さないで」のお願い ---------- */
+  var PERSIST = '', persistTries = 0;
+  function persistAsk() {
+    if (PERSIST === 'yes' || persistTries >= 4) return;
+    persistTries++;
+    try {
+      if (!(navigator.storage && navigator.storage.persist)) { PERSIST = 'na'; return; }
+      navigator.storage.persist().then(function (g) { PERSIST = g ? 'yes' : 'no'; }, function () { PERSIST = 'no'; });
+    } catch (e) { PERSIST = 'na'; }
+  }
+  function bkScopes() { return Object.keys(COURSES).map(scopeOf); }
+  function bkSum(str) { return ('0' + (hashStr(str) % 1296).toString(36)).slice(-2); }
+  function bkMake() {
+    var parts = [];
+    bkScopes().forEach(function (s) {
+      var hex = '', any = false, j, k, v;
+      for (j = 0; j < MAXQ / 4; j++) {
+        v = 0;
+        for (k = 0; k < 4; k++) if (isDoneS(s, 4 * j + k + 1)) { v |= 1 << k; any = true; }
+        hex += v.toString(16);
+      }
+      if (any) parts.push(s + '=' + hex);
+    });
+    if (!parts.length) return '';
+    var body = 'KS1;' + parts.join(';');
+    return body + '~' + bkSum(body);
+  }
+  function bkRestore(raw) {
+    var s = String(raw || '').replace(/\s+/g, '');
+    if (!s) return { err: 'コードをはりつけてください' };
+    var i = s.lastIndexOf('~');
+    if (i < 0 || bkSum(s.slice(0, i)) !== s.slice(i + 1)) return { err: 'コードが正しくないようです。最後まで コピーできていますか？' };
+    var parts = s.slice(0, i).split(';');
+    if (parts[0] !== 'KS1') return { err: 'このコードは使えません' };
+    var known = bkScopes(), add = 0, skip = 0;
+    parts.slice(1).forEach(function (p) {
+      var q = p.split('='), sc = q[0], hex = q[1] || '', j, k, n;
+      if (known.indexOf(sc) < 0 || !new RegExp('^[0-9a-f]{' + MAXQ / 4 + '}$').test(hex)) { skip++; return; }
+      for (j = 0; j < MAXQ / 4; j++) {
+        var v = parseInt(hex.charAt(j), 16);
+        for (k = 0; k < 4; k++) { n = 4 * j + k + 1; if ((v >> k) & 1 && !isDoneS(sc, n)) { setKey('ks_best_' + sc + '_' + n, '0'); add++; } }
+      }
+    });
+    return { add: add, skip: skip };
+  }
+  function bkOpen() {
+    $('bk-code').value = bkMake() || '（まだ記録がありません）';
+    $('bk-in').value = ''; $('bk-msg').textContent = '';
+    var st = function (p) {
+      $('bk-state').textContent = p === 'yes' ? 'ブラウザに「消さないで」とお願い ずみ（受け付けられました）' :
+        p === 'na' ? 'このブラウザは「消さないで」のお願いに対応していません' : 'ブラウザに「消さないで」とお願いしましたが、受け付けられていません。コードのバックアップがおすすめです';
+    };
+    try {
+      if (navigator.storage && navigator.storage.persisted) navigator.storage.persisted().then(function (p) { if (p) PERSIST = 'yes'; st(PERSIST); }, function () { st(PERSIST); });
+      else st(PERSIST);
+    } catch (e) { st(PERSIST); }
+    $('backup').hidden = false;
+  }
+
+  /* ---------- イベント ---------- */
+  $('board').addEventListener('click', function (e) {
+    var el = e.target.closest ? e.target.closest('[data-a]') : null;
+    if (el) tap(el.getAttribute('data-a'));
+  });
+  $('board').addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    var el = e.target.closest ? e.target.closest('[data-a]') : null;
+    if (el) { e.preventDefault(); tap(el.getAttribute('data-a')); }
+  });
+  $('btn-undo').addEventListener('click', undo);
+  $('btn-hint').addEventListener('click', doHint);
+  $('btn-retry').addEventListener('click', function () { if (LV) { reset(); toast('最初からやり直します'); } });
+  $('btn-ans').addEventListener('click', function () {
+    showAns = !showAns; lsSet('ks_ans', showAns ? '1' : '0'); sel = null; render();
+    toast(showAns ? '答えを見せます（まちがいの手数減りなし）' : '答えを隠します');
+  });
+  $('btn-snd').addEventListener('click', function () {
+    soundOn = !soundOn; lsSet('ks_snd', soundOn ? '1' : '0'); sndUI();
+    if (soundOn) sfx('place');
+    toast(soundOn ? '音をオンにしました' : '音をオフにしました');
+  });
+  $('prev').addEventListener('click', function () { nav(-1); });
+  $('next').addEventListener('click', function () { nav(1); });
+  $('end-retry').addEventListener('click', function () { reset(); });
+  $('end-next').addEventListener('click', function () { if (endNext) startLevel(endNext); else openList(); });
+  $('end-copy').addEventListener('click', function () {
+    var code = bkMake(), b = this, ok = function () { b.textContent = 'コピーしました ✓ メモに貼ってね'; },
+      fb = function () { $('end').hidden = true; bkOpen(); };
+    try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(ok, fb); else fb(); } catch (e) { fb(); }
+  });
+  $('level').addEventListener('click', openList);
+  $('level').addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openList(); } });
+  $('qlist-close').addEventListener('click', function () { $('qlist').hidden = true; });
+  $('qgrid').addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('[data-q]') : null;
+    if (!b) return;
+    var n = +b.getAttribute('data-q'), playing = S && S.moves > 0 && !over;
+    if (n === qNo && !over) { $('qlist').hidden = true; return; }
+    if (playing && pendQ !== n) {
+      pendQ = n; drawList();
+      $('qlist-note').textContent = qText(n) + 'に移ると、いまの途中経過は消えます。もう一度タップすると移ります';
+      return;
+    }
+    pendQ = 0; $('qlist').hidden = true; startLevel(n);
+  });
+  $('course-backup').addEventListener('click', function () { $('courses').hidden = true; bkOpen(); });
+  $('bk-close').addEventListener('click', function () { $('backup').hidden = true; });
+  $('bk-code').addEventListener('click', function () { try { this.select(); } catch (e) {} });
+  $('bk-copy').addEventListener('click', function () {
+    var code = $('bk-code').value, ok = function () { $('bk-msg').textContent = 'コピーしました'; },
+      fb = function () {
+        try { $('bk-code').focus(); $('bk-code').select(); if (document.execCommand && document.execCommand('copy')) { ok(); return; } } catch (e) {}
+        $('bk-msg').textContent = 'コードを長押しして「コピー」してください';
+      };
+    try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(ok, fb); else fb(); } catch (e) { fb(); }
+  });
+  $('bk-restore').addEventListener('click', function () {
+    var r = bkRestore($('bk-in').value);
+    if (r.err) { $('bk-msg').textContent = r.err; return; }
+    $('bk-msg').textContent = r.add + '問分の記録を戻しました' + (r.skip ? '（使えない部分が ' + r.skip + '個ありました）' : '');
+    $('bk-code').value = bkMake() || '（まだ記録がありません）';
+  });
+  function renderCourses() {
+    var playing = S && S.moves > 0 && !over;
+    $('course-list').innerHTML = Object.keys(COURSES).map(function (k) {
+      var c = COURSES[k], cnt = doneCount(k), sv = readSave(k);
+      if (k === COURSE && playing) sv = { n: qNo };
+      return '<button type="button" class="cbtn' + (k === COURSE ? ' on' : '') + '" data-course="' + k + '"><b>' + c.name + '</b>' +
+        (k === COURSE ? '<span class="cur">いまのコース</span>' : '') +
+        (cnt ? '<span class="ok">' + cnt + ' / ' + MAXQ + ' クリア</span>' : '') + (sv ? '<span class="ok">' + qText(sv.n) + 'の途中</span>' : '') +
+        '<small>' + c.desc + '</small></button>';
+    }).join('');
+    $('course-note').textContent = playing ? '途中の盤面は保存されます。このコースにもどると、続きから遊べます' : '';
+  }
+  $('btn-course').addEventListener('click', function () { renderCourses(); $('courses').hidden = false; });
+  $('course-close').addEventListener('click', function () { $('courses').hidden = true; });
+  $('course-list').addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('[data-course]') : null;
+    if (!b) return;
+    var k = b.getAttribute('data-course');
+    $('courses').hidden = true;
+    if (k === COURSE && S && !over) return;
+    var same = k === COURSE;
+    COURSE = k; lsSet('ks_course', k);
+    startLevel(same ? qNo : resumeTarget(k));
+    if (cfgNow().big && !lsGet('ks_seen_gentle')) openRules();
+  });
+  /* ---------- あそびかた：ゆったりはスライド、ほかは文章（コースの設定に合わせて書き換え） ---------- */
+  var slideNo = 0;
+  function rulesItems(c) {
+    var n = c.slots;
+    return [
+      '計算の答えが同じカードを重ねていきます。',
+      '★の親カードが、その答えを集めるベースです。まず上の' + n + 'つの枠（親枠）に親カードを置き、その上に答えが同じ計算カードを重ねます。決まった枚数がそろうと、山ごと消えます。',
+      '親枠が空いていないと、親カードは置けません。' + (n < c.cols ? '点線の枠は使えません。' : ''),
+      '下の列には、答えが同じ計算カードどうしを重ねられます（重なったカードはまとめて動きます）。空いた列には何でも置けます。',
+      '親カードも下の列に置けますが、親カードの上には計算カードを置けません。答えが合う計算カードの上に親カードを置くのはOKで、重なった山ごと親枠へ移せます。',
+      '山札をタップすると1枚めくれます。計算カードの答えは表示されません。自分で計算して置きましょう。' + (c.penalty ? 'まちがえて置こうとすると手数が1減ります。' : 'まちがえても手数は減りません。'),
+      'カードを動かすたびに手数を1つ使います。0になるか、動かせなくなると終わりです。'
+    ];
+  }
+  /* ---------- ゆったりコースのあそびかた：本物そっくりのミニ盤面を台本どおりに動かす ---------- */
+  var DM_CW = 52, dmT = [], dmG = [], DS = null, DU = null, RM = false;
+  try { RM = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); } catch (e) {}
+  var DM_STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01z"/></svg>';
+  function kc(a, op, b) { return { a: a, op: op, b: b, v: op === '+' ? a + b : a - b }; }
+  function pc(v) { return { p: true, v: v }; }
+  function dmAt(ms, fn) { if (RM) fn(); else dmT.push(setTimeout(fn, ms)); }
+  function stopDemo() {
+    dmT.forEach(clearTimeout); dmT = [];
+    dmG.forEach(function (g) { if (g.parentNode) g.parentNode.removeChild(g); }); dmG = [];
+  }
+  function dmDraw() {
+    var host = $('dm'); if (!host || !DS) return;
+    var cw = DM_CW, step = cw * 0.2, ustep = cw * 0.36, ch = cw * 1.4, i, k, h = '';
+    function tg(key) { return DU.tgts.indexOf(key) >= 0 ? ' tgt' : ''; }
+    var w = DS.waste, ws = DU.sel === 'waste' ? 'sel' : '';
+    h += '<div class="row"><div style="grid-column:1 / 3"></div>' +
+      '<div class="pile waste' + (w ? '' : ' empty') + '" data-a="waste">' + (w ? (w.p ? pcard(w, '', ws) : full(w, 'hidden', ws)) : '') + '</div>' +
+      '<div class="pile stock" data-a="stock"><div class="card back"></div><span class="cnt">' + DS.stock + '</span></div></div>';
+    h += '<div class="row">';
+    for (i = 0; i < 4; i++) {
+      var f = DS.fnd[i];
+      h += '<div class="fs"><span class="badge' + (f ? '' : ' none') + '">' + (f ? f.k + '/' + DS.need : '親枠') + '</span><div class="slot' + (f ? '' : ' empty') + tg('fnd:' + i) + '" data-a="fnd:' + i + '">' +
+        (f ? (f.top.p ? pcard(f.top, '') : full(f.top, 'strong')) : '<span class="ph">' + DM_STAR + '</span>') + '</div></div>';
+    }
+    h += '</div><div class="row">';
+    for (i = 0; i < 4; i++) {
+      var c = DS.cols[i], d = c.down, u = c.up, cs = DU.sel === 'col:' + i ? 'sel' : '';
+      if (!d && !u.length) { h += '<div class="col empty' + tg('col:' + i) + '" data-a="col:' + i + '"></div>'; continue; }
+      var hh = d * step + (u.length ? (u.length - 1) * ustep + ch : 0), html = '';
+      for (k = 0; k < d; k++) html += '<div class="card back" style="top:' + (k * step).toFixed(1) + 'px;z-index:' + k + '"></div>';
+      for (k = 0; k < u.length; k++) {
+        var st = 'top:' + (d * step + k * ustep).toFixed(1) + 'px;z-index:' + (d + k);
+        if (k < u.length - 1) html += strip(u[k], cs, st);
+        else if (u[k].p) html += pcard(u[k], (u.length - 1) + '/' + DS.need, cs, st);
+        else html += full(u[k], 'soft', cs, st);
+      }
+      h += '<div class="col' + tg('col:' + i) + '" data-a="col:' + i + '" style="height:' + hh.toFixed(1) + 'px">' + html + '</div>';
+    }
+    host.innerHTML = h + '</div>';
+  }
+  function dmSay(t) { DU.say = t; var b = $('dm-bub'); if (b) b.textContent = t; }
+  function dmSel(s, tg) { DU.sel = s; DU.tgts = tg || []; dmDraw(); }
+  function dmFg(sel) {
+    var wrap = $('dm-wrap'), fg = $('dm-fg'), el = wrap && wrap.querySelector(sel);
+    if (RM || !fg || !el) return;
+    var r = el.getBoundingClientRect(), wr = wrap.getBoundingClientRect();
+    fg.style.opacity = 1; fg.style.left = (r.left - wr.left + r.width / 2) + 'px'; fg.style.top = (r.top - wr.top + 36) + 'px';
+  }
+  function dmFgOff() { var fg = $('dm-fg'); if (fg) fg.style.opacity = 0; }
+  function dmTap() { var fg = $('dm-fg'); if (!fg) return; fg.classList.remove('tap'); void fg.offsetWidth; fg.classList.add('tap'); }
+  /* fromSel の最後の n 枚が toSel へ飛ぶ。mutate で状態を更新し、描画し直してから、飛んでいく様子を重ねて見せる */
+  function dmMove(fromSel, n, toSel, mutate) {
+    var wrap = $('dm-wrap'), host = $('dm');
+    if (!wrap || !host) return;
+    if (RM) { mutate(); DU.sel = null; DU.tgts = []; dmDraw(); return; }
+    var wr = wrap.getBoundingClientRect(),
+      src = [].slice.call(host.querySelectorAll(fromSel + ' .card')).slice(-n),
+      r0 = src.map(function (e) { return e.getBoundingClientRect(); }),
+      gh = src.map(function (e, i) {
+        var g = e.cloneNode(true);
+        g.style.cssText = 'position:absolute;margin:0;right:auto;left:' + (r0[i].left - wr.left) + 'px;top:' + (r0[i].top - wr.top) + 'px;width:' + r0[i].width + 'px;height:' + r0[i].height + 'px;z-index:' + (100 + i) + ';transition:transform .65s ease';
+        wrap.appendChild(g); dmG.push(g); return g;
+      });
+    mutate(); DU.sel = null; DU.tgts = []; dmDraw();
+    var dst = [].slice.call(host.querySelectorAll(toSel + ' .card')).slice(-n);
+    dst.forEach(function (e) { e.style.visibility = 'hidden'; });
+    void wrap.offsetWidth;
+    gh.forEach(function (g, i) {
+      var t = dst[Math.min(i, dst.length - 1)]; if (!t) return;
+      var r = t.getBoundingClientRect();
+      g.style.transform = 'translate(' + (r.left - r0[i].left) + 'px,' + (r.top - r0[i].top) + 'px)';
+    });
+    dmT.push(setTimeout(function () {
+      dst.forEach(function (e) { e.style.visibility = ''; });
+      gh.forEach(function (g) { if (g.parentNode) g.parentNode.removeChild(g); });
+    }, 720));
+  }
+  function dmShake(sel) { var el = $('dm') && $('dm').querySelector(sel); if (el) el.classList.add('shake'); }
+  function dmX(sel) {
+    var wrap = $('dm-wrap'), x = $('dm-x'), el = wrap && wrap.querySelector(sel);
+    if (!x || !el) return;
+    var r = el.getBoundingClientRect(), wr = wrap.getBoundingClientRect();
+    x.style.left = (r.left - wr.left + r.width / 2) + 'px'; x.style.top = (r.top - wr.top + 36) + 'px'; x.hidden = false;
+  }
+  function dmXOff() { var x = $('dm-x'); if (x) x.hidden = true; }
+  function dmVanish(sel) {
+    var wrap = $('dm-wrap'), el = wrap && wrap.querySelector(sel);
+    if (!el) return;
+    el.classList.add('vanish');
+    if (RM) return;
+    var r = el.getBoundingClientRect(), wr = wrap.getBoundingClientRect(), g = document.createElement('div');
+    g.className = 'dm-ring'; g.style.left = (r.left - wr.left + r.width / 2) + 'px'; g.style.top = (r.top - wr.top + r.height / 2) + 'px';
+    wrap.appendChild(g); dmG.push(g);
+    dmT.push(setTimeout(function () { if (g.parentNode) g.parentNode.removeChild(g); }, 800));
+  }
+
+  var FND4 = ['fnd:0', 'fnd:1', 'fnd:2', 'fnd:3'];
+  var SCENES = [
+    { t: '同じ答えを 重ねる', say0: '6＋2 … 答えは？',
+      d: 'めくったカードの答えは出ません。自分で計算して、同じ答えのカードの上へ。全部消せば勝ちです。',
+      init: function () {
+        return { need: 3, waste: kc(6, '+', 2), stock: 12, fnd: [null, null, null, null],
+          cols: [{ down: 2, up: [kc(3, '+', 5)] }, { down: 1, up: [kc(9, '−', 4)] }, { down: 0, up: [kc(7, '+', 7)] }, { down: 2, up: [kc(20, '−', 5)] }] };
+      },
+      run: function () {
+        dmAt(1300, function () { dmSay('6＋2＝8'); });
+        dmAt(2300, function () { dmFg('[data-a="waste"]'); });
+        dmAt(3200, function () { dmTap(); dmSel('waste', ['col:0']); dmSay('置ける所が 点線で光るよ'); });
+        dmAt(4200, function () { dmFg('[data-a="col:0"]'); });
+        dmAt(5100, function () { dmTap(); dmMove('[data-a="waste"]', 1, '[data-a="col:0"]', function () { DS.cols[0].up.push(DS.waste); DS.waste = null; }); });
+        dmAt(6200, function () { dmSay('答えが同じ 8 が 重なった！'); dmFgOff(); });
+      } },
+    { t: '★の親カードは 親枠へ', say0: '★のカードは 親カード',
+      d: 'めくったカードに★があれば親カード。上の親枠に置くと、その答えを集められます。',
+      init: function () {
+        return { need: 3, waste: pc(8), stock: 11, fnd: [null, null, null, null],
+          cols: [{ down: 1, up: [kc(9, '−', 4)] }, { down: 0, up: [kc(7, '+', 7)] }, { down: 2, up: [kc(12, '+', 3)] }, { down: 1, up: [kc(6, '+', 5)] }] };
+      },
+      run: function () {
+        dmAt(1500, function () { dmFg('[data-a="waste"]'); });
+        dmAt(2400, function () { dmTap(); dmSel('waste', FND4); dmSay('空いている親枠に置けるよ'); });
+        dmAt(3400, function () { dmFg('[data-a="fnd:0"]'); });
+        dmAt(4300, function () { dmTap(); dmMove('[data-a="waste"]', 1, '[data-a="fnd:0"]', function () { DS.fnd[0] = { top: DS.waste, k: 0 }; DS.waste = null; }); });
+        dmAt(5400, function () { dmSay('8を集める 親枠になった！'); dmFgOff(); });
+      } },
+    { t: '山ごと動かす・列を空ける', say0: '重なった山は まとめて動かせる',
+      d: '重なった山は、まとめて動かせます。列が空いたら、どのカードも置けます。',
+      init: function () {
+        return { need: 3, waste: null, stock: 10, fnd: [{ top: pc(8), k: 0 }, null, null, null],
+          cols: [{ down: 0, up: [kc(7, '+', 7)] }, { down: 0, up: [kc(3, '+', 5), kc(6, '+', 2)] }, { down: 0, up: [kc(9, '−', 4)] }, { down: 0, up: [kc(12, '+', 3)] }] };
+      },
+      run: function () {
+        dmAt(1400, function () { dmFg('[data-a="col:1"]'); });
+        dmAt(2300, function () { dmTap(); dmSel('col:1', ['fnd:0']); dmSay('同じ答えの 親カードの上へ'); });
+        dmAt(3300, function () { dmFg('[data-a="fnd:0"]'); });
+        dmAt(4200, function () {
+          dmTap();
+          dmMove('[data-a="col:1"]', 2, '[data-a="fnd:0"]', function () { var u = DS.cols[1].up; DS.fnd[0] = { top: u[u.length - 1], k: 2 }; DS.cols[1].up = []; });
+        });
+        dmAt(5300, function () { dmSay('列が 空いたよ'); dmFg('[data-a="col:2"]'); });
+        dmAt(6200, function () { dmTap(); dmSel('col:2', ['col:1']); dmSay('空いた列には どのカードも置ける'); });
+        dmAt(7200, function () { dmFg('[data-a="col:1"]'); });
+        dmAt(8100, function () { dmTap(); dmMove('[data-a="col:2"]', 1, '[data-a="col:1"]', function () { DS.cols[1].up = DS.cols[2].up; DS.cols[2].up = []; }); });
+        dmAt(9200, function () { dmSay('どんどん 列を空けよう'); dmFgOff(); });
+      } },
+    { t: 'そろうと 消える', say0: '4＋4＝8 … 親枠の山へ',
+      d: '親カードに同じ答えのカードを決まった枚数そろえると、山ごと消えます。',
+      init: function () {
+        return { need: 3, waste: kc(4, '+', 4), stock: 9, fnd: [{ top: kc(10, '−', 2), k: 2 }, null, null, null],
+          cols: [{ down: 0, up: [kc(7, '+', 7)] }, { down: 1, up: [kc(9, '−', 4)] }, { down: 0, up: [kc(12, '+', 3)] }, { down: 1, up: [kc(6, '+', 5)] }] };
+      },
+      run: function () {
+        dmAt(1400, function () { dmFg('[data-a="waste"]'); });
+        dmAt(2300, function () { dmTap(); dmSel('waste', ['fnd:0']); dmSay('同じ 8 の親カードの上へ'); });
+        dmAt(3300, function () { dmFg('[data-a="fnd:0"]'); });
+        dmAt(4200, function () { dmTap(); dmMove('[data-a="waste"]', 1, '[data-a="fnd:0"]', function () { DS.fnd[0] = { top: DS.waste, k: 3 }; DS.waste = null; }); });
+        dmAt(5300, function () { dmSay('3/3 そろった！'); dmFgOff(); });
+        dmAt(5900, function () { dmVanish('[data-a="fnd:0"]'); });
+        dmAt(6600, function () { DS.fnd[0] = null; dmDraw(); dmSay('山ごと 消えた！'); });
+      } },
+    { t: '置けない場所', say0: '6＋2＝8 … 親カードの上に置けるかな？',
+      d: '下の列の親カードの上には、計算カードは置けません。親カードは親枠へ。',
+      n: '手数は動かすたびに1つ。ゆったりは、まちがえても減らず、ヒントも何回でも。',
+      init: function () {
+        return { need: 3, waste: kc(6, '+', 2), stock: 10, fnd: [null, null, null, null],
+          cols: [{ down: 0, up: [kc(7, '+', 7)] }, { down: 1, up: [pc(8)] }, { down: 0, up: [kc(9, '−', 4)] }, { down: 1, up: [kc(12, '+', 3)] }] };
+      },
+      run: function () {
+        dmAt(1400, function () { dmFg('[data-a="waste"]'); });
+        dmAt(2300, function () { dmTap(); dmSel('waste', []); dmSay('8の親カードの上に置いてみよう'); });
+        dmAt(3300, function () { dmFg('[data-a="col:1"]'); });
+        dmAt(4200, function () { dmTap(); dmShake('[data-a="col:1"]'); dmX('[data-a="col:1"]'); dmSay('置けません！ 点線で光る所だけ置けるよ'); });
+        dmAt(5500, function () { dmXOff(); dmSel(null); });
+        dmAt(6200, function () { dmFg('[data-a="col:1"]'); });
+        dmAt(7100, function () { dmTap(); dmSel('col:1', FND4); dmSay('親カードは 親枠へ置くよ'); });
+        dmAt(8200, function () { dmFgOff(); });
+      } }
+  ];
+  function runScene(i) {
+    stopDemo(); dmXOff(); dmFgOff();
+    var sc = SCENES[i];
+    DS = sc.init(); DU = { say: sc.say0, sel: null, tgts: [] };
+    dmSay(sc.say0); dmDraw();
+    sc.run();
+  }
+  function drawSlide() {
+    var s = SCENES[slideNo], last = slideNo === SCENES.length - 1, dots = '', i, nx;
+    stopDemo();
+    for (i = 0; i < SCENES.length; i++) dots += '<i' + (i === slideNo ? ' class="on"' : '') + '></i>';
+    $('rules-slides').innerHTML =
+      '<button type="button" class="sl-close" data-sl="x" aria-label="とじて はじめる">×</button>' +
+      '<h2 id="sl-title" class="sl-title">' + s.t + '</h2>' +
+      '<div class="sl-stage"><div id="dm-wrap" class="dm-wrap" aria-hidden="true"><div id="dm-bub" class="bub"></div><div id="dm" class="dm"></div><div id="dm-fg" class="dm-fg"></div><div id="dm-x" class="dm-x" hidden>×</div></div></div>' +
+      '<p class="sl-txt">' + s.d + '</p>' + (s.n ? '<p class="sl-note">' + s.n + '</p>' : '') +
+      '<div class="sl-bar"><div class="sl-dots" role="img" aria-label="' + (slideNo + 1) + '枚目 / ' + SCENES.length + '枚">' + dots + '</div>' +
+      '<button type="button" class="sl-replay" data-sl="r">↻ もういちど</button></div>' +
+      '<div class="sl-acts">' + (slideNo ? '<button type="button" class="go sub" data-sl="-1">まえへ</button>' : '') +
+      '<button type="button" class="go" data-sl="1">' + (last ? 'はじめる' : 'つぎへ') + '</button></div>';
+    nx = $('rules-slides').querySelector('.go[data-sl="1"]');
+    if (nx && nx.focus) try { nx.focus({ preventScroll: true }); } catch (e) {}
+    runScene(slideNo);
+  }
+  function openRules() {
+    var c = cfgNow(), sl = !!c.big;
+    $('rules-text').hidden = sl; $('rules-slides').hidden = !sl;
+    $('rules-panel').setAttribute('aria-labelledby', sl ? 'sl-title' : 'rules-title');
+    if (!sl) {
+      $('rules-list').innerHTML = rulesItems(c).map(function (t) { return '<li>' + t + '</li>'; }).join('');
+      $('rules-extra').textContent = '「もどす」は盤面だけが戻り、手数は戻りません。' + (c.hints > 50 ? 'ヒントは何回でも使えます。' : 'ヒントは1回のプレイで' + c.hints + '回まで。');
+    }
+    $('rules').hidden = false;
+    if (sl) { slideNo = 0; drawSlide(); } /* 表示してから描く（位置を測るため） */
+  }
+  function closeRules() { stopDemo(); $('rules').hidden = true; lsSet('ks_seen', '1'); if (cfgNow().big) lsSet('ks_seen_gentle', '1'); }
+  $('btn-help').addEventListener('click', openRules);
+  $('rules-ok').addEventListener('click', closeRules);
+  $('rules-slides').addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('[data-sl]') : null;
+    if (!b) return;
+    var v = b.getAttribute('data-sl');
+    if (v === 'r') { runScene(slideNo); return; }
+    if (v === 'x' || (v === '1' && slideNo === SCENES.length - 1)) { closeRules(); return; }
+    slideNo += +v; drawSlide();
+  });
+  var rt = 0;
+  window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(render, 80); });
+
+  /* ---------- 起動 ---------- */
+  showAns = lsGet('ks_ans') === '1';
+  sndUI();
+  COURSE = lsGet('ks_course'); if (!COURSES[COURSE]) COURSE = 'normal';
+  persistAsk();
+  startLevel(resumeTarget(COURSE));
+  if (!lsGet('ks_seen') || (cfgNow().big && !lsGet('ks_seen_gentle'))) openRules();
+  window.__ks = { get S() { return S; }, get LV() { return LV; }, tap: tap, doMove: doMove, get over() { return over; }, get qNo() { return qNo; }, isDone: isDone, doneCount: doneCount, bkMake: bkMake, bkRestore: bkRestore };
+})();
+</script>
+
+</body>
+</html>
