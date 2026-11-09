@@ -152,6 +152,8 @@ details p,details li{line-height:1.7;font-size:.92rem}
 .rbar .me{font-weight:800;text-decoration:underline}.rbar .off{opacity:.45}
 .cd{font-size:5.5rem;font-weight:800;line-height:1.1}
 .ov.opaque{background:#173d30}
+@media (hover:none) and (pointer:coarse) and (min-height:560px){.ov{padding-bottom:128px}.card{max-height:calc(100vh - 160px);max-height:calc(100dvh - 160px)}#app{padding-bottom:130px}}
+.hostbox{margin-top:10px;padding:8px 8px 10px;border:2px dashed #c9b98f;border-radius:14px;background:#fbf6e6;text-align:center}.hostbox .hl{margin:0;font-size:.75rem;font-weight:700;color:#8a7440;text-align:left}.hostbtns{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:6px}.hostbtns button{min-height:54px;padding:6px 8px;border:2px solid var(--tile-edge);background:#fff;border-radius:12px;font-weight:700;font-size:.95rem;line-height:1.25}.hostbtns button .small{font-weight:400;font-size:.7rem}.leavebtn{display:block;width:100%;margin-top:20px;padding:9px;font-size:.85rem;background:transparent;border:1px solid #c9bfa8;color:#8a7f66;border-radius:10px}
 .nudge{font-size:1.6rem;font-weight:800;color:#c2362b;margin:8px 0;animation:pulse 1s infinite}
 .nudgebtn button{font-size:1.3rem;padding:16px 6px}
 .roomnum{font-size:2.4rem;font-weight:800;letter-spacing:.3em;text-align:center}
@@ -2575,7 +2577,7 @@ function dFinalHTML(){
     <p class="small" style="margin-bottom:2px">${RC.round}回戦の けっか（あがった人に1点）</p>${rScoreHTML()}
     <p class="small">このスマホの せんせき：<b>${S.dwins.n}</b> 戦 <b>${S.dwins.w}</b> 勝</p>
     ${resting ? '<p class="small"><b>おやすみ中</b>だよ。次のゲームも お休みのまま始まるよ。戻るときは「もどる」を押してね</p>' : ""}
-    ${chatInlineHTML("「もう一回やらない？」など、ここで話せるよ", ["🔁 もう1ゲームやりたいな", "👋 またね"])}
+    ${chatInlineHTML("「もう一回やらない？」など、ここで話せるよ", ["🔁 もう1ゲームやりたいな", "👋 おしまい、またね"])}
     <button data-act="${resting ? "r-back" : "r-rest"}" style="width:100%;margin-top:8px">${resting ? "もどる" : "ちょっと抜けるね"}</button>
     <div class="two"><button data-act="r-leave2">おわる</button>${host ? '<button class="pri" data-act="r-again">もう一度</button>' : '<span class="small" style="align-self:center">ホストが もう一度 はじめるのを待ってね</span>'}</div></div></div>`;
 }
@@ -2728,28 +2730,36 @@ function rScoreHTML(){
   const top = Math.max(...RC.players.map(p => p.score));
   return `<div class="rscore">${RC.players.slice().sort((a, b) => b.score - a.score).map(p => `<div class="rrow ${p.id === RC.me ? "me" : ""}"><span class="ra">${p.animal}</span><span class="rn">${p.name ? esc(p.name) : ""}</span><span class="small">${!p.on ? "切れた" : (p.rest ? "おやすみ中" : "")}</span><b>${p.score}点</b>${top > 0 && p.score === top ? " 👑" : ""}</div>`).join("")}</div>`;
 }
-// 回戦のあいだ：つぎの条件を1行で見せる。ホストだけ「変える」で開いて直せる（ふだんは閉じたまま）
-function rCondHTML(){
+// 回戦のあいだ：ホスト用の枠（条件を変える／いまスタート）と、いちばん下の目立たない「おわる」
+function rHostBoxHTML(last, pending, mine){
   const dr = RC.kind === "draw", host = RC.role === "host";
-  if(!dr && !host) return "";
+  const leave = `<button class="leavebtn" data-act="r-leave-ask">おわる</button>`;
+  const force = host && pending.length > 0 && !(pending.length === 1 && pending[0] === mine);
+  const showCond = !last && (dr || host);
   const sum = dr ? `つぎの回戦：<b>${RC.dlimit > 0 ? RC.dlimit + "秒" : "時間なし"}</b>・手札<b>${RC.dshow ? "見える" : "かくす"}</b>` : "つぎの問題の ハンデ（スタートをおそく）";
   const hasBonus = RC.players.some(p => p.bonus);
-  const line = `<p class="small" style="margin:6px 0 0">${sum}${hasBonus && (dr ? RC.dlimit > 0 : true) ? "（ハンデあり）" : ""}</p>`;
-  if(!host) return line;
-  if(!RC.condOpen) return line + `<button data-act="r-cond" style="width:100%;margin-top:4px">⚙ 条件を変える</button>`;
-  const lbl = k => k === 0 ? "なし" : k + "秒";
-  let h = `<div class="panel" style="margin:6px 0 0;text-align:left">`;
-  if(dr){
-    h += `<h2>1回の番の制限時間</h2><div class="seg">${[0, 20, 30, 45, 60].map(k => `<button data-act="r-dlimit" data-v="${k}" class="${RC.dlimit === k ? "on" : ""}">${lbl(k)}</button>`).join("")}</div>
-      <h2 style="margin-top:8px">ほかの人の手札</h2><div class="seg"><button data-act="r-dshow" data-v="0" class="${RC.dshow ? "" : "on"}">かくす</button><button data-act="r-dshow" data-v="1" class="${RC.dshow ? "on" : ""}">見える</button></div>`;
+  const line = showCond ? `<p class="small" style="margin:6px 0 0">${sum}${hasBonus && (dr ? RC.dlimit > 0 : true) ? "（ハンデあり）" : ""}</p>` : "";
+  if(!host) return line + leave;
+  const bs = [];
+  if(!last) bs.push(`<button data-act="r-cond">⚙ 条件を<br>${RC.condOpen ? "とじる" : "変える"}</button>`);
+  if(force) bs.push(`<button data-act="r-force">⏩ いまスタート<br><span class="small">押していない人を置いて すすめるよ</span></button>`);
+  let h = (bs.length ? `<div class="hostbox"><p class="hl">ホスト用</p>${line}<div class="hostbtns">${bs.join("")}</div>` : (line ? `<div class="hostbox">${line}` : ""));
+  if(showCond && RC.condOpen){
+    const lbl = k => k === 0 ? "なし" : k + "秒";
+    let ph = "";
+    if(dr){
+      ph += `<h2>1回の番の制限時間</h2><div class="seg">${[0, 20, 30, 45, 60].map(k => `<button data-act="r-dlimit" data-v="${k}" class="${RC.dlimit === k ? "on" : ""}">${lbl(k)}</button>`).join("")}</div>
+        <h2 style="margin-top:8px">ほかの人の手札</h2><div class="seg"><button data-act="r-dshow" data-v="0" class="${RC.dshow ? "" : "on"}">かくす</button><button data-act="r-dshow" data-v="1" class="${RC.dshow ? "on" : ""}">見える</button></div>`;
+    }
+    if(!dr || RC.dlimit > 0){
+      ph += `<h2 style="margin-top:8px">${dr ? "人ごとのハンデ（番の時間を ふやす）" : "人ごとのハンデ（スタートをおそく）"}</h2><div id="r-list">${rListHTML()}</div>`;
+    } else {
+      ph += `<p class="small" style="margin:8px 0 0">時間が「なし」のときは、ハンデは使われないよ</p>`;
+    }
+    h += `<div class="panel" style="margin:8px 0 0;text-align:left">${ph}</div>`;
   }
-  if(!dr || RC.dlimit > 0){
-    h += `<h2 style="margin-top:8px">${dr ? "人ごとのハンデ（番の時間を ふやす）" : "人ごとのハンデ（スタートをおそく）"}</h2><div id="r-list">${rListHTML()}</div>`;
-  } else {
-    h += `<p class="small" style="margin:8px 0 0">時間が「なし」のときは、ハンデは使われないよ</p>`;
-  }
-  h += `<button data-act="r-cond" style="width:100%;margin-top:8px">とじる</button></div>`;
-  return line + h;
+  if(h) h += `</div>`;
+  return h + leave;
 }
 function rBetweenHTML(){
   const mine = RC.me, host = RC.role === "host", last = RC.round >= RC.rounds;
@@ -2766,9 +2776,7 @@ function rBetweenHTML(){
     ${chatInlineHTML(RC.kind === "draw" ? "次の回戦の前に、ひとこと話せるよ" : "次の問題の前に、ひとこと話せるよ")}
     ${done ? `<p class="small">ほかの人を待っているよ<span class="dots"><i></i><i></i><i></i></span><br>待っている人：<b>${rWho(pending)}</b></p>`
            : `${late ? '<div class="nudge">👇 「' + nextLabel + '」を押してね！</div>' : ""}<div class="two ${late ? "nudgebtn" : ""}"><button class="pri" data-act="r-next" style="grid-column:1/-1">${nextLabel}</button></div>`}
-    ${last ? "" : rCondHTML()}
-    ${host && pending.length && !(pending.length === 1 && pending[0] === mine) ? `<button data-act="r-force" style="margin-top:8px">いまスタート<br><span class="small">押していない人を置いて すすめるよ</span></button>` : ""}
-    <button data-act="r-leave-ask" style="width:100%;margin-top:8px">おわる</button>
+    ${rHostBoxHTML(last, pending, mine)}
     </div></div>`;
 }
 function rFinalHTML(){
@@ -2779,7 +2787,7 @@ function rFinalHTML(){
   const mp = rPl(RC.me), resting = !!(mp && mp.rest);
   return `<div class="ov"><div class="card"><h2>${title}</h2>${rScoreHTML()}
     ${resting ? '<p class="small"><b>おやすみ中</b>だよ。次のゲームも お休みのまま始まるよ。戻るときは「もどる」を押してね</p>' : ""}
-    ${chatInlineHTML("「あと一回だけやらない？」など、ここで話せるよ", ["🔁 もう1ゲームやりたいな", "👋 またね"])}
+    ${chatInlineHTML("「あと一回だけやらない？」など、ここで話せるよ", ["🔁 もう1ゲームやりたいな", "👋 おしまい、またね"])}
     <button data-act="${resting ? "r-back" : "r-rest"}" style="width:100%;margin-top:8px">${resting ? "もどる" : "ちょっと抜けるね"}</button>
     <div class="two"><button data-act="r-leave2">おわる</button>${host ? '<button class="pri" data-act="r-again">もう一度</button>' : '<span class="small" style="align-self:center">ホストが もう一度 はじめるのを待ってね</span>'}</div></div></div>`;
 }
