@@ -152,8 +152,8 @@ details p,details li{line-height:1.7;font-size:.92rem}
 .rbar .me{font-weight:800;text-decoration:underline}.rbar .off{opacity:.45}
 .cd{font-size:5.5rem;font-weight:800;line-height:1.1}
 .ov.opaque{background:#173d30}
-@media (hover:none) and (pointer:coarse) and (min-height:560px){.ov{padding-bottom:128px}.card{max-height:calc(100vh - 160px);max-height:calc(100dvh - 160px)}#app{padding-bottom:130px}}
-.hostbox{margin-top:10px;padding:8px 8px 10px;border:2px dashed #c9b98f;border-radius:14px;background:#fbf6e6;text-align:center}.hostbox .hl{margin:0;font-size:.75rem;font-weight:700;color:#8a7440;text-align:left}.hostbtns{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:6px}.hostbtns button{min-height:54px;padding:6px 8px;border:2px solid var(--tile-edge);background:#fff;border-radius:12px;font-weight:700;font-size:.95rem;line-height:1.25}.hostbtns button .small{font-weight:400;font-size:.7rem}.leavebtn{display:block;width:100%;margin-top:20px;padding:9px;font-size:.85rem;background:transparent;border:1px solid #c9bfa8;color:#8a7f66;border-radius:10px}
+.card{max-height:90vh;max-height:90dvh}
+.hostbox{margin-top:10px;padding:8px 8px 10px;border:2px dashed #c9b98f;border-radius:14px;background:#fbf6e6;text-align:center}.hostbox .hl{margin:0;font-size:.75rem;font-weight:700;color:#8a7440;text-align:left}.hostbtns{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:6px}.hostbtns button{min-height:54px;padding:6px 8px;border:2px solid var(--tile-edge);background:#fff;border-radius:12px;font-weight:700;font-size:.95rem;line-height:1.25}.hostbtns button .small{font-weight:400;font-size:.7rem}.leavewrap{margin-top:26px;padding-top:14px;border-top:1px solid #d9d0b8}.leavebtn{display:block;width:100%;margin:0;padding:9px;font-size:.85rem;background:transparent;border:1px solid #c9bfa8;color:#8a7f66;border-radius:10px}
 .nudge{font-size:1.6rem;font-weight:800;color:#c2362b;margin:8px 0;animation:pulse 1s infinite}
 .nudgebtn button{font-size:1.3rem;padding:16px 6px}
 .roomnum{font-size:2.4rem;font-weight:800;letter-spacing:.3em;text-align:center}
@@ -2115,6 +2115,9 @@ function rSnap(){
 }
 function rUpdate(){
   const me = RC; if(me && me.role === "host"){ me.dp = me.dg ? dPub() : null; if(me.dp) me.dp.recvAt = Date.now(); }
+  if(me && me.role === "host" && me.phase === "between" && me.round >= me.rounds && !me.ft){      // 最後の回戦：6秒たったら自動で結果へ
+    me.ft = setTimeout(() => { me.ft = null; if(RC === me && me.phase === "between" && me.round >= me.rounds) rNextRound(); }, 6000);
+  }
   rBcast(rSnap()); rAfterState();
 }
 // つながりが切れている間に届かなかった操作を、状態を見て送りなおす（ゲストだけ）。
@@ -2209,7 +2212,7 @@ function rStart(){
 }
 function dLateIn(){ RC.players.forEach(p => { if(p.late){ p.late = false; p.rest = false; p.autoRest = false; } }); }   // とちゅう参加の人は、つぎの回戦から参加
 function rNextRound(){
-  const me = RC; me.condOpen = false;
+  const me = RC; me.condOpen = false; clearTimeout(me.ft); me.ft = null;
   if(me.kind === "draw"){ dLateIn(); if(me.round >= me.rounds){ me.phase = "final"; me.win = null; rUpdate(); } else dNewRound(); return; }
   me.players.forEach(p => { if(p.late){ p.late = false; p.rest = false; p.autoRest = false; } });   // とちゅう参加の人は、ここから参加
   if(me.round >= me.rounds){ me.phase = "final"; me.win = null; rUpdate(); return; }
@@ -2733,7 +2736,7 @@ function rScoreHTML(){
 // 回戦のあいだ：ホスト用の枠（条件を変える／いまスタート）と、いちばん下の目立たない「おわる」
 function rHostBoxHTML(last, pending, mine){
   const dr = RC.kind === "draw", host = RC.role === "host";
-  const leave = `<button class="leavebtn" data-act="r-leave-ask">おわる</button>`;
+  const leave = `<div class="leavewrap"><button class="leavebtn" data-act="r-leave-ask">🚪 ゲームをおわる（部屋を出る）</button></div>`;
   const force = host && pending.length > 0 && !(pending.length === 1 && pending[0] === mine);
   const showCond = !last && (dr || host);
   const sum = dr ? `つぎの回戦：<b>${RC.dlimit > 0 ? RC.dlimit + "秒" : "時間なし"}</b>・手札<b>${RC.dshow ? "見える" : "かくす"}</b>` : "つぎの問題の ハンデ（スタートをおそく）";
@@ -2770,6 +2773,7 @@ function rBetweenHTML(){
   const nextLabel = last ? "けっかを見る" : (RC.kind === "draw" ? "次の回戦へ" : "次へ");
   return `<div class="ov"><div class="card"><h2>${title}</h2>
     <p class="small" style="margin:0">${RC.round}／${RC.rounds}回戦 おわり${last ? "" : "（あと" + (RC.rounds - RC.round) + "回戦）"}</p>
+    ${last ? '<p style="margin:6px 0 0;font-weight:800">🏁 ゲーム終了！ もうすぐ けっかが出るよ</p>' : ""}
     ${win ? `<div class="words">${win.words.map(wordHTML).join("")}</div>` : ""}
     ${RC.sol ? `<p class="small">出題で用意していた答え（例）：<b>${RC.sol.map(x => "「" + x + "」").join("")}</b></p>` : ""}
     ${rScoreHTML()}
