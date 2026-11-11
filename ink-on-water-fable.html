@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#f1ece0">
+<title>墨流し｜水面に墨を落とす</title>
+<style>
+  html,body{
+    margin:0;height:100%;overflow:hidden;background:#f1ece0;
+    overscroll-behavior:none;
+    -webkit-user-select:none;user-select:none;
+    -webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;
+    font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;
+    color:#4a4339;
+  }
+  #stage{position:fixed;inset:0;touch-action:none;cursor:crosshair;background:rgb(250,246,236);overflow:hidden}
+  #ink{position:absolute;inset:0;width:100%;height:100%;display:block}
+  #paper{position:absolute;inset:0;pointer-events:none;mix-blend-mode:multiply;opacity:.85}
+  #vig{position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(ellipse at 50% 45%,rgba(255,255,255,0) 50%,rgba(110,90,60,.16) 100%)}
+  #flash{position:absolute;inset:0;pointer-events:none;background:#fff;opacity:0}
+  #flash.on{animation:flash .5s ease-out}
+  @keyframes flash{0%{opacity:.7}100%{opacity:0}}
+
+  #hint{
+    position:absolute;left:0;right:0;top:36%;text-align:center;pointer-events:none;
+    font-size:15px;letter-spacing:.18em;line-height:2.1;color:rgba(74,67,57,.62);
+    transition:opacity 1.6s ease;
+  }
+  #hint b{font-weight:normal;font-size:22px;letter-spacing:.4em;display:block;margin-bottom:.3em;color:rgba(74,67,57,.78)}
+  body.touched #hint{opacity:0}
+
+  .glass{
+    background:rgba(250,246,236,.74);
+    -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+    border:1px solid rgba(120,100,70,.18);
+    box-shadow:0 2px 14px rgba(90,70,40,.12);
+  }
+  button{font:inherit;color:inherit}
+
+  /* 上：操作ボタン */
+  #top{
+    position:fixed;right:calc(10px + env(safe-area-inset-right));
+    top:calc(10px + env(safe-area-inset-top));
+    display:flex;gap:4px;padding:4px;border-radius:999px;
+  }
+  .tbtn{
+    height:36px;min-width:48px;padding:0 11px;border-radius:999px;cursor:pointer;
+    border:0;background:transparent;font-size:14px;letter-spacing:.16em;white-space:nowrap;
+  }
+  .tbtn:active,.tbtn[aria-expanded="true"]{background:rgba(74,67,57,.12)}
+
+  /* 調整パネル */
+  #panel{
+    position:fixed;right:calc(10px + env(safe-area-inset-right));
+    top:calc(64px + env(safe-area-inset-top));
+    width:min(290px,calc(100vw - 20px));box-sizing:border-box;
+    padding:14px 16px 12px;border-radius:18px;font-size:13px;letter-spacing:.1em;
+  }
+  #panel[hidden]{display:none}
+  #panel h2{margin:0 0 8px;font-size:13px;font-weight:normal;color:rgba(74,67,57,.75)}
+  #panel h2:not(:first-child){margin-top:14px}
+  #sets{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{
+    height:34px;padding:0 13px;border-radius:999px;cursor:pointer;white-space:nowrap;
+    border:1px solid rgba(74,67,57,.28);background:transparent;font-size:13px;letter-spacing:.12em;
+  }
+  .chip[aria-pressed="true"]{background:#4a4339;color:#f6f1e5;border-color:#4a4339}
+  .ends{display:flex;justify-content:space-between;font-size:11px;color:rgba(74,67,57,.6);margin-top:-2px}
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;width:100%;height:32px;margin:0;background:transparent;cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-runnable-track{height:3px;border-radius:2px;background:rgba(74,67,57,.3)}
+  input[type=range]::-moz-range-track{height:3px;border-radius:2px;background:rgba(74,67,57,.3)}
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:22px;height:22px;border-radius:50%;margin-top:-10px;
+    background:#4a4339;border:2px solid #f6f1e5;box-shadow:0 1px 4px rgba(0,0,0,.25);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:18px;height:18px;border-radius:50%;background:#4a4339;border:2px solid #f6f1e5;
+  }
+
+  /* 下：色 */
+  #ui{
+    position:fixed;left:50%;transform:translateX(-50%);
+    bottom:calc(14px + env(safe-area-inset-bottom));
+    display:flex;align-items:center;gap:2px;padding:5px 8px;border-radius:999px;
+  }
+  .dot{
+    width:42px;height:42px;border:0;background:none;padding:0;margin:0;
+    display:grid;place-items:center;cursor:pointer;border-radius:50%;
+  }
+  .dot span{
+    width:25px;height:25px;border-radius:50%;display:block;
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);
+    transition:transform .2s ease, box-shadow .2s ease;
+  }
+  .dot[aria-pressed="true"] span{transform:scale(1.2);box-shadow:0 0 0 2px #f6f1e5,0 0 0 3.5px rgba(74,67,57,.7)}
+
+  #toast{
+    position:fixed;left:50%;transform:translateX(-50%);
+    bottom:calc(84px + env(safe-area-inset-bottom));
+    padding:8px 16px;border-radius:999px;font-size:13px;letter-spacing:.12em;white-space:nowrap;
+    opacity:0;transition:opacity .4s ease;pointer-events:none;
+  }
+  #toast.on{opacity:1}
+
+  #viewer{
+    position:fixed;inset:0;z-index:10;background:rgba(46,40,32,.9);color:#f6f1e5;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+    padding:calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));box-sizing:border-box;
+  }
+  #viewer[hidden]{display:none}
+  #viewimg{
+    max-width:82%;max-height:66%;border-radius:4px;box-shadow:0 6px 30px rgba(0,0,0,.4);
+    -webkit-touch-callout:default;-webkit-user-select:auto;user-select:auto;
+  }
+  #viewer p{margin:0;font-size:13px;letter-spacing:.14em;opacity:.85}
+  #viewclose{
+    height:42px;padding:0 22px;border-radius:999px;cursor:pointer;
+    border:1px solid rgba(246,241,229,.6);background:transparent;color:#f6f1e5;font-size:14px;letter-spacing:.16em;
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="ink"></canvas>
+  <div id="paper"></div>
+  <div id="vig"></div>
+  <div id="flash"></div>
+  <div id="hint"><b>墨流し</b>水面をタップして、墨を落とす<br>指でなぞると、水がひっぱられる</div>
+</div>
+
+<div id="top" class="glass" role="toolbar" aria-label="操作">
+  <button class="tbtn" id="shot" aria-label="いまの水面を絵として保存する">写す</button>
+  <button class="tbtn" id="wash" aria-label="水面をきれいにする">洗う</button>
+  <button class="tbtn" id="calm" aria-label="水の流れを止める">止める</button>
+  <button class="tbtn" id="tune" aria-expanded="false" aria-controls="panel">調整</button>
+</div>
+
+<div id="panel" class="glass" hidden>
+  <h2>色のセット</h2>
+  <div id="sets"></div>
+  <h2><label for="strength">流れの強さ</label></h2>
+  <input type="range" id="strength" min="0" max="100" step="1">
+  <div class="ends"><span>そっと</span><span>ぐいっと</span></div>
+  <h2><label for="length">流れの長さ</label></h2>
+  <input type="range" id="length" min="0" max="100" step="1">
+  <div class="ends"><span>すぐ止まる</span><span>ずっと流れる</span></div>
+</div>
+
+<div id="ui" class="glass" role="toolbar" aria-label="墨の色"></div>
+<div id="toast" class="glass" role="status"></div>
+<div id="viewer" hidden>
+  <img id="viewimg" alt="写した水面の絵">
+  <p>絵を長押しして「写真に保存」</p>
+  <button id="viewclose">水面にもどる</button>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+/* ---------- 設定 ---------- */
+let S = 3;                 // 墨(色)の解像度は、水の流れの解像度の何倍か（重い端末では自動で2に下げる）
+const SIM_MIN = 96;        // 水の流れ：短辺のマス数（大きいほど細かいが重い）
+const STEP = 1000 / 60;    // 1ステップの時間(ms)
+const PRESSURE_ITER = 22;  // 圧力計算の反復回数
+const INK_KEEP = 0.9998;   // 墨の薄れ方（ほんのり薄れる）
+const VORT = 0.28;         // 渦を保つ強さ
+const MAXD = 3.2;          // 墨の濃さの上限
+let velKeep = 0.9965;      // 流れの持ち（「流れの長さ」スライダーで変わる）
+let strength = 1;          // 引っぱる強さ（「流れの強さ」スライダーで変わる）
+
+/* 色のセット：数字は「光をどれだけ吸うか」(R,G,B)。重なると絵の具のように引き算で混ざる */
+const SETS = [
+  { name: '和の色', inks: [
+    { name: '墨',   v: [1.00, 0.95, 0.80] },
+    { name: '藍',   v: [1.60, 0.90, 0.35] },
+    { name: '紅',   v: [0.20, 1.25, 0.95] },
+    { name: '若草', v: [0.95, 0.28, 0.95] },
+    { name: '山吹', v: [0.12, 0.50, 1.50] },
+    { name: '藤',   v: [0.75, 1.20, 0.35] },
+  ]},
+  { name: '水墨', inks: [
+    { name: '濃墨', v: [1.45, 1.40, 1.25] },
+    { name: '淡墨', v: [0.50, 0.48, 0.42] },
+    { name: '青墨', v: [1.20, 0.98, 0.62] },
+    { name: '茶墨', v: [0.62, 0.86, 1.12] },
+    { name: '紫墨', v: [0.85, 1.05, 0.70] },
+    { name: '朱',   v: [0.08, 1.05, 1.35] },
+  ]},
+  { name: 'パステル', inks: [
+    { name: 'さくら',   v: [0.06, 0.52, 0.34] },
+    { name: 'もも',     v: [0.04, 0.38, 0.58] },
+    { name: 'レモン',   v: [0.03, 0.14, 0.78] },
+    { name: 'ミント',   v: [0.60, 0.07, 0.38] },
+    { name: 'そら',     v: [0.74, 0.24, 0.05] },
+    { name: 'ラベンダー', v: [0.44, 0.56, 0.06] },
+  ]},
+  { name: 'ポップ', inks: [
+    { name: 'ピンク',   v: [0.04, 1.75, 0.55] },
+    { name: 'オレンジ', v: [0.02, 0.80, 1.85] },
+    { name: 'イエロー', v: [0.02, 0.18, 1.95] },
+    { name: 'ライム',   v: [0.85, 0.05, 1.60] },
+    { name: 'シアン',   v: [1.85, 0.30, 0.08] },
+    { name: 'むらさき', v: [1.00, 1.65, 0.05] },
+  ]},
+];
+let setIdx = 0, cur = 0;
+
+/* 前回の設定を覚えておく（使えない環境では何もしない） */
+const KEY = 'ink-on-water-fable';
+const saved = (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (_) { return {}; } })();
+function remember() {
+  try { localStorage.setItem(KEY, JSON.stringify({ set: setIdx, strength: +elStrength.value, length: +elLength.value })); } catch (_) {}
+}
+
+/* ---------- 要素 ---------- */
+const $ = id => document.getElementById(id);
+const stage = $('stage'), cvs = $('ink'), ui = $('ui'), panel = $('panel');
+const elStrength = $('strength'), elLength = $('length');
+const ctx = cvs.getContext('2d', { alpha: false });
+
+/* 和紙の質感（小さなノイズを敷き詰める） */
+const PAPER_N = 220;
+const paperCanvas = document.createElement('canvas');
+(function makePaper() {
+  const n = PAPER_N, c = paperCanvas;
+  c.width = c.height = n;
+  const g = c.getContext('2d');
+  const im = g.createImageData(n, n);
+  for (let i = 0; i < n * n; i++) {
+    const val = 246 + Math.random() * 9;
+    im.data[i*4] = val; im.data[i*4+1] = val - 1; im.data[i*4+2] = val - 3; im.data[i*4+3] = 255;
+  }
+  g.putImageData(im, 0, 0);
+  g.globalAlpha = 0.05;
+  g.strokeStyle = '#8a7a5a';
+  for (let k = 0; k < 90; k++) {      // 繊維っぽい短い線
+    const x = Math.random() * n, y = Math.random() * n, a = Math.random() * Math.PI, l = 6 + Math.random() * 16;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke();
+  }
+  const p = $('paper');
+  p.style.backgroundImage = 'url(' + c.toDataURL() + ')';
+  p.style.backgroundSize = n + 'px ' + n + 'px';
+})();
+
+/* ---------- 色ボタン・色セット ---------- */
+function buildDots() {
+  ui.textContent = '';
+  SETS[setIdx].inks.forEach((ink, i) => {
+    const b = document.createElement('button');
+    b.className = 'dot';
+    b.setAttribute('aria-label', ink.name);
+    b.setAttribute('aria-pressed', i === cur ? 'true' : 'false');
+    const s = document.createElement('span');
+    s.style.background = 'rgb(' + ink.v.map(a => Math.round(255 * Math.exp(-a * 0.95))).join(',') + ')';
+    b.appendChild(s);
+    b.addEventListener('click', () => {
+      cur = i;
+      [...ui.children].forEach((d, k) => d.setAttribute('aria-pressed', k === i ? 'true' : 'false'));
+    });
+    ui.appendChild(b);
+  });
+}
+function buildSets() {
+  const box = $('sets');
+  SETS.forEach((set, i) => {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.textContent = set.name;
+    b.setAttribute('aria-pressed', i === setIdx ? 'true' : 'false');
+    b.addEventListener('click', () => {
+      setIdx = i; cur = 0;
+      [...box.children].forEach((d, k) => d.setAttribute('aria-pressed', k === i ? 'true' : 'false'));
+      buildDots(); remember();
+    });
+    box.appendChild(b);
+  });
+}
+
+/* ---------- 流れのスライダー ---------- */
+function applyFlow() {
+  const a = elStrength.value / 100, b = elLength.value / 100;
+  strength = 0.3 * Math.pow(2.2 / 0.3, a);                 // 0.3倍〜2.2倍
+  velKeep = 1 - 0.03 * Math.pow(0.0005 / 0.03, b);         // 1コマで3%減る〜0.05%しか減らない
+}
+
+/* ---------- 水の流れ ---------- */
+let W, H, DW, DH, cw, ch;
+let u, v, u0, v0, p, div, curl, dye, dye0, buf32, imgData, noise;
+let clearing = 0, calming = 0;
+const blooms = [];
+
+function sizeDye(old) {
+  DW = W * S; DH = H * S;
+  const nd = new Float32Array(DW * DH * 3);
+  if (old) {                                   // 細かさを変えるとき、いまの絵を写し替える
+    for (let j = 0; j < DH; j++) {
+      const oj = Math.min(old.h - 1, (j * old.h / DH) | 0);
+      for (let i = 0; i < DW; i++) {
+        const oi = Math.min(old.w - 1, (i * old.w / DW) | 0);
+        const a = (j * DW + i) * 3, b = (oj * old.w + oi) * 3;
+        nd[a] = old.d[b]; nd[a + 1] = old.d[b + 1]; nd[a + 2] = old.d[b + 2];
+      }
+    }
+  }
+  dye = nd; dye0 = new Float32Array(DW * DH * 3);
+  cvs.width = DW; cvs.height = DH;
+  imgData = ctx.createImageData(DW, DH);
+  buf32 = new Uint32Array(imgData.data.buffer);
+  noise = new Uint8Array(DW * DH);             // 色の段差(しま模様)をなくすための細かいゆらぎ
+  for (let i = 0; i < noise.length; i++) noise[i] = (Math.random() * 4) | 0;
+  // マス目を見えなくする：1マスの半分ぶんだけ、表示をやわらかくぼかす
+  cvs.style.filter = 'blur(' + (0.55 * cw / DW).toFixed(2) + 'px)';
+}
+
+function init() {
+  cw = window.innerWidth; ch = window.innerHeight;
+  const cell = Math.min(cw, ch) / SIM_MIN;
+  W = Math.max(24, Math.round(cw / cell));
+  H = Math.max(24, Math.round(ch / cell));
+  const n = W * H;
+  u = new Float32Array(n); v = new Float32Array(n);
+  u0 = new Float32Array(n); v0 = new Float32Array(n);
+  p = new Float32Array(n); div = new Float32Array(n); curl = new Float32Array(n);
+  sizeDye(null);
+  blooms.length = 0;
+}
+
+/* 速度を流す（速度自身も流れに運ばれる） */
+function advectVel() {
+  const w = W, h = H, mx = w - 1.0001, my = h - 1.0001, keep = velKeep;
+  let k = 0;
+  for (let j = 0; j < h; j++) {
+    for (let i = 0; i < w; i++, k++) {
+      let x = i - u[k], y = j - v[k];
+      if (x < 0) x = 0; else if (x > mx) x = mx;
+      if (y < 0) y = 0; else if (y > my) y = my;
+      const i0 = x | 0, j0 = y | 0, fx = x - i0, fy = y - j0;
+      const a = j0 * w + i0, b = a + 1, c = a + w, d = c + 1;
+      const w00 = (1 - fx) * (1 - fy) * keep, w10 = fx * (1 - fy) * keep;
+      const w01 = (1 - fx) * fy * keep,       w11 = fx * fy * keep;
+      u0[k] = u[a] * w00 + u[b] * w10 + u[c] * w01 + u[d] * w11;
+      v0[k] = v[a] * w00 + v[b] * w10 + v[c] * w01 + v[d] * w11;
+    }
+  }
+  let t = u; u = u0; u0 = t; t = v; v = v0; v0 = t;
+}
+
+/* 渦が消えすぎないように、少しだけ回転を足す */
+function vorticity() {
+  const w = W, h = H;
+  for (let j = 1; j < h - 1; j++) {
+    let k = j * w + 1;
+    for (let i = 1; i < w - 1; i++, k++) {
+      curl[k] = 0.5 * ((v[k + 1] - v[k - 1]) - (u[k + w] - u[k - w]));
+    }
+  }
+  for (let j = 1; j < h - 1; j++) {
+    let k = j * w + 1;
+    for (let i = 1; i < w - 1; i++, k++) {
+      const l = Math.abs(curl[k - 1]), r = Math.abs(curl[k + 1]);
+      const b = Math.abs(curl[k - w]), t = Math.abs(curl[k + w]);
+      let nx = 0.5 * (r - l), ny = 0.5 * (t - b);
+      const len = Math.sqrt(nx * nx + ny * ny) + 1e-5;
+      nx /= len; ny /= len;
+      const c = curl[k];
+      u[k] += VORT * ny * c;
+      v[k] -= VORT * nx * c;
+    }
+  }
+}
+
+/* 水は縮まない：流れの「湧き出し・吸い込み」を取り除く（圧力計算） */
+function project() {
+  const w = W, h = H;
+  for (let j = 1; j < h - 1; j++) {
+    let k = j * w + 1;
+    for (let i = 1; i < w - 1; i++, k++) {
+      div[k] = -0.5 * (u[k + 1] - u[k - 1] + v[k + w] - v[k - w]);
+      p[k] *= 0.9;
+    }
+  }
+  for (let it = 0; it < PRESSURE_ITER; it++) {
+    for (let j = 1; j < h - 1; j++) {
+      let k = j * w + 1;
+      for (let i = 1; i < w - 1; i++, k++) {
+        p[k] = (div[k] + p[k - 1] + p[k + 1] + p[k - w] + p[k + w]) * 0.25;
+      }
+    }
+    for (let i = 0; i < w; i++) { p[i] = p[i + w]; p[i + (h - 1) * w] = p[i + (h - 2) * w]; }
+    for (let j = 0; j < h; j++) { p[j * w] = p[j * w + 1]; p[j * w + w - 1] = p[j * w + w - 2]; }
+  }
+  for (let j = 1; j < h - 1; j++) {
+    let k = j * w + 1;
+    for (let i = 1; i < w - 1; i++, k++) {
+      u[k] -= 0.5 * (p[k + 1] - p[k - 1]);
+      v[k] -= 0.5 * (p[k + w] - p[k - w]);
+    }
+  }
+  for (let j = 0; j < h; j++) { u[j * w] = 0; u[j * w + w - 1] = 0; }   // 水槽のふちは通り抜けない
+  for (let i = 0; i < w; i++) { v[i] = 0; v[i + (h - 1) * w] = 0; }
+}
+
+/* 墨を水の流れに乗せて運ぶ */
+function advectDye(decay) {
+  const mx = W - 1.0001, my = H - 1.0001, dmx = DW - 1.0001, dmy = DH - 1.0001;
+  const inv = 1 / S;
+  let o = 0;
+  for (let j = 0; j < DH; j++) {
+    let vy = (j + 0.5) * inv - 0.5; if (vy < 0) vy = 0; else if (vy > my) vy = my;
+    const j0 = vy | 0, fy = vy - j0, rowA = j0 * W, rowB = rowA + W;
+    for (let i = 0; i < DW; i++, o++) {
+      let vx = (i + 0.5) * inv - 0.5; if (vx < 0) vx = 0; else if (vx > mx) vx = mx;
+      const i0 = vx | 0, fx = vx - i0;
+      const a = rowA + i0, b = a + 1, c = rowB + i0, d = c + 1;
+      const a00 = (1 - fx) * (1 - fy), a10 = fx * (1 - fy), a01 = (1 - fx) * fy, a11 = fx * fy;
+      const uu = u[a] * a00 + u[b] * a10 + u[c] * a01 + u[d] * a11;
+      const vv = v[a] * a00 + v[b] * a10 + v[c] * a01 + v[d] * a11;
+      let x = i - S * uu, y = j - S * vv;
+      if (x < 0) x = 0; else if (x > dmx) x = dmx;
+      if (y < 0) y = 0; else if (y > dmy) y = dmy;
+      const x0 = x | 0, y0 = y | 0, tx = x - x0, ty = y - y0;
+      const p00 = (y0 * DW + x0) * 3, p10 = p00 + 3, p01 = p00 + DW * 3, p11 = p01 + 3;
+      const q00 = (1 - tx) * (1 - ty) * decay, q10 = tx * (1 - ty) * decay;
+      const q01 = (1 - tx) * ty * decay,       q11 = tx * ty * decay;
+      const o3 = o * 3;
+      dye0[o3]     = dye[p00]     * q00 + dye[p10]     * q10 + dye[p01]     * q01 + dye[p11]     * q11;
+      dye0[o3 + 1] = dye[p00 + 1] * q00 + dye[p10 + 1] * q10 + dye[p01 + 1] * q01 + dye[p11 + 1] * q11;
+      dye0[o3 + 2] = dye[p00 + 2] * q00 + dye[p10 + 2] * q10 + dye[p01 + 2] * q01 + dye[p11 + 2] * q11;
+    }
+  }
+  const t = dye; dye = dye0; dye0 = t;
+}
+
+/* ---------- 墨を落とす ---------- */
+function splatDye(cx, cy, sig, amt, vec) {
+  const R = Math.ceil(sig * 3);
+  const x0 = Math.max(0, Math.floor(cx - R)), x1 = Math.min(DW - 1, Math.ceil(cx + R));
+  const y0 = Math.max(0, Math.floor(cy - R)), y1 = Math.min(DH - 1, Math.ceil(cy + R));
+  const k = -1 / (2 * sig * sig);
+  for (let j = y0; j <= y1; j++) {
+    const dy = j - cy;
+    for (let i = x0; i <= x1; i++) {
+      const dx = i - cx;
+      const g = Math.exp((dx * dx + dy * dy) * k) * amt;
+      const o = (j * DW + i) * 3;
+      dye[o]     = Math.min(dye[o]     + g * vec[0], MAXD);
+      dye[o + 1] = Math.min(dye[o + 1] + g * vec[1], MAXD);
+      dye[o + 2] = Math.min(dye[o + 2] + g * vec[2], MAXD);
+    }
+  }
+}
+
+/* 水をつかんで引っぱる（指の動きに水を引き寄せる） */
+function grab(cx, cy, vx, vy, sig, k) {
+  const R = Math.ceil(sig * 2.6);
+  const x0 = Math.max(1, Math.floor(cx - R)), x1 = Math.min(W - 2, Math.ceil(cx + R));
+  const y0 = Math.max(1, Math.floor(cy - R)), y1 = Math.min(H - 2, Math.ceil(cy + R));
+  const s = -1 / (2 * sig * sig);
+  for (let j = y0; j <= y1; j++) {
+    const dy = j - cy;
+    for (let i = x0; i <= x1; i++) {
+      const dx = i - cx;
+      const g = Math.exp((dx * dx + dy * dy) * s) * k;
+      const q = j * W + i;
+      u[q] += (vx - u[q]) * g;
+      v[q] += (vy - v[q]) * g;
+    }
+  }
+}
+
+/* 墨のしずく：落ちた瞬間はキュッと濃く、そのあとふわっと広がる */
+function newBloom(x, y, hold) {
+  const b = { x, y, age: 0, hold, vec: SETS[setIdx].inks[cur].v };
+  blooms.push(b);
+  return b;
+}
+function bloomStep(b) {
+  const base = 0.036 * Math.min(DW, DH);
+  const k = b.age;
+  const sig = base * (0.5 + 1.2 * (1 - Math.exp(-k / 25)) + 0.5 * Math.max(0, k - 40) / 100);
+  const r = base / sig;
+  let amt;
+  if (k < 40) amt = 0.023 * r * r;                       // 落とした直後
+  else if (b.hold && k < 320) amt = 0.011 * r * r;       // 押し続けている間は、さらに染み出す
+  else return false;
+  splatDye((b.x + 0.5) * S - 0.5, (b.y + 0.5) * S - 0.5, sig, amt, b.vec);
+  b.age++;
+  return true;
+}
+
+/* ---------- 指の入力 ---------- */
+const ptrs = new Map();
+function toGrid(e) {
+  return { x: e.clientX / cw * W - 0.5, y: e.clientY / ch * H - 0.5 };
+}
+stage.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  try { stage.setPointerCapture(e.pointerId); } catch (_) {}
+  document.body.classList.add('touched');
+  const g = toGrid(e), now = performance.now();
+  ptrs.set(e.pointerId, {
+    x: g.x, y: g.y, px: e.clientX, py: e.clientY, t: now, t0: now,
+    moved: 0, dragging: false, bloom: null, vx: 0, vy: 0,
+  });
+});
+stage.addEventListener('pointermove', e => {
+  const s = ptrs.get(e.pointerId);
+  if (!s) return;
+  e.preventDefault();
+  const evs = (e.getCoalescedEvents && e.getCoalescedEvents().length) ? e.getCoalescedEvents() : [e];
+  for (const ev of evs) {
+    const now = performance.now();
+    const g = toGrid(ev);
+    s.moved += Math.hypot(ev.clientX - s.px, ev.clientY - s.py);
+    s.px = ev.clientX; s.py = ev.clientY;
+    if (!s.dragging && s.moved > 7) {
+      s.dragging = true;
+      if (s.bloom) s.bloom.hold = false;       // なぞり始めたら、しずくは広がるのをやめる
+    }
+    if (s.dragging) {
+      const dt = Math.max(now - s.t, 6);
+      const vx = (g.x - s.x) * (STEP / dt) * strength, vy = (g.y - s.y) * (STEP / dt) * strength;
+      s.vx = s.vx * 0.5 + vx * 0.5; s.vy = s.vy * 0.5 + vy * 0.5;
+      const sp = Math.hypot(s.vx, s.vy), MAXV = 5 * strength;
+      if (sp > MAXV) { s.vx *= MAXV / sp; s.vy *= MAXV / sp; }
+      const sig = 0.06 * Math.min(W, H);
+      const dist = Math.hypot(g.x - s.x, g.y - s.y);
+      const n = Math.max(1, Math.ceil(dist / (sig * 0.7)));
+      for (let q = 1; q <= n; q++) {
+        grab(s.x + (g.x - s.x) * q / n, s.y + (g.y - s.y) * q / n, s.vx, s.vy, sig, 0.5);
+      }
+    }
+    s.x = g.x; s.y = g.y; s.t = now;
+  }
+}, { passive: false });
+function endPtr(e) {
+  const s = ptrs.get(e.pointerId);
+  if (!s) return;
+  if (!s.dragging && !s.bloom) newBloom(s.x, s.y, false);   // 短いタップ
+  if (s.bloom) s.bloom.hold = false;
+  ptrs.delete(e.pointerId);
+}
+stage.addEventListener('pointerup', endPtr);
+stage.addEventListener('pointercancel', endPtr);
+stage.addEventListener('contextmenu', e => e.preventDefault());
+
+/* ---------- 描画 ---------- */
+const PAPER = [250, 246, 236];
+const LUT_N = 4096, LUT_K = 1024;      // 濃さ 0〜4 を 1/1024 刻みで
+const lutR = new Uint8Array(LUT_N), lutG = new Uint8Array(LUT_N), lutB = new Uint8Array(LUT_N);
+for (let i = 0; i < LUT_N; i++) {
+  const e = Math.exp(-i / LUT_K);
+  lutR[i] = Math.round(PAPER[0] * e); lutG[i] = Math.round(PAPER[1] * e); lutB[i] = Math.round(PAPER[2] * e);
+}
+function render() {
+  const n = DW * DH, top = LUT_N - 1;
+  for (let i = 0, o = 0; i < n; i++, o += 3) {
+    const nz = noise[i];
+    let a = (dye[o] * LUT_K + nz) | 0, b = (dye[o + 1] * LUT_K + nz) | 0, c = (dye[o + 2] * LUT_K + nz) | 0;
+    if (a > top) a = top; if (b > top) b = top; if (c > top) c = top;
+    buf32[i] = 0xff000000 | (lutB[c] << 16) | (lutG[b] << 8) | lutR[a];
+  }
+  ctx.putImageData(imgData, 0, 0);
+}
+
+/* ---------- 写す：いまの水面を1枚の絵にする（水は流れ続ける） ---------- */
+let toastT = 0;
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2200);
+}
+function makePicture() {
+  render();
+  const k = Math.max(1, Math.min(window.devicePixelRatio || 1, 2160 / Math.max(cw, ch)));
+  const ow = Math.round(cw * k), oh = Math.round(ch * k);
+  const out = document.createElement('canvas'); out.width = ow; out.height = oh;
+  const g = out.getContext('2d');
+  g.fillStyle = 'rgb(' + PAPER.join(',') + ')'; g.fillRect(0, 0, ow, oh);
+  // 墨：いったん2倍にしてから引きのばすと、マス目が出にくい
+  const mid = document.createElement('canvas'); mid.width = DW * 2; mid.height = DH * 2;
+  const mg = mid.getContext('2d');
+  mg.imageSmoothingEnabled = true; mg.imageSmoothingQuality = 'high';
+  mg.drawImage(cvs, 0, 0, mid.width, mid.height);
+  g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+  if ('filter' in g) g.filter = 'blur(' + (0.55 * ow / DW).toFixed(2) + 'px)';
+  g.drawImage(mid, 0, 0, ow, oh);
+  if ('filter' in g) g.filter = 'none';
+  // 和紙
+  g.save();
+  g.globalCompositeOperation = 'multiply'; g.globalAlpha = 0.85;
+  g.scale(k, k); g.fillStyle = g.createPattern(paperCanvas, 'repeat'); g.fillRect(0, 0, cw, ch);
+  g.restore();
+  // ふちの影
+  g.save();
+  g.translate(ow * 0.5, oh * 0.45); g.scale(ow * 0.7071, oh * 0.7778);
+  const gr = g.createRadialGradient(0, 0, 0, 0, 0, 1);
+  gr.addColorStop(0.5, 'rgba(110,90,60,0)'); gr.addColorStop(1, 'rgba(110,90,60,0.16)');
+  g.fillStyle = gr; g.fillRect(-2, -2, 4, 4);
+  g.restore();
+  return out;
+}
+function stamp() {
+  const d = new Date(), z = n => String(n).padStart(2, '0');
+  return d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + '-' + z(d.getHours()) + z(d.getMinutes()) + z(d.getSeconds());
+}
+function download(blob, name) {
+  const a = document.createElement('a'), url = URL.createObjectURL(blob);
+  a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+function showPicture(pic) {
+  const v = $('viewer');
+  $('viewimg').src = pic.toDataURL('image/png');
+  v.hidden = false;
+  $('viewclose').onclick = () => { v.hidden = true; $('viewimg').removeAttribute('src'); };
+}
+$('shot').addEventListener('click', () => {
+  const fl = $('flash'); fl.classList.remove('on'); void fl.offsetWidth; fl.classList.add('on');
+  const name = 'suminagashi-' + stamp() + '.png';
+  const pic = makePicture();
+  pic.toBlob(blob => {
+    if (!blob) { toast('うまく写せませんでした'); return; }
+    const coarse = window.matchMedia && matchMedia('(pointer: coarse)').matches;
+    let file = null;
+    try { file = new File([blob], name, { type: 'image/png' }); } catch (_) {}
+    if (coarse && file && navigator.canShare && navigator.canShare({ files: [file] })) {
+      // スマホ：共有メニューから「画像を保存」などを選べる
+      navigator.share({ files: [file] }).catch(err => {
+        if (err && err.name !== 'AbortError') showPicture(pic);
+      });
+    } else if (coarse) {
+      showPicture(pic);             // 共有が使えないスマホ：画面の中に絵を出して、長押しで保存
+    } else {
+      download(blob, name); toast('画像を保存しました');
+    }
+  }, 'image/png');
+});
+
+/* ---------- ボタン類 ---------- */
+$('wash').addEventListener('click', () => { clearing = 50; });
+$('calm').addEventListener('click', () => { calming = 24; });
+$('tune').addEventListener('click', () => {
+  const open = panel.hidden;
+  panel.hidden = !open;
+  $('tune').setAttribute('aria-expanded', open ? 'true' : 'false');
+});
+elStrength.addEventListener('input', () => { applyFlow(); remember(); });
+elLength.addEventListener('input', () => { applyFlow(); remember(); });
+
+/* ---------- 1ステップ進める ---------- */
+function step() {
+  const now = performance.now();
+  for (const s of ptrs.values()) {            // 押し続けたらしずくを落とし始める
+    if (!s.dragging && !s.bloom && now - s.t0 > 110) s.bloom = newBloom(s.x, s.y, true);
+  }
+  for (let i = blooms.length - 1; i >= 0; i--) if (!bloomStep(blooms[i])) blooms.splice(i, 1);
+
+  if (calming > 0) {                          // 止める：流れをすっと静める（墨はその場に残る）
+    for (let i = 0; i < u.length; i++) { u[i] *= 0.72; v[i] *= 0.72; p[i] *= 0.72; }
+    if (--calming === 0) { u.fill(0); v.fill(0); p.fill(0); }
+  }
+  vorticity();
+  advectVel();
+  project();
+
+  let decay = INK_KEEP;
+  if (clearing > 0) { decay *= 0.9; clearing--; }
+  advectDye(decay);
+}
+
+/* 重い端末では、墨の細かさを自動で下げる */
+let perfSum = 0, perfN = 0;
+function watchPerf(ms) {
+  if (S <= 2) return;
+  perfSum += ms; perfN++;
+  if (perfN >= 90) {
+    if (perfSum / perfN > 11) { const old = { d: dye, w: DW, h: DH }; S = 2; sizeDye(old); }
+    perfSum = 0; perfN = 0;
+  }
+}
+
+let acc = 0, last = performance.now();
+function frame(now) {
+  acc += Math.min(now - last, 50); last = now;
+  let ran = 0;
+  while (acc >= STEP && ran < 2) {
+    const t0 = performance.now();
+    step();
+    watchPerf(performance.now() - t0);
+    acc -= STEP; ran++;
+  }
+  if (acc > STEP * 2) acc = 0;
+  if (ran) render();
+  requestAnimationFrame(frame);
+}
+
+/* 画面サイズが大きく変わったときだけ作り直す（スマホのアドレスバーの出入りでは消さない） */
+let rt = 0;
+window.addEventListener('resize', () => {
+  clearTimeout(rt);
+  rt = setTimeout(() => {
+    const nw = window.innerWidth, nh = window.innerHeight;
+    if (Math.abs(nw - cw) > 2 || Math.abs(nh - ch) / ch > 0.18) init();
+  }, 250);
+});
+
+/* ---------- はじめる ---------- */
+if (Number.isInteger(saved.set) && SETS[saved.set]) setIdx = saved.set;
+elStrength.value = Number.isFinite(saved.strength) ? saved.strength : 60;
+elLength.value = Number.isFinite(saved.length) ? saved.length : 52;
+applyFlow();
+buildSets();
+buildDots();
+init();
+render();
+requestAnimationFrame(frame);
+
+/* 動作確認用（遊ぶ人には影響なし） */
+window.__ink = { get blooms() { return blooms.length; }, get S() { return S; } };
+})();
+</script>
+</body>
+</html>
