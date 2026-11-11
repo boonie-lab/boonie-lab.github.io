@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0c0e09">
+<title>粘菌の部屋</title>
+<style>
+  :root{
+    --ink:#f4efd8; --sub:rgba(244,239,216,.62); --glass:rgba(22,24,16,.62); --line:rgba(255,244,190,.16);
+    --accent:#ffd53d; --accent-ink:#2a2200;
+  }
+  body.light{
+    --ink:#3a3116; --sub:rgba(58,49,22,.62); --glass:rgba(255,252,240,.72); --line:rgba(90,70,10,.18);
+    --accent:#c98a00; --accent-ink:#fffbe8;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overflow:hidden;background:#0c0e09;
+    font-family:"Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic UI","Yu Gothic",system-ui,sans-serif;
+    color:var(--ink);-webkit-user-select:none;user-select:none;overscroll-behavior:none}
+  canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+  .ui{transition:opacity .35s ease, transform .35s ease}
+  body.viewing .ui{opacity:0;pointer-events:none}
+  .glass{background:var(--glass);border:1px solid var(--line);
+    -webkit-backdrop-filter:blur(14px) saturate(1.2);backdrop-filter:blur(14px) saturate(1.2)}
+
+  /* 上のバー */
+  #top{position:fixed;left:0;right:0;top:0;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
+    padding:calc(env(safe-area-inset-top) + 10px) calc(env(safe-area-inset-right) + 12px) 0 calc(env(safe-area-inset-left) + 12px);
+    pointer-events:none}
+  #top>*{pointer-events:auto}
+  #title{padding:7px 13px 8px;border-radius:16px;line-height:1.25}
+  #title b{display:block;font-size:15px;letter-spacing:.08em}
+  #title span{display:block;font-size:11.5px;color:var(--sub);margin-top:1px;min-width:9em}
+  #back{display:none;font-size:11.5px;color:var(--sub);text-decoration:none;margin-bottom:2px}
+  .pills{display:flex;gap:6px}
+  .pill{font:inherit;color:var(--ink);font-size:12.5px;padding:9px 12px;border-radius:999px;cursor:pointer;white-space:nowrap}
+  .pill:active{transform:scale(.95)}
+
+  /* 下のドック */
+  #dock{position:fixed;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;gap:8px;
+    padding:0 calc(env(safe-area-inset-right) + 10px) calc(env(safe-area-inset-bottom) + 12px) calc(env(safe-area-inset-left) + 10px);
+    pointer-events:none}
+  #dock>*{pointer-events:auto}
+  #tools{display:flex;gap:4px;padding:5px;border-radius:22px;max-width:100%}
+  .tool{font:inherit;color:var(--ink);background:transparent;border:0;border-radius:17px;cursor:pointer;
+    width:74px;padding:7px 2px 6px;display:flex;flex-direction:column;align-items:center;gap:3px;transition:background .2s,color .2s}
+  .tool svg{width:24px;height:24px;display:block}
+  .tool b{font-size:12.5px;font-weight:600;letter-spacing:.04em}
+  .tool small{font-size:9.5px;color:var(--sub);white-space:nowrap}
+  .tool.on{background:var(--accent);color:var(--accent-ink)}
+  .tool.on small{color:inherit;opacity:.75}
+  #acts{display:flex;gap:6px}
+  #acts .pill{font-size:12px;padding:8px 13px}
+  #reset.arm{background:#b3261e;color:#fff;border-color:transparent}
+
+  /* 眺めるモードから戻る */
+  #unview{position:fixed;right:calc(env(safe-area-inset-right) + 12px);top:calc(env(safe-area-inset-top) + 10px);
+    opacity:0;pointer-events:none;transition:opacity .35s}
+  body.viewing #unview{opacity:.5;pointer-events:auto}
+
+  /* ヒント */
+  #hint{position:fixed;left:50%;top:26%;transform:translate(-50%,-50%);width:min(82vw,330px);text-align:center;
+    padding:13px 16px;border-radius:18px;font-size:14px;line-height:1.7;pointer-events:none;transition:opacity .6s}
+  #hint.off{opacity:0}
+  #toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 150px);transform:translateX(-50%);
+    padding:9px 15px;border-radius:999px;font-size:12.5px;pointer-events:none;opacity:0;transition:opacity .3s;white-space:nowrap}
+  #toast.on{opacity:1}
+
+  /* シート */
+  .scrim{position:fixed;inset:0;background:rgba(0,0,0,.38);opacity:0;pointer-events:none;transition:opacity .3s;z-index:5}
+  .scrim.on{opacity:1;pointer-events:auto}
+  .sheet{position:fixed;left:50%;bottom:0;width:min(100%,520px);max-height:82%;overflow:auto;-webkit-overflow-scrolling:touch;
+    transform:translate(-50%,105%);transition:transform .38s cubic-bezier(.2,.9,.25,1);z-index:6;
+    border-radius:24px 24px 0 0;padding:8px 20px calc(env(safe-area-inset-bottom) + 22px);
+    background:#191b12;color:#f4efd8;border:1px solid rgba(255,244,190,.14);border-bottom:0;-webkit-user-select:text;user-select:text}
+  .sheet.on{transform:translate(-50%,0)}
+  .grab{width:38px;height:4px;border-radius:2px;background:rgba(255,255,255,.22);margin:4px auto 12px}
+  .sheet h2{font-size:16px;margin:0 0 12px;letter-spacing:.06em;display:flex;justify-content:space-between;align-items:center}
+  .sheet h3{font-size:12px;font-weight:600;color:rgba(244,239,216,.6);margin:16px 0 7px;letter-spacing:.08em}
+  .x{font:inherit;font-size:13px;color:#f4efd8;background:rgba(255,255,255,.1);border:0;border-radius:999px;padding:6px 13px;cursor:pointer}
+  .seg{display:flex;background:rgba(255,255,255,.07);border-radius:13px;padding:3px;gap:3px}
+  .seg button{flex:1;font:inherit;font-size:13px;color:#f4efd8;background:transparent;border:0;border-radius:10px;padding:9px 4px;cursor:pointer}
+  .seg button.on{background:#ffd53d;color:#2a2200;font-weight:600}
+  .sw{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:-1px;border:1px solid rgba(255,255,255,.35)}
+  .sheet p,.sheet li{font-size:13.5px;line-height:1.8;margin:0 0 6px}
+  .sheet ol,.sheet ul{margin:0 0 6px;padding-left:1.4em}
+  .sheet .note{font-size:11.5px;color:rgba(244,239,216,.58);line-height:1.7}
+  .legend{height:12px;border-radius:6px;margin:4px 0 3px}
+  .legrow{display:flex;justify-content:space-between;font-size:11px;color:rgba(244,239,216,.6)}
+  .kw{color:#ffd53d}
+
+  /* 写した絵 */
+  #shot{position:fixed;inset:0;z-index:8;background:rgba(0,0,0,.82);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px}
+  #shot.on{display:flex}
+  #shot img{max-width:100%;max-height:72%;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.6);-webkit-user-select:auto;user-select:auto;-webkit-touch-callout:default}
+  #shot p{font-size:13px;color:#f4efd8;margin:0}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+
+<div id="top" class="ui">
+  <div id="title" class="glass">
+    <a id="back" href="./index.html">← 広場へ</a>
+    <b>粘菌の部屋</b><span id="stat">…</span>
+  </div>
+  <div class="pills">
+    <button class="pill glass" id="bHow">しくみ</button>
+    <button class="pill glass" id="bSet">調整</button>
+    <button class="pill glass" id="bView">眺める</button>
+  </div>
+</div>
+
+<div id="hint" class="glass ui">画面をタップして<b class="kw"> エサ </b>を置くと、<br>粘菌が道をのばしてつなぎます</div>
+<div id="toast" class="glass"></div>
+
+<div id="dock" class="ui">
+  <div id="acts">
+    <button class="pill glass" id="bScatter">エサをまく</button>
+    <button class="pill glass" id="bShot">写す</button>
+    <button class="pill glass" id="reset">はじめから</button>
+  </div>
+  <div id="tools" class="glass">
+    <button class="tool on" data-tool="food">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><ellipse cx="12" cy="12" rx="7.5" ry="5.2" transform="rotate(-24 12 12)"/><path d="M7.6 14.2c3-.4 6-2 8.6-4.6"/></svg>
+      <b>エサ</b><small>置く</small></button>
+    <button class="tool" data-tool="salt">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5l3 3-3 3-3-3zM6.5 12.5l2.5 2.5-2.5 2.5L4 15zM17.5 12.5L20 15l-2.5 2.5L15 15z"/></svg>
+      <b>塩</b><small>さける壁</small></button>
+    <button class="tool" data-tool="erase">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 15.5l8.5-8.5 5 5L13 17.5H8z"/><path d="M4 20h16"/></svg>
+      <b>けす</b><small>切る・取る</small></button>
+    <button class="tool" data-tool="seed">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2"/></svg>
+      <b>タネ</b><small>粘菌を置く</small></button>
+  </div>
+</div>
+
+<button class="pill glass" id="unview">もどる</button>
+
+<div class="scrim" id="scrim"></div>
+
+<div class="sheet" id="sSet">
+  <div class="grab"></div>
+  <h2>調整 <button class="x" data-close>とじる</button></h2>
+  <h3>育つ速さ</h3>
+  <div class="seg" data-key="speed"><button data-v="slow">ゆっくり</button><button data-v="mid">ふつう</button><button data-v="fast">はやい</button></div>
+  <h3>色</h3>
+  <div class="seg" data-key="pal">
+    <button data-v="ki"><i class="sw" style="background:#ffd53d"></i>きいろ</button>
+    <button data-v="yako"><i class="sw" style="background:#3fe0c5"></i>夜光</button>
+    <button data-v="kanten"><i class="sw" style="background:#e9e2cf"></i>寒天</button>
+  </div>
+  <h3>道のかたち</h3>
+  <div class="seg" data-key="shape"><button data-v="fine">こまかい網</button><button data-v="mid">ふつう</button><button data-v="bold">太い道</button></div>
+  <p class="note" style="margin-top:14px">「道のかたち」は、つぶが<b>どれくらい先のにおいをかぐか</b>を変えます。近くをかぐと細かい網に、遠くをかぐと太くまっすぐな道になります。</p>
+</div>
+
+<div class="sheet" id="sHow">
+  <div class="grab"></div>
+  <h2>しくみ <button class="x" data-close>とじる</button></h2>
+  <p>粘菌（モジホコリ）は、脳も神経もない<b>大きな1つの細胞</b>。それなのに、エサ同士をむだの少ない道でつなぎます。</p>
+  <h3>このアプリの中身</h3>
+  <p>画面の中では、何千〜何万個の小さな<b class="kw">つぶ</b>が動いています。つぶのルールは3つだけ。</p>
+  <ol>
+    <li>少し先の <b>左・正面・右</b> の「におい」をかぐ</li>
+    <li>いちばん濃い方へ向きを変えて進む</li>
+    <li>通った所に自分のにおい（跡）を残す。跡は少しずつ広がって薄れる</li>
+  </ol>
+  <p>みんなが通る道は濃くなって、さらにつぶが集まる。通らない道は薄れて消える。この<b class="kw">「増えるほど、さらに増える」</b>しくみ（正のフィードバック）だけで、網ができて、だんだん近道が残ります。誰も全体を見ていないのがおもしろいところ。</p>
+  <h3>色の意味</h3>
+  <div class="legend" id="legend"></div>
+  <div class="legrow"><span>できたての道</span><span>長く使われている道</span></div>
+  <p style="margin-top:8px">うっすら残る跡は「前にいた場所」。本物の粘菌も、通ったあとに粘液の跡を残します。</p>
+  <h3>ためしてみよう</h3>
+  <ul>
+    <li>エサを三角や四角に置く → 全部の辺はつながず、近道をさがす</li>
+    <li><b>塩</b>で壁や迷路を描く → よけて回り道をする（本物も塩が苦手）</li>
+    <li>太い道を<b>けす</b>で切る → つなぎ直す</li>
+    <li>エサにとどくたび、体が少し大きくなる</li>
+  </ul>
+  <h3>もとになった研究</h3>
+  <p class="note">つぶのルール：Jeff Jones (2010) “Characteristics of pattern formation and evolution in approximations of Physarum transport networks”, <i>Artificial Life</i> 16(2)。<br>
+  迷路をとく粘菌：中垣俊之ほか (2000) <i>Nature</i> 407。鉄道網に似たネットワーク：手老篤史ほか (2010) <i>Science</i> 327。</p>
+  <p class="note">※ これは見た目と動きを似せた簡単なモデルで、本物の粘菌の正確な再現ではありません。体の膜がじわじわ広がる部分や、エサの方へ伸びやすくする部分は、遊びやすくするための独自アレンジです。</p>
+</div>
+
+<div id="shot"><img id="shotImg" alt="写した絵"><p>画像を長押しすると保存できます</p><button class="pill glass" id="shotClose">とじる</button></div>
+
+<script>
+/*=== SIM CORE (画面に依存しない計算部分) ===*/
+function createSim(W, H, NMAX) {
+  const N = W * H, TAU = Math.PI * 2, GMAX = 2200;
+  const T = new Float32Array(N), tmp = new Float32Array(N), M = new Float32Array(N),
+        G = new Float32Array(N), R = new Float32Array(N), B = new Uint8Array(N),
+        Sfar = new Float32Array(N), Snear = new Float32Array(N), grain = new Float32Array(N),
+        D = new Float32Array(N), tmp2 = new Float32Array(N), lobe = new Float32Array(N);
+  const ax = new Float32Array(NMAX), ay = new Float32Array(NMAX), ah = new Float32Array(NMAX);
+  const bgR = new Float32Array(N), bgG = new Float32Array(N), bgB = new Float32Array(N);
+  const lut = new Float32Array(64 * 3);
+  const areaK = N / 110000;
+  const P = {
+    SA: 0.5, RA: 0.6, SO: 5,      // かぐ角度・曲がる角度・かぐ距離
+    step: 0.9, dep: 1,            // 1歩の長さ・残す跡の量
+    mix: 0.3, decay: 0.92,        // 跡の広がり・薄れ
+    rate: 0.06, loss: 0.004,      // 膜の広がる速さ・ひっこむ速さ
+    dD: 0.012, dGrow: 0.12, dShrink: 0.06,   // 体の「圧」の広がり・膜が広がる/ひっこむ境目
+    ws: 3, wn: 7, over: 5, sat: 3, // エサのにおいの効き・エサ自体の引力・こみすぎ・かぎ分けの上限
+    explore: 0.2, turnover: 0.0015, // エサが無いときの広がり・体の中の流れ（入れかわり）
+    baseN: Math.round(3000 * areaK), perFood: Math.round(2200 * areaK), birth: 2
+  };
+  const L = 0.3 * Math.hypot(W, H), RN = 4.5;
+  const sim = { W, H, N, T, M, G, R, B, D, P, n: 0, foods: [], tick: 0, smin: 0, srange: 0, reached: 0, capScale: 1, NMAX, GMAX };
+  let pal = null;
+
+  for (let i = 0; i < N; i++) grain[i] = Math.random();
+  { // なめらかなムラ（仮足＝のびる腕のでこぼこ用）
+    const cs = 7, gw = Math.ceil(W / cs) + 2, gh = Math.ceil(H / cs) + 2, gr = new Float32Array(gw * gh);
+    for (let i = 0; i < gr.length; i++) gr[i] = Math.random();
+    for (let y = 0, i = 0; y < H; y++) for (let x = 0; x < W; x++, i++) {
+      const fx = x / cs, fy = y / cs, x0 = fx | 0, y0 = fy | 0; let u = fx - x0, v = fy - y0; u = u * u * (3 - 2 * u); v = v * v * (3 - 2 * v);
+      const a = gr[y0 * gw + x0], b = gr[y0 * gw + x0 + 1], c = gr[(y0 + 1) * gw + x0], d = gr[(y0 + 1) * gw + x0 + 1];
+      const q = a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v; lobe[i] = 0.2 + 1.6 * q * q;
+    } }
+
+  // エサのにおい：いちばん近い「まだとどいていないエサ」までの、塩をよけた道のり
+  const dist = new Float32Array(N); let scentDirty = false;
+  function rebuildScent() {
+    scentDirty = false; let un = 0; dist.fill(1e9);
+    for (const f of sim.foods) if (!f.reached) { dist[(f.y | 0) * W + (f.x | 0)] = 0; un++; }
+    if (!un) { Sfar.fill(0); return; }
+    const D2 = 1.41421, W1 = W - 1, H1 = H - 1;
+    for (let it = 0; it < 48; it++) { let ch = false;
+      for (let y = 1; y < H1; y++) { let i = y * W + 1; for (let x = 1; x < W1; x++, i++) { if (B[i]) continue;
+        let d = dist[i], v = dist[i - 1] + 1; if (v < d) d = v; v = dist[i - W] + 1; if (v < d) d = v;
+        v = dist[i - W - 1] + D2; if (v < d) d = v; v = dist[i - W + 1] + D2; if (v < d) d = v;
+        if (d < dist[i]) { dist[i] = d; ch = true; } } }
+      for (let y = H1 - 1; y >= 1; y--) { let i = y * W + W1 - 1; for (let x = W1 - 1; x >= 1; x--, i--) { if (B[i]) continue;
+        let d = dist[i], v = dist[i + 1] + 1; if (v < d) d = v; v = dist[i + W] + 1; if (v < d) d = v;
+        v = dist[i + W + 1] + D2; if (v < d) d = v; v = dist[i + W - 1] + D2; if (v < d) d = v;
+        if (d < dist[i]) { dist[i] = d; ch = true; } } }
+      if (!ch) break; }
+    const k = -1 / L; for (let i = 0; i < N; i++) { const d = dist[i]; Sfar[i] = d < 1e8 ? Math.exp(d * k) : 0; }
+  }
+  function addNear(f, sign) {
+    const r = Math.ceil(RN * 3), x0 = Math.max(0, (f.x | 0) - r), x1 = Math.min(W - 1, (f.x | 0) + r),
+          y0 = Math.max(0, (f.y | 0) - r), y1 = Math.min(H - 1, (f.y | 0) + r);
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+      const dx = x - f.x, dy = y - f.y; Snear[y * W + x] += sign * Math.exp(-(dx * dx + dy * dy) / (RN * RN)); }
+  }
+  function tidyScent() {
+    if (sim.foods.length === 0) Snear.fill(0);
+  }
+  sim.addFood = function (x, y) {
+    x = Math.max(4, Math.min(W - 5, x)); y = Math.max(4, Math.min(H - 5, y));
+    if (B[(y | 0) * W + (x | 0)]) return null;
+    for (const f of sim.foods) { const dx = f.x - x, dy = f.y - y; if (dx * dx + dy * dy < 49) return null; }
+    const f = { x, y, reached: false, born: sim.tick, rot: Math.random() * TAU, sz: 0.85 + Math.random() * 0.3, t0: 0, tr: 0 };
+    sim.foods.push(f); scentDirty = true; addNear(f, 1); return f;
+  };
+  sim.removeFood = function (f) {
+    const k = sim.foods.indexOf(f); if (k < 0) return;
+    sim.foods.splice(k, 1); if (f.reached) sim.reached--; scentDirty = true; addNear(f, -1); tidyScent();
+  };
+  function disc(x, y, r, fn) {
+    const x0 = Math.max(1, Math.floor(x - r)), x1 = Math.min(W - 2, Math.ceil(x + r)),
+          y0 = Math.max(1, Math.floor(y - r)), y1 = Math.min(H - 2, Math.ceil(y + r)), r2 = r * r;
+    for (let yy = y0; yy <= y1; yy++) for (let xx = x0; xx <= x1; xx++) {
+      const dx = xx + 0.5 - x, dy = yy + 0.5 - y; if (dx * dx + dy * dy <= r2) fn(yy * W + xx); }
+  }
+  sim.seed = function (x, y, count) {
+    x = Math.max(12, Math.min(W - 13, x)); y = Math.max(12, Math.min(H - 13, y));
+    disc(x, y, 9, i => { B[i] = 0; M[i] = 1; });
+    count = Math.min(count, NMAX - sim.n);
+    for (let k = 0; k < count; k++) {
+      const a = Math.random() * TAU, r = Math.sqrt(Math.random()) * 7, j = sim.n++;
+      ax[j] = x + Math.cos(a) * r; ay[j] = y + Math.sin(a) * r; ah[j] = Math.random() * TAU;
+    }
+  };
+  sim.erase = function (x, y, r) {
+    disc(x, y, r, i => { T[i] = 0; M[i] = 0; B[i] = 0; G[i] = 0; D[i] = 0; R[i] *= 0.4; }); scentDirty = true;
+    for (let k = sim.foods.length - 1; k >= 0; k--) { const f = sim.foods[k], dx = f.x - x, dy = f.y - y;
+      if (dx * dx + dy * dy < (r + 1.5) * (r + 1.5)) sim.removeFood(f); }
+  };
+  sim.salt = function (x, y, r) { disc(x, y, r, i => { B[i] = 1; T[i] = 0; M[i] = 0; G[i] = 0; D[i] = 0; }); scentDirty = true; };
+
+  sim.step = function () {
+    if (scentDirty && (sim.tick & 3) === 0) rebuildScent();
+    const SO = P.SO, cSA = Math.cos(P.SA), sSA = Math.sin(P.SA), RA = P.RA, st = P.step, dep = P.dep, over = P.over, wn = P.wn;
+    const sat = P.sat, smin = sim.smin, invS = sim.srange > 1e-9 ? P.ws / sim.srange : 0, capS = P.ws * 1.5, W1 = W - 1, H1 = H - 1;
+    let n = sim.n, lo = 1e9, hi = -1e9;
+    for (let i = 0; i < n; i++) {
+      const x = ax[i], y = ay[i]; let h = ah[i];
+      const ci = (y | 0) * W + (x | 0);
+      if (M[ci] < 0.5) { n--; ax[i] = ax[n]; ay[i] = ay[n]; ah[i] = ah[n]; i--; continue; }
+      const c = Math.cos(h), s = Math.sin(h);
+      let F0 = -1, F1 = -1, F2 = -1, px, py, k, v, t;
+      px = x + c * SO; py = y + s * SO;
+      if (px >= 1 && py >= 1 && px < W1 && py < H1) { k = (py | 0) * W + (px | 0);
+        if (M[k] >= 0.5) { v = (Sfar[k] - smin) * invS; t = T[k]; F0 = (t > sat ? sat : t) + (v > capS ? capS : v) + wn * Snear[k]; } }
+      px = x + (c * cSA + s * sSA) * SO; py = y + (s * cSA - c * sSA) * SO;
+      if (px >= 1 && py >= 1 && px < W1 && py < H1) { k = (py | 0) * W + (px | 0);
+        if (M[k] >= 0.5) { v = (Sfar[k] - smin) * invS; t = T[k]; F1 = (t > sat ? sat : t) + (v > capS ? capS : v) + wn * Snear[k]; } }
+      px = x + (c * cSA - s * sSA) * SO; py = y + (s * cSA + c * sSA) * SO;
+      if (px >= 1 && py >= 1 && px < W1 && py < H1) { k = (py | 0) * W + (px | 0);
+        if (M[k] >= 0.5) { v = (Sfar[k] - smin) * invS; t = T[k]; F2 = (t > sat ? sat : t) + (v > capS ? capS : v) + wn * Snear[k]; } }
+      const rnd = Math.random();
+      if (F0 >= F1 && F0 >= F2) h += (rnd - 0.5) * 0.14;
+      else if (F0 < F1 && F0 < F2) h += rnd < 0.5 ? -RA : RA;
+      else if (F1 > F2) h -= RA; else h += RA;
+      if (T[ci] > over) h += (Math.random() - 0.5) * 3;
+      const nx = x + Math.cos(h) * st, ny = y + Math.sin(h) * st;
+      let di = ci;
+      if (nx >= 1 && ny >= 1 && nx < W1 && ny < H1) {
+        const ni = (ny | 0) * W + (nx | 0);
+        if (M[ni] >= 0.5) { ax[i] = nx; ay[i] = ny; di = ni; } else h = Math.random() * TAU;
+      } else h = Math.random() * TAU;
+      ah[i] = h; T[di] += dep;
+      const sv = Sfar[di]; if (sv < lo) lo = sv; if (sv > hi) hi = sv;
+    }
+    sim.n = n;
+    if (n > 0 && hi - lo > 1e-7) { sim.smin = lo; sim.srange = hi - lo; } else { sim.smin = 0; sim.srange = 0; }
+
+    // 跡をぼかして薄める + 体の圧・膜・年齢・名残りの更新
+    for (let y = 1; y < H1; y++) { let i = y * W + 1; for (let x = 1; x < W1; x++, i++) { tmp[i] = T[i - 1] + T[i] + T[i + 1]; tmp2[i] = D[i - 1] + D[i] + D[i + 1]; } }
+    const mix = P.mix, decay = P.decay, rate = P.rate, loss = P.loss, dD = P.dD, kD = 1 - dD, dGrow = P.dGrow, dShrink = P.dShrink;
+    const useS = sim.srange > 1e-9, s0 = sim.smin, inv2 = useS ? 1 / sim.srange : 0, explore = P.explore;
+    for (let y = 1; y < H1; y++) { let i = y * W + 1;
+      for (let x = 1; x < W1; x++, i++) {
+        let t = T[i]; const bl = (tmp[i - W] + tmp[i] + tmp[i + W]) * 0.1111111;
+        t = (t + (bl - t) * mix) * decay; if (t < 1e-4) t = 0;
+        let d = (tmp2[i - W] + tmp2[i] + tmp2[i + W]) * 0.1111111 * kD + (t > 5 ? 5 : t) * dD; if (d < 1e-4) d = 0;
+        let m = M[i];
+        if (B[i]) { t = 0; d = 0; m = 0; M[i] = 0; }
+        else if (d > dGrow) {
+          if (m < 1) { let g = (d - dGrow) * 3; if (g > 1) g = 1;
+            if (useS) { let u = (Sfar[i] - s0) * inv2; if (u < 0) u = 0; else if (u > 1.4) u = 1.4; g *= 0.05 + 2.2 * u * u; } else g *= explore;
+            m += rate * g * lobe[i]; if (m > 1) m = 1; M[i] = m; }
+        } else if (d < dShrink && m > 0) { m -= loss; if (m < 0) m = 0; M[i] = m; }
+        T[i] = t; D[i] = d;
+        if (t > 1) { if (G[i] < GMAX) G[i] += 1; } else if (G[i] > 0) { const g2 = G[i] - 3; G[i] = g2 < 0 ? 0 : g2; }
+        if (m >= 0.5) { const r = R[i]; if (r < 1) R[i] = r + 0.02 > 1 ? 1 : r + 0.02; }
+        else { const r = R[i]; if (r > 0) R[i] = r < 0.004 ? 0 : r * 0.9997; }
+      } }
+
+    // 体の大きさ：とどいたエサの数で決まる。新しいつぶは、とどいたエサから生まれて道を流れる
+    const cap = Math.min(NMAX * sim.capScale, P.baseN + sim.reached * P.perFood) | 0;
+    n = sim.n;
+    if (n > 0) {
+      let births = n < cap ? Math.min(P.birth, cap - n) : 0, deaths = n > cap ? Math.min(2, n - cap) : 0;
+      if (sim.reached > 0) { const tv = n * P.turnover; let k = tv | 0; if (Math.random() < tv - k) k++; births += k; deaths += k; }
+      for (let q = 0; q < deaths && n > 1; q++) { const j = (Math.random() * n) | 0; n--; ax[j] = ax[n]; ay[j] = ay[n]; ah[j] = ah[n]; }
+      const nf = sim.foods.length;
+      for (let q = 0; q < births && n < NMAX; q++) {
+        let ok = false;
+        if (sim.reached > 0) { const f = sim.foods[(Math.random() * nf) | 0];
+          if (f.reached) { const x = f.x + (Math.random() - 0.5) * 4, y = f.y + (Math.random() - 0.5) * 4;
+            if (M[(y | 0) * W + (x | 0)] >= 0.5) { ax[n] = x; ay[n] = y; ok = true; } } }
+        if (!ok) { const j = (Math.random() * n) | 0; ax[n] = ax[j]; ay[n] = ay[j]; }
+        ah[n] = Math.random() * TAU; n++;
+      }
+    }
+    sim.n = n;
+
+    if ((sim.tick & 7) === 0) for (const f of sim.foods) if (!f.reached) {
+      const i = (f.y | 0) * W + (f.x | 0);
+      if ((T[i] + T[i - 1] + T[i + 1] + T[i - W] + T[i + W]) * 0.2 > 1.2) { f.reached = true; f.tr = sim.tick; sim.reached++; scentDirty = true; if (sim.onReach) sim.onReach(f); }
+    }
+    sim.tick++;
+  };
+
+  function hex(s) { const v = parseInt(s.slice(1), 16); return [v >> 16 & 255, v >> 8 & 255, v & 255]; }
+  sim.setPalette = function (p) {
+    pal = { bg: hex(p.bg), edge: hex(p.edge), res: hex(p.res), mem: hex(p.mem), hi: hex(p.hi), salt: hex(p.salt), salt2: hex(p.salt2),
+            resA: p.resA, memA: p.memA, kT: p.kT };
+    const y0 = hex(p.young), m0 = hex(p.mid), o0 = hex(p.old);
+    for (let k = 0; k < 64; k++) { const a = k / 63; let A, Bc, u;
+      if (a < 0.4) { A = y0; Bc = m0; u = a / 0.4; } else { A = m0; Bc = o0; u = (a - 0.4) / 0.6; }
+      for (let c = 0; c < 3; c++) lut[k * 3 + c] = A[c] + (Bc[c] - A[c]) * u; }
+    const cx = W / 2, cy = H / 2, rm = Math.hypot(cx, cy);
+    for (let y = 0, i = 0; y < H; y++) for (let x = 0; x < W; x++, i++) {
+      let v = Math.hypot(x - cx, y - cy) / rm; v = v * v * (0.75 + 0.25 * v);
+      const gn = (grain[i] - 0.5) * p.grain;
+      bgR[i] = pal.bg[0] + (pal.edge[0] - pal.bg[0]) * v + gn;
+      bgG[i] = pal.bg[1] + (pal.edge[1] - pal.bg[1]) * v + gn;
+      bgB[i] = pal.bg[2] + (pal.edge[2] - pal.bg[2]) * v + gn;
+    }
+  };
+  sim.lutCss = function () { const s = []; for (let k = 0; k < 64; k += 9) s.push('rgb(' + (lut[k * 3] | 0) + ',' + (lut[k * 3 + 1] | 0) + ',' + (lut[k * 3 + 2] | 0) + ')'); return 'linear-gradient(90deg,' + s.join(',') + ')'; };
+
+  sim.render = function (px) {
+    const rs = pal.res, ms = pal.mem, hi = pal.hi, s1 = pal.salt, s2 = pal.salt2, resA = pal.resA, memA = pal.memA, kT = pal.kT;
+    const ph = sim.tick * 0.05, gk = 63 / GMAX;
+    for (let i = 0, o = 0; i < N; i++, o += 4) {
+      let r = bgR[i], g = bgG[i], b = bgB[i];
+      if (B[i]) { const q = grain[i], k = q > 0.86 ? 1 : 0.55 + q * 0.3;
+        const sr = q > 0.86 ? s2[0] : s1[0], sg = q > 0.86 ? s2[1] : s1[1], sb = q > 0.86 ? s2[2] : s1[2];
+        r += (sr - r) * k; g += (sg - g) * k; b += (sb - b) * k;
+      } else {
+        const rr = R[i];
+        if (rr > 0.004) { const k = rr * resA * (0.65 + 0.35 * grain[i]); r += (rs[0] - r) * k; g += (rs[1] - g) * k; b += (rs[2] - b) * k; }
+        const m = M[i];
+        if (m > 0.3) { let u = (m - 0.3) * 2; if (u > 1) u = 1; const k = u * u * (3 - 2 * u) * memA; r += (ms[0] - r) * k; g += (ms[1] - g) * k; b += (ms[2] - b) * k; }
+        const t = T[i];
+        if (t > 0.03) {
+          const gi = G[i]; let v = t / (t + kT);
+          v *= 0.9 + 0.1 * Math.sin(ph - gi * 0.012);
+          const a = ((gi * gk) | 0) * 3;
+          r += (lut[a] - r) * v; g += (lut[a + 1] - g) * v; b += (lut[a + 2] - b) * v;
+          const h2 = v - 0.62; if (h2 > 0) { const k = h2 * 1.5; r += (hi[0] - r) * k; g += (hi[1] - g) * k; b += (hi[2] - b) * k; }
+        }
+      }
+      px[o] = r; px[o + 1] = g; px[o + 2] = b; px[o + 3] = 255;
+    }
+  };
+  return sim;
+}
+/*=== /SIM CORE ===*/
+</script>
+
+<script>
+(function () {
+  'use strict';
+  const SHOW_BACK_LINK = false;   // 入口ページ（index.html）ができたら true に
+
+  const PALS = {
+    ki:     { light: false, bloom: 0.30, bg: '#0e100a', edge: '#050603', res: '#6f6c48', mem: '#5d4d0c', young: '#fff59a', mid: '#ffc81f', old: '#e2701a', hi: '#fffde6', salt: '#aebccb', salt2: '#f6fbff', resA: 0.16, memA: 0.30, kT: 2.0, grain: 5, theme: '#0c0e09' },
+    yako:   { light: false, bloom: 0.34, bg: '#050a12', edge: '#010307', res: '#2a5566', mem: '#0b3f52', young: '#d8fff6', mid: '#3fe0c5', old: '#2c79e0', hi: '#ffffff', salt: '#8d93b8', salt2: '#eef0ff', resA: 0.20, memA: 0.34, kT: 2.0, grain: 4, theme: '#050a12' },
+    kanten: { light: true,  bloom: 0,    bg: '#ece5d2', edge: '#d6cbb0', res: '#bdb48a', mem: '#ecd66a', young: '#f3cf12', mid: '#e09a0c', old: '#a8521a', hi: '#8a3e12', salt: '#8fa6bb', salt2: '#ffffff', resA: 0.30, memA: 0.55, kT: 1.7, grain: 7, theme: '#ece5d2' }
+  };
+  const SPEEDS = { slow: 0.5, mid: 1, fast: 3 };
+  const SHAPES = { fine: { SO: 3.5, SA: 0.62, RA: 0.7 }, mid: { SO: 5, SA: 0.5, RA: 0.6 }, bold: { SO: 8.5, SA: 0.42, RA: 0.5 } };
+
+  const $ = id => document.getElementById(id);
+  const cv = $('cv'), ctx = cv.getContext('2d');
+  const simCv = document.createElement('canvas'), sctx = simCv.getContext('2d');
+  const bloomCv = document.createElement('canvas'), bctx = bloomCv.getContext('2d');
+  let sim = null, img = null, W = 0, H = 0, cw = 0, ch = 0, dpr = 1, aspect0 = 1;
+  let tool = 'food', acc = 0, emaMs = 8, lastTune = 0, frameNo = 0, running = true;
+  const set = { speed: 'mid', pal: 'ki', shape: 'mid' };
+  try { const s = JSON.parse(localStorage.getItem('slime-mold-set') || '{}'); for (const k in set) if (typeof s[k] === 'string') set[k] = s[k]; } catch (e) {}
+  if (!PALS[set.pal]) set.pal = 'ki'; if (!SPEEDS[set.speed]) set.speed = 'mid'; if (!SHAPES[set.shape]) set.shape = 'mid';
+  function saveSet() { try { localStorage.setItem('slime-mold-set', JSON.stringify(set)); } catch (e) {} }
+
+  if (SHOW_BACK_LINK) $('back').style.display = 'block';
+
+  function fit() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = window.innerWidth, h = window.innerHeight;
+    cw = Math.round(w * dpr); ch = Math.round(h * dpr); cv.width = cw; cv.height = ch;
+    return w / h;
+  }
+  function build() {
+    const a = fit(); aspect0 = a;
+    const w = window.innerWidth, h = window.innerHeight;
+    const coarse = matchMedia('(pointer:coarse)').matches;
+    const target = coarse ? 105000 : 150000;
+    const sc = Math.sqrt(w * h / target);
+    W = Math.max(120, Math.round(w / sc)); H = Math.max(120, Math.round(h / sc));
+    const NMAX = coarse ? 34000 : 52000;
+    sim = createSim(W, H, NMAX);
+    simCv.width = W; simCv.height = H; img = sctx.createImageData(W, H);
+    bloomCv.width = Math.ceil(W / 4); bloomCv.height = Math.ceil(H / 4);
+    sim.onReach = f => { f.t0 = performance.now(); };
+    applySet();
+    sim.seed(W / 2, H * 0.47, sim.P.baseN);
+  }
+  function applySet() {
+    const p = PALS[set.pal]; sim.setPalette(p);
+    Object.assign(sim.P, SHAPES[set.shape]);
+    document.body.classList.toggle('light', p.light);
+    document.documentElement.style.background = document.body.style.background = p.bg;
+    const mt = document.querySelector('meta[name=theme-color]'); if (mt) mt.content = p.theme;
+    $('legend').style.background = sim.lutCss();
+    document.querySelectorAll('.seg').forEach(seg => seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === set[seg.dataset.key])));
+  }
+
+  /* ---- 描画 ---- */
+  function drawFoods(now) {
+    const sx = cw / W, sy = ch / H, p = PALS[set.pal];
+    for (const f of sim.foods) {
+      const x = (f.x + 0.5) * sx, y = (f.y + 0.5) * sy;
+      if (!f.t0) f.t0 = now; if (!f.tb) f.tb = now;
+      const pop = Math.min(1, (now - f.tb) / 260), e = 1 - Math.pow(1 - pop, 3);
+      const r = Math.max(4.5 * dpr, 2.5 * sx) * f.sz * (0.4 + 0.6 * e);
+      if (f.reached) {
+        const age = (now - f.t0) / 1000, burst = Math.max(0, 1 - age / 1.2);
+        const pr = r * (2.6 + 0.35 * Math.sin(now / 700 + f.rot) + burst * 3);
+        const g = ctx.createRadialGradient(x, y, r * 0.5, x, y, pr);
+        const col = p.light ? '168,82,26' : (set.pal === 'yako' ? '120,255,230' : '255,225,90');
+        g.addColorStop(0, 'rgba(' + col + ',' + (0.42 + burst * 0.4) + ')'); g.addColorStop(1, 'rgba(' + col + ',0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, pr, 0, 6.2832); ctx.fill();
+      }
+      ctx.save(); ctx.translate(x, y); ctx.rotate(f.rot);
+      ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(r * 0.12, r * 0.2, r * 1.05, r * 0.78, 0, 0, 6.2832); ctx.fill();
+      const g2 = ctx.createLinearGradient(-r, -r, r, r); g2.addColorStop(0, '#fbf1d6'); g2.addColorStop(1, '#d2b57c');
+      ctx.fillStyle = g2; ctx.beginPath(); ctx.ellipse(0, 0, r, r * 0.72, 0, 0, 6.2832); ctx.fill();
+      ctx.lineWidth = Math.max(1, r * 0.12); ctx.strokeStyle = 'rgba(120,88,40,.55)'; ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-r * 0.55, 0); ctx.quadraticCurveTo(0, r * 0.22, r * 0.55, 0); ctx.strokeStyle = 'rgba(120,88,40,.45)'; ctx.stroke();
+      ctx.restore();
+    }
+  }
+  const brushes = new Map();
+  function drawBrush() {
+    if (!brushes.size) return; const sx = cw / W;
+    ctx.lineWidth = 1.5 * dpr; ctx.strokeStyle = PALS[set.pal].light ? 'rgba(60,40,10,.5)' : 'rgba(255,255,255,.55)';
+    brushes.forEach(b => { ctx.beginPath(); ctx.arc(b.x * sx, b.y * (ch / H), b.r * sx, 0, 6.2832); ctx.stroke(); });
+  }
+  function frame(now) {
+    requestAnimationFrame(frame);
+    if (!running || !sim) return;
+    const t0 = performance.now();
+    acc += SPEEDS[set.speed]; let k = 0;
+    while (acc >= 1 && k < 4) { sim.step(); acc -= 1; k++; }
+    if (acc > 4) acc = 0;
+    sim.render(img.data); sctx.putImageData(img, 0, 0);
+    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(simCv, 0, 0, cw, ch);
+    const bl = PALS[set.pal].bloom;
+    if (bl > 0) {
+      bctx.imageSmoothingEnabled = true; bctx.drawImage(simCv, 0, 0, bloomCv.width, bloomCv.height);
+      ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = bl; ctx.drawImage(bloomCv, 0, 0, cw, ch);
+      ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+    }
+    drawFoods(now); drawBrush();
+    emaMs += (performance.now() - t0 - emaMs) * 0.05;
+    if (now - lastTune > 2500) { lastTune = now; if (emaMs > 21 && sim.capScale > 0.45) sim.capScale *= 0.85; }
+    if ((frameNo++ % 20) === 0) stat();
+  }
+  function stat() {
+    const nf = sim.foods.length; let s;
+    if (sim.n === 0) s = '粘菌がいません。「タネ」で置こう';
+    else if (nf === 0) s = 'エサをさがしています';
+    else s = 'エサ ' + sim.reached + ' / ' + nf + ' にとどいた';
+    if ($('stat').textContent !== s) $('stat').textContent = s;
+  }
+
+  /* ---- 指の操作 ---- */
+  const ptrs = new Map();
+  function gpos(e) { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H }; }
+  let toastT = 0;
+  function toast(s) { const t = $('toast'); t.textContent = s; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 1800); }
+  function putFood(p) {
+    if (sim.foods.length >= 48) { toast('エサはここまで（48こ）'); return false; }
+    const f = sim.addFood(p.x, p.y); if (f) { f.tb = performance.now(); return true; } return false;
+  }
+  function stroke(a, b, r, fn) {
+    const d = Math.hypot(b.x - a.x, b.y - a.y), n = Math.max(1, Math.ceil(d / (r * 0.5)));
+    for (let i = 1; i <= n; i++) fn(a.x + (b.x - a.x) * i / n, a.y + (b.y - a.y) * i / n, r);
+  }
+  cv.addEventListener('pointerdown', e => {
+    e.preventDefault(); try { cv.setPointerCapture(e.pointerId); } catch (_) {}
+    $('hint').classList.add('off');
+    const p = gpos(e); ptrs.set(e.pointerId, { last: p, placed: p });
+    if (tool === 'food') putFood(p);
+    else if (tool === 'salt') { sim.salt(p.x, p.y, 3.2); brushes.set(e.pointerId, { x: p.x, y: p.y, r: 3.2 }); }
+    else if (tool === 'erase') { sim.erase(p.x, p.y, 5.5); brushes.set(e.pointerId, { x: p.x, y: p.y, r: 5.5 }); }
+    else if (tool === 'seed') { if (sim.n > sim.NMAX - 400) toast('粘菌がいっぱいです'); else sim.seed(p.x, p.y, Math.min(500, sim.P.baseN)); }
+  });
+  cv.addEventListener('pointermove', e => {
+    const s = ptrs.get(e.pointerId); if (!s) return; const p = gpos(e);
+    if (tool === 'food') { if (Math.hypot(p.x - s.placed.x, p.y - s.placed.y) >= 18) { if (putFood(p)) s.placed = p; } }
+    else if (tool === 'salt') { stroke(s.last, p, 3.2, sim.salt); brushes.set(e.pointerId, { x: p.x, y: p.y, r: 3.2 }); }
+    else if (tool === 'erase') { stroke(s.last, p, 5.5, sim.erase); brushes.set(e.pointerId, { x: p.x, y: p.y, r: 5.5 }); }
+    s.last = p;
+  });
+  const up = e => { ptrs.delete(e.pointerId); brushes.delete(e.pointerId); };
+  cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+  cv.addEventListener('contextmenu', e => e.preventDefault());
+
+  /* ---- ボタン ---- */
+  document.querySelectorAll('.tool').forEach(b => b.addEventListener('click', () => {
+    tool = b.dataset.tool; document.querySelectorAll('.tool').forEach(x => x.classList.toggle('on', x === b));
+  }));
+  $('bScatter').addEventListener('click', () => {
+    $('hint').classList.add('off'); let made = 0, tries = 0;
+    while (made < 5 && tries++ < 200 && sim.foods.length < 48) {
+      const x = W * (0.12 + Math.random() * 0.76), y = H * (0.16 + Math.random() * 0.62); let ok = true;
+      for (const f of sim.foods) if (Math.hypot(f.x - x, f.y - y) < Math.min(W, H) * 0.16) { ok = false; break; }
+      if (ok && putFood({ x, y })) made++;
+    }
+    if (!made) toast('もう置く場所がありません');
+  });
+  let armT = 0;
+  $('reset').addEventListener('click', () => {
+    const b = $('reset');
+    if (b.classList.contains('arm')) { clearTimeout(armT); b.classList.remove('arm'); b.textContent = 'はじめから'; build(); }
+    else { b.classList.add('arm'); b.textContent = 'もう一度おすと消える'; armT = setTimeout(() => { b.classList.remove('arm'); b.textContent = 'はじめから'; }, 2600); }
+  });
+  $('bView').addEventListener('click', () => document.body.classList.add('viewing'));
+  $('unview').addEventListener('click', () => document.body.classList.remove('viewing'));
+
+  function openSheet(id) { $('scrim').classList.add('on'); $(id).classList.add('on'); }
+  function closeSheets() { $('scrim').classList.remove('on'); document.querySelectorAll('.sheet').forEach(s => s.classList.remove('on')); }
+  $('bSet').addEventListener('click', () => openSheet('sSet'));
+  $('bHow').addEventListener('click', () => openSheet('sHow'));
+  $('scrim').addEventListener('click', closeSheets);
+  document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeSheets));
+  document.querySelectorAll('.seg').forEach(seg => seg.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return; set[seg.dataset.key] = b.dataset.v; saveSet(); applySet();
+  }));
+
+  /* ---- 写す ---- */
+  $('bShot').addEventListener('click', () => {
+    let url; try { url = cv.toDataURL('image/png'); } catch (e) { toast('写せませんでした'); return; }
+    const show = () => { $('shotImg').src = url; $('shot').classList.add('on'); };
+    try {
+      cv.toBlob(async blob => {
+        try {
+          const file = new File([blob], 'slime-mold.png', { type: 'image/png' });
+          if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file] }); return; }
+        } catch (e) { if (e && e.name === 'AbortError') return; }
+        show();
+      }, 'image/png');
+    } catch (e) { show(); }
+  });
+  $('shotClose').addEventListener('click', () => $('shot').classList.remove('on'));
+
+  /* ---- 画面の大きさ・休止 ---- */
+  let rsT = 0;
+  window.addEventListener('resize', () => { clearTimeout(rsT); rsT = setTimeout(() => {
+    const a = window.innerWidth / window.innerHeight;
+    if (Math.abs(a / aspect0 - 1) > 0.18) build(); else fit();
+  }, 180); });
+  document.addEventListener('visibilitychange', () => { running = !document.hidden; });
+
+  build();
+  requestAnimationFrame(frame);
+  setTimeout(() => $('hint').classList.add('off'), 9000);
+})();
+</script>
+</body>
+</html>
