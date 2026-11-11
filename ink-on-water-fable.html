@@ -50,6 +50,21 @@
     border:0;background:transparent;font-size:14px;letter-spacing:.16em;white-space:nowrap;
   }
   .tbtn:active,.tbtn[aria-expanded="true"]{background:rgba(74,67,57,.12)}
+  @media (max-width:372px){ .tbtn{padding:0 7px;min-width:0;letter-spacing:.06em;font-size:13px} #top{gap:2px} }
+
+  /* 眺めるモード：メニューを消して、右上に小さな「もどる」の丸だけ残す */
+  #top,#ui,#panel{transition:opacity .5s ease}
+  body.zen #top,body.zen #ui,body.zen #panel{opacity:0;pointer-events:none}
+  #back{
+    position:fixed;right:calc(6px + env(safe-area-inset-right));top:calc(6px + env(safe-area-inset-top));
+    width:44px;height:44px;border:0;background:none;padding:0;cursor:pointer;
+    display:none;place-items:center;
+  }
+  body.zen #back{display:grid}
+  #back span{
+    width:11px;height:11px;border-radius:50%;box-sizing:border-box;
+    border:1.5px solid rgba(74,67,57,.4);background:rgba(250,246,236,.4);
+  }
 
   /* 調整パネル */
   #panel{
@@ -137,6 +152,7 @@
   <button class="tbtn" id="wash" aria-label="水面をきれいにする">洗う</button>
   <button class="tbtn" id="calm" aria-label="水の流れを止める">止める</button>
   <button class="tbtn" id="tune" aria-expanded="false" aria-controls="panel">調整</button>
+  <button class="tbtn" id="zen" aria-label="メニューを隠して眺める">眺める</button>
 </div>
 
 <div id="panel" class="glass" hidden>
@@ -151,6 +167,7 @@
 </div>
 
 <div id="ui" class="glass" role="toolbar" aria-label="墨の色"></div>
+<button id="back" aria-label="メニューを出す"><span></span></button>
 <div id="toast" class="glass" role="status"></div>
 <div id="viewer" hidden>
   <img id="viewimg" alt="写した水面の絵">
@@ -360,6 +377,9 @@ function vorticity() {
       curl[k] = 0.5 * ((v[k + 1] - v[k - 1]) - (u[k + w] - u[k - w]));
     }
   }
+  // ふちの列にも、ひとつ内側と同じ値を入れておく（壁ぎわで渦の力が暴れないように）
+  for (let j = 1; j < h - 1; j++) { curl[j * w] = curl[j * w + 1]; curl[j * w + w - 1] = curl[j * w + w - 2]; }
+  for (let i = 0; i < w; i++) { curl[i] = curl[i + w]; curl[(h - 1) * w + i] = curl[(h - 2) * w + i]; }
   for (let j = 1; j < h - 1; j++) {
     let k = j * w + 1;
     for (let i = 1; i < w - 1; i++, k++) {
@@ -402,8 +422,23 @@ function project() {
       v[k] -= 0.5 * (p[k + w] - p[k - w]);
     }
   }
-  for (let j = 0; j < h; j++) { u[j * w] = 0; u[j * w + w - 1] = 0; }   // 水槽のふちは通り抜けない
-  for (let i = 0; i < w; i++) { v[i] = 0; v[i + (h - 1) * w] = 0; }
+  walls();
+}
+
+/* 水槽のふち：壁は通り抜けない。壁に沿う向きは、ひとつ内側の水と同じ動きにする（つるっとすべる壁）。
+   これをしないと、ふちの1列だけ計算から取り残されて、ポコポコした跡が出る。 */
+function walls() {
+  const w = W, h = H;
+  for (let j = 0; j < h; j++) {
+    const r = j * w;
+    u[r] = 0; v[r] = v[r + 1];
+    u[r + w - 1] = 0; v[r + w - 1] = v[r + w - 2];
+  }
+  const b = (h - 1) * w;
+  for (let i = 0; i < w; i++) {
+    v[i] = 0; u[i] = u[i + w];
+    v[b + i] = 0; u[b + i] = u[b - w + i];
+  }
 }
 
 /* 流れをなめらかにする：
@@ -425,6 +460,7 @@ function blur121(src, dst) {
 function smoothVel() {
   blur121(u, ub); blur121(v, vb);
   for (let i = 0; i < u.length; i++) { u[i] += (ub[i] - u[i]) * SMOOTH; v[i] += (vb[i] - v[i]) * SMOOTH; }
+  walls();
   blur121(u, ub); blur121(v, vb);          // 墨を運ぶのには、ならした流れ(ub, vb)を使う
 }
 
@@ -672,6 +708,8 @@ $('tune').addEventListener('click', () => {
   panel.hidden = !open;
   $('tune').setAttribute('aria-expanded', open ? 'true' : 'false');
 });
+$('zen').addEventListener('click', () => { document.body.classList.add('zen'); toast('右上の小さな丸で、メニューがもどります'); });
+$('back').addEventListener('click', () => { document.body.classList.remove('zen'); });
 elStrength.addEventListener('input', () => { applyFlow(); remember(); });
 elLength.addEventListener('input', () => { applyFlow(); remember(); });
 
