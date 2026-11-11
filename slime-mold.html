@@ -52,6 +52,16 @@
   .tool.on small{color:inherit;opacity:.75}
   #acts{display:flex;gap:5px}
   #acts .pill{font-size:12px;padding:8px 11px}
+  .pills{flex-wrap:wrap;justify-content:flex-end}
+  #title{flex:none}
+  #title span{white-space:nowrap}
+  .seg button:disabled{opacity:.35}
+  .dx{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid rgba(255,255,255,.08)}
+  .dx canvas{width:92px;height:92px;border-radius:14px;flex:none;border:1px solid rgba(255,244,190,.14)}
+  .dx b{font-size:14.5px}
+  .dx .st{font-size:11.5px;color:#ffd53d;margin-left:8px;letter-spacing:.05em}
+  .dx p{margin:4px 0 0;font-size:12.5px;line-height:1.7}
+  .dx.no b{color:rgba(244,239,216,.5)}
   #reset.arm{background:#b3261e;color:#fff;border-color:transparent}
   #bAuto.on{background:var(--accent);color:var(--accent-ink);border-color:transparent;font-weight:600}
 
@@ -112,6 +122,7 @@
     <button class="pill glass" id="bHow">しくみ</button>
     <button class="pill glass" id="bSet">調整</button>
     <button class="pill glass" id="bView">眺める</button>
+    <button class="pill glass" id="bDex">図鑑</button>
   </div>
 </div>
 
@@ -149,16 +160,10 @@
   <div class="grab"></div>
   <h2>調整 <button class="x" data-close>とじる</button></h2>
   <h3>育つ速さ</h3>
-  <div class="seg" data-key="speed"><button data-v="slow">ゆっくり</button><button data-v="mid">ふつう</button><button data-v="fast">はやい</button></div>
+  <div class="seg wrap" data-key="speed"><button data-v="vslow">ごくゆっくり</button><button data-v="slow">ゆっくり</button><button data-v="mid">ふつう</button><button data-v="fast">はやい</button><button data-v="turbo">早回し</button></div>
   <h3>種類</h3>
-  <div class="seg wrap" data-key="sp">
-    <button data-v="random">ランダム</button>
-    <button data-v="ki"><i class="sw" style="background:#ffc81f"></i>黄の網</button>
-    <button data-v="pot"><i class="sw" style="background:#f3de5c"></i>ぽってり</button>
-    <button data-v="ito"><i class="sw" style="background:#eef3f1"></i>白い糸</button>
-    <button data-v="shu"><i class="sw" style="background:#ff7d2e"></i>朱の網</button>
-    <button data-v="yako"><i class="sw" style="background:#3fe0c5"></i>夜光</button>
-  </div>
+  <div class="seg wrap" data-key="sp" id="spSeg"></div>
+  <p class="note" style="margin-top:6px">「？？？」は、まだ出会っていない種類。ランダムで出会うと選べるようになります。</p>
   <h3>場所</h3>
   <div class="seg wrap" data-key="hab">
     <button data-v="random">ランダム</button>
@@ -171,6 +176,9 @@
   <p class="note">「ランダム」は、場面が変わるたび（おまかせの場面転換・はじめから）に入れかわります。</p>
   <h3>道のかたち</h3>
   <div class="seg" data-key="shape"><button data-v="fine">こまかい網</button><button data-v="mid">ふつう</button><button data-v="bold">太い道</button></div>
+  <h3>子実体</h3>
+  <button class="x" id="bFruitNow" style="padding:10px 16px">いま胞子にする</button>
+  <p class="note" style="margin-top:6px">おまかせでなくても、いまの粘菌を子実体に変えて胞子を飛ばします（そのあと次の場面へ）。</p>
   <p class="note" style="margin-top:14px">「道のかたち」は、つぶが<b>どれくらい先のにおいをかぐか</b>を変えます。近くをかぐと細かい網に、遠くをかぐと太くまっすぐな道になります。</p>
 </div>
 
@@ -200,12 +208,19 @@
   </ul>
   <h3>おまかせ（粘菌の一生）</h3>
   <p>エサがときどき現れて、粘菌が食べつくしては次へ移ります。エサがなくなると、道の上に<b class="kw">子実体</b>（しじつたい＝胞子を作る小さなつぶ）ができて胞子を飛ばし、落ちた所から次の場面が始まります。本物の粘菌も、エサが尽きると子実体に変わります。</p>
-  <h3>種類について</h3>
-  <p class="note">黄の網＝モジホコリ風、ぽってり＝ススホコリ風、白い糸＝ムラサキホコリの仲間風、朱の網＝赤っぽい種類風、夜光＝空想の色。色と道のくせを<b>それらしく</b>寄せたもので、種類ごとの正確な再現ではありません。</p>
+  <h3>種類と子実体について</h3>
+  <p class="note">種類ごとに、変形体（動き回る体）の色と、子実体の形を作り分けています。くわしくは「図鑑」へ。色や形は資料の説明をもとに<b>それらしく</b>描いたもので、写真を写したものでも、正確な再現でもありません。レア度と「どの場所で出やすいか」は、遊びのための設定です。</p>
   <h3>もとになった研究</h3>
   <p class="note">つぶのルール：Jeff Jones (2010) “Characteristics of pattern formation and evolution in approximations of Physarum transport networks”, <i>Artificial Life</i> 16(2)。<br>
   迷路をとく粘菌：中垣俊之ほか (2000) <i>Nature</i> 407。鉄道網に似たネットワーク：手老篤史ほか (2010) <i>Science</i> 327。</p>
   <p class="note">※ これは見た目と動きを似せた簡単なモデルで、本物の粘菌の正確な再現ではありません。体の膜がじわじわ広がる部分、エサの方へ伸びやすくする部分、場所による広がりやすさ、子実体の見た目は、遊びやすくするための独自アレンジです。</p>
+</div>
+
+<div class="sheet" id="sDex">
+  <div class="grab"></div>
+  <h2>出会った粘菌 <button class="x" data-close>とじる</button></h2>
+  <div id="dexList"></div>
+  <p class="note" style="margin-top:12px">特徴の参考：筑波大学山岳科学センター「生き物写真館」、Hidden Forest（ニュージーランドの変形菌）、Landcare Research「Virtual Mycota」、Messiah University「Fungi on Wood」。絵は特徴の説明をもとに描いたもので、「〜風」です。記録はこの端末のこのブラウザにだけ残ります。</p>
 </div>
 
 <div id="shot"><img id="shotImg" alt="写した絵"><p>画像を長押しすると保存できます</p><button class="pill glass" id="shotClose">とじる</button></div>
@@ -217,7 +232,7 @@ function createSim(W, H, NMAX) {
   const T = new Float32Array(N), tmp = new Float32Array(N), M = new Float32Array(N),
         G = new Float32Array(N), R = new Float32Array(N), B = new Uint8Array(N),
         Sfar = new Float32Array(N), Snear = new Float32Array(N), grain = new Float32Array(N),
-        D = new Float32Array(N), tmp2 = new Float32Array(N), lobe = new Float32Array(N);
+        D = new Float32Array(N), tmp2 = new Float32Array(N), lobe = new Float32Array(N), fing = new Float32Array(N);
   const ax = new Float32Array(NMAX), ay = new Float32Array(NMAX), ah = new Float32Array(NMAX);
   const bgR = new Float32Array(N), bgG = new Float32Array(N), bgB = new Float32Array(N);
   const lut = new Float32Array(64 * 3);
@@ -229,7 +244,8 @@ function createSim(W, H, NMAX) {
     rate: 0.06, loss: 0.004,      // 膜の広がる速さ・ひっこむ速さ
     dD: 0.012, dGrow: 0.12, dShrink: 0.06,   // 体の「圧」の広がり・膜が広がる/ひっこむ境目
     ws: 3, wn: 7, over: 5, sat: 3, // エサのにおいの効き・エサ自体の引力・こみすぎ・かぎ分けの上限
-    explore: 0.2, turnover: 0.0015, eat: 0, // エサが無いときの広がり・体の中の流れ（入れかわり）
+    explore: 0.2, turnover: 0.0015, eat: 0,
+    finger: 0.5, pulse: 0, bias: 1, wander: 0.14,   // 先っぽの指っぽさ・脈打ち・エサへのまっすぐさ・ふらつき（わき道の多さ） // エサが無いときの広がり・体の中の流れ（入れかわり）
     baseN: Math.round(3000 * areaK), perFood: Math.round(2200 * areaK), birth: 2
   };
   const L = 0.3 * Math.hypot(W, H), RN = 4.5;
@@ -273,15 +289,15 @@ function createSim(W, H, NMAX) {
         else { const m2 = 0.6 + 0.6 * fbm(x * 0.06, y * 0.06); r = 17 * m2; g = 12 * m2; b = 9 * m2; lb = 0.4; }
         r += gn * 5; g += gn * 4; b += gn * 3;
       } else if (kind === 'soil') {
-        const m2 = 0.55 + 0.85 * fbm(x * 0.045, y * 0.045); r = 30 * m2; g = 22 * m2; b = 15 * m2; lb = 0.25 + 1.5 * q * q;
+        const m2 = 0.55 + 0.85 * fbm(x * 0.045, y * 0.045); r = 30 * m2; g = 22 * m2; b = 15 * m2; lb = 0.45 + 1.0 * q;
         if (grain[i] > 0.975) { r += 34; g += 30; b += 24; } else { r += gn * 9; g += gn * 7; b += gn * 6; }
         for (let k = 0; k < stones.length; k++) { const S2 = stones[k], dx = x - S2.x, dy = y - S2.y, lx = (dx * S2.c + dy * S2.s) * S2.ir, ly = (-dx * S2.s + dy * S2.c) * S2.iq, d = lx * lx + ly * ly;
           if (d < 1) { const lit = S2.tone * (0.62 + 0.5 * (-(dx + dy) * S2.ir * 0.5 + 0.5)) * (0.9 + 0.2 * vn(x * 0.3, y * 0.3));
             r = (58 + 14 * S2.warm) * lit; g = 56 * lit; b = (54 - 10 * S2.warm) * lit; lb = 0.035; }
           else if (d < 1.7 && lb > 0.04) { const k2 = 0.62 + 0.38 * (d - 1) / 0.7; r *= k2; g *= k2; b *= k2; } }
-      } else { r = 14 + gn * 5; g = 16 + gn * 5; b = 10 + gn * 5; lb = 0.2 + 1.6 * q * q; }
+      } else { r = 14 + gn * 5; g = 16 + gn * 5; b = 10 + gn * 5; lb = 0.5 + 0.9 * q; }
       let v = Math.hypot(x - cx, y - cy) / rm; v = 1 - 0.6 * v * v * (0.75 + 0.25 * v);
-      bgR[i] = r * v; bgG[i] = g * v; bgB[i] = b * v; lobe[i] = lb;
+      bgR[i] = r * v; bgG[i] = g * v; bgB[i] = b * v; lobe[i] = lb; fing[i] = vn(x / 4.6 + 100, y / 4.6 + 37);
     }
   };
   // エサのにおい：いちばん近い「まだとどいていないエサ」までの、塩をよけた道のり
@@ -348,7 +364,7 @@ function createSim(W, H, NMAX) {
   sim.step = function () {
     if (scentDirty && (sim.tick & 3) === 0) rebuildScent();
     const SO = P.SO, cSA = Math.cos(P.SA), sSA = Math.sin(P.SA), RA = P.RA, st = P.step, dep = P.dep, over = P.over, wn = P.wn;
-    const sat = P.sat, smin = sim.smin, invS = sim.srange > 1e-9 ? P.ws / sim.srange : 0, capS = P.ws * 1.5, W1 = W - 1, H1 = H - 1;
+    const wander = P.wander, sat = P.sat, smin = sim.smin, invS = sim.srange > 1e-9 ? P.ws / sim.srange : 0, capS = P.ws * 1.5, W1 = W - 1, H1 = H - 1;
     let n = sim.n, lo = 1e9, hi = -1e9;
     for (let i = 0; i < n; i++) {
       const x = ax[i], y = ay[i]; let h = ah[i];
@@ -366,7 +382,7 @@ function createSim(W, H, NMAX) {
       if (px >= 1 && py >= 1 && px < W1 && py < H1) { k = (py | 0) * W + (px | 0);
         if (M[k] >= 0.5) { v = (Sfar[k] - smin) * invS; t = T[k]; F2 = (t > sat ? sat : t) + (v > capS ? capS : v) + wn * Snear[k]; } }
       const rnd = Math.random();
-      if (F0 >= F1 && F0 >= F2) h += (rnd - 0.5) * 0.14;
+      if (F0 >= F1 && F0 >= F2) h += (rnd - 0.5) * wander;
       else if (F0 < F1 && F0 < F2) h += rnd < 0.5 ? -RA : RA;
       else if (F1 > F2) h -= RA; else h += RA;
       if (T[ci] > over) h += (Math.random() - 0.5) * 3;
@@ -384,7 +400,8 @@ function createSim(W, H, NMAX) {
 
     // 跡をぼかして薄める + 体の圧・膜・年齢・名残りの更新
     for (let y = 1; y < H1; y++) { let i = y * W + 1; for (let x = 1; x < W1; x++, i++) { tmp[i] = T[i - 1] + T[i] + T[i + 1]; tmp2[i] = D[i - 1] + D[i] + D[i + 1]; } }
-    const mix = P.mix, decay = P.decay, rate = P.rate, loss = P.loss, dD = P.dD, kD = 1 - dD, dGrow = P.dGrow, dShrink = P.dShrink;
+    const mix = P.mix, decay = P.decay, loss = P.loss, finger = P.finger, bias = P.bias,
+          rate = P.rate * Math.max(0, 1 + P.pulse * 1.4 * Math.sin(sim.tick * 0.024)), dD = P.dD, kD = 1 - dD, dGrow = P.dGrow, dShrink = P.dShrink;
     const useS = sim.srange > 1e-9, s0 = sim.smin, inv2 = useS ? 1 / sim.srange : 0, explore = P.explore;
     for (let y = 1; y < H1; y++) { let i = y * W + 1;
       for (let x = 1; x < W1; x++, i++) {
@@ -395,8 +412,9 @@ function createSim(W, H, NMAX) {
         if (B[i]) { t = 0; d = 0; m = 0; M[i] = 0; }
         else if (d > dGrow) {
           if (m < 1) { let g = (d - dGrow) * 3; if (g > 1) g = 1;
-            if (useS) { let u = (Sfar[i] - s0) * inv2; if (u < 0) u = 0; else if (u > 1.4) u = 1.4; g *= 0.05 + 2.2 * u * u; } else g *= explore;
-            m += rate * g * lobe[i]; if (m > 1) m = 1; M[i] = m; }
+            if (useS) { let u = (Sfar[i] - s0) * inv2; if (u < 0) u = 0; else if (u > 1.4) u = 1.4; g *= 0.7 + (0.05 + 2.2 * u * u - 0.7) * bias; } else g *= explore;
+            let lb = lobe[i]; if (finger > 0) { const f = fing[i]; lb *= 1 - finger + finger * (0.08 + 2.7 * f * f * f); }
+            m += rate * g * lb; if (m > 1) m = 1; M[i] = m; }
         } else if (d < dShrink && m > 0) { m -= loss; if (m < 0) m = 0; M[i] = m; }
         T[i] = t; D[i] = d;
         if (t > 1) { if (G[i] < GMAX) G[i] += 1; } else if (G[i] > 0) { const g2 = G[i] - 3; G[i] = g2 < 0 ? 0 : g2; }
@@ -492,14 +510,35 @@ function createSim(W, H, NMAX) {
 
   // 種類：色と、道のつくり方のくせ（「〜風」は見た目を寄せたもので、正確な再現ではありません）
   const SPECIES = {
-    ki:   { name: '黄の網', young: '#fff59a', mid: '#ffc81f', old: '#e2701a', hi: '#fffde6', mem: '#5d4d0c', res: '#6f6c48', memA: 0.30, resA: 0.16, kT: 2.0, bloom: 0.30, P: { SO: 5, SA: 0.5, RA: 0.6, sat: 3, over: 5, mix: 0.3, dGrow: 0.12 } },
-    pot:  { name: 'ぽってり', young: '#fffbd6', mid: '#f3de5c', old: '#cf9a2a', hi: '#ffffff', mem: '#6e5f1c', res: '#75704a', memA: 0.42, resA: 0.18, kT: 2.6, bloom: 0.30, P: { SO: 7.5, SA: 0.45, RA: 0.5, sat: 7, over: 11, mix: 0.45, dGrow: 0.16 } },
-    ito:  { name: '白い糸', young: '#ffffff', mid: '#dbe7e4', old: '#93b0bd', hi: '#ffffff', mem: '#39474a', res: '#5f6a6a', memA: 0.26, resA: 0.16, kT: 1.6, bloom: 0.30, P: { SO: 4, SA: 0.56, RA: 0.64, sat: 3, over: 5, mix: 0.27, dGrow: 0.12 } },
-    shu:  { name: '朱の網', young: '#ffe0a8', mid: '#ff7d2e', old: '#c02818', hi: '#fff1d8', mem: '#5a1d0c', res: '#6a4a3c', memA: 0.32, resA: 0.16, kT: 2.0, bloom: 0.30, P: { SO: 6, SA: 0.5, RA: 0.6, sat: 3.5, over: 6, mix: 0.32, dGrow: 0.12 } },
-    yako: { name: '夜光', young: '#d8fff6', mid: '#3fe0c5', old: '#2c79e0', hi: '#ffffff', mem: '#0b3f52', res: '#2a5566', memA: 0.34, resA: 0.20, kT: 2.0, bloom: 0.34, P: { SO: 5, SA: 0.5, RA: 0.6, sat: 3, over: 5, mix: 0.3, dGrow: 0.12 } }
+    ki:   { name: '黄の網', zname: 'モジホコリ風', rare: 1, fruit: 'moji', spore: '#d6c8d8', hab: { agar: 1, bark: 1, leaf: 1, soil: 1 },
+            desc: '変形体は黄色。子実体は黄色っぽい柄の先に、黒〜灰色のこぶがいくつも集まる。迷路や鉄道網の研究でいちばん有名な粘菌。',
+            young: '#fff59a', mid: '#ffc81f', old: '#e2701a', hi: '#fffde6', mem: '#5d4d0c', res: '#6f6c48', memA: 0.30, resA: 0.16, kT: 2.0, bloom: 0.30, P: { SO: 5, SA: 0.5, RA: 0.6, sat: 3, over: 5, mix: 0.3, dGrow: 0.12, finger: 0.5, pulse: 0.35, bias: 1, wander: 0.12, step: 0.9 } },
+    pot:  { name: 'ぽってり', zname: 'ススホコリ風', rare: 1, fruit: 'susu', spore: '#e8d7a0', hab: { agar: 0.6, bark: 1, leaf: 1, soil: 1 },
+            desc: '変形体は黄色でぽってり。子実体は柄がなく、泡のようなかたまりのまま固まり、かわくと茶色い粉になる。手のひらほどに育つことも。',
+            young: '#fffbd6', mid: '#f3de5c', old: '#cf9a2a', hi: '#ffffff', mem: '#6e5f1c', res: '#75704a', memA: 0.42, resA: 0.18, kT: 2.6, bloom: 0.30, P: { SO: 7.5, SA: 0.45, RA: 0.5, sat: 7, over: 11, mix: 0.45, dGrow: 0.16, finger: 0, pulse: 0.6, bias: 0.7, wander: 0.3, step: 0.7 } },
+    ito:  { name: '白い糸', zname: 'ムラサキホコリ風', rare: 2, fruit: 'murasaki', spore: '#d6ae9e', hab: { bark: 1, leaf: 0.8, soil: 0.2 },
+            desc: '変形体は白。子実体は黒い毛のような柄に、こげ茶の細長い筒。束になって生え、1〜2cmと大きめ。木から毛が生えたように見える。',
+            young: '#ffffff', mid: '#dbe7e4', old: '#93b0bd', hi: '#ffffff', mem: '#39474a', res: '#5f6a6a', memA: 0.26, resA: 0.16, kT: 1.6, bloom: 0.30, P: { SO: 4, SA: 0.56, RA: 0.64, sat: 3, over: 5, mix: 0.27, dGrow: 0.12, finger: 0.9, pulse: 0, bias: 0.8, wander: 0.22, step: 1.0 } },
+    shu:  { name: '朱の網', zname: 'マメホコリ風', rare: 2, fruit: 'mame', spore: '#ecd0c6', hab: { bark: 1, leaf: 0.2, soil: 0.3 },
+            desc: '変形体は赤〜さんご色。子実体はピンクの丸い玉（3〜15mm）で、熟すと茶〜灰色になる。朽ち木の上にころころと並ぶ。',
+            young: '#ffe0a8', mid: '#ff7d2e', old: '#c02818', hi: '#fff1d8', mem: '#5a1d0c', res: '#6a4a3c', memA: 0.32, resA: 0.16, kT: 2.0, bloom: 0.30, P: { SO: 6, SA: 0.5, RA: 0.6, sat: 3.5, over: 6, mix: 0.32, dGrow: 0.12, finger: 0.3, pulse: 0.2, bias: 0.6, wander: 0.35, step: 0.85 } },
+    tsuno:{ name: '水の糸', zname: 'ツノホコリ風', rare: 3, fruit: 'tsuno', spore: '#ffffff', hab: { bark: 1, leaf: 0.3 },
+            desc: '変形体は水のように透きとおる。子実体は白く半透明の小さな柱で、つららやサンゴのよう。雨のあとの朽ち木に広がる。',
+            young: '#f4fbff', mid: '#cfe3ea', old: '#8fb0c0', hi: '#ffffff', mem: '#2c3e45', res: '#56676c', memA: 0.22, resA: 0.15, kT: 1.5, bloom: 0.28, P: { SO: 4.5, SA: 0.54, RA: 0.62, sat: 3, over: 5, mix: 0.28, dGrow: 0.12, finger: 0.7, pulse: 0, bias: 0.5, wander: 0.4, step: 1.1, loss: 0.0025 } },
+    ami:  { name: '鉛の網', zname: 'アミホコリ風', rare: 3, fruit: 'ami', spore: '#e8c070', hab: { bark: 1, leaf: 0.15 },
+            desc: '変形体は鉛色〜黒っぽい。子実体は細い柄の先でうなだれる丸い玉。胞子が飛ぶと、かごのような網だけが残る。',
+            young: '#d3daea', mid: '#8292b4', old: '#4b5884', hi: '#eef2ff', mem: '#222a3e', res: '#4a5266', memA: 0.36, resA: 0.17, kT: 2.0, bloom: 0.30, P: { SO: 5.5, SA: 0.5, RA: 0.6, sat: 3.2, over: 5.5, mix: 0.3, dGrow: 0.12, finger: 0.2, pulse: 0.8, bias: 1, wander: 0.08, step: 0.8, loss: 0.006 } },
+    ruri: { name: '瑠璃', zname: 'ルリホコリ風', rare: 4, fruit: 'ruri', spore: '#cbbcff', hab: { bark: 1 },
+            desc: '変形体は白。子実体は長く黒い柄の先に、青や紫に金属のように光る小さな玉。コケのついた朽ち木で見つかる。',
+            young: '#ffffff', mid: '#e4e0f2', old: '#a698d4', hi: '#ffffff', mem: '#383250', res: '#625c78', memA: 0.28, resA: 0.16, kT: 1.7, bloom: 0.30, P: { SO: 5, SA: 0.5, RA: 0.6, sat: 3, over: 5, mix: 0.3, dGrow: 0.12, finger: 1, pulse: 0.15, bias: 0.9, wander: 0.1, step: 1.0 } },
+    yako: { name: '夜光', zname: '夜光（空想）', rare: 0, fruit: 'yako', spore: '#d8fff6', hab: { agar: 1, bark: 0.4, leaf: 0.4, soil: 0.4 },
+            desc: '本物にはいない、このアプリだけの種類。暗い所でほんのり光る。',
+            young: '#d8fff6', mid: '#3fe0c5', old: '#2c79e0', hi: '#ffffff', mem: '#0b3f52', res: '#2a5566', memA: 0.34, resA: 0.20, kT: 2.0, bloom: 0.34, P: { SO: 5, SA: 0.5, RA: 0.6, sat: 3, over: 5, mix: 0.3, dGrow: 0.12, finger: 0.6, pulse: 0.5, bias: 1, wander: 0.18, step: 1.15 } }
   };
+  const ALWAYS = { ki: 1, pot: 1, ito: 1, shu: 1, yako: 1 };       // はじめから選べる種類（ほかは出会うと選べる）
+  const RARE_W = { 0: 0.7, 1: 6, 2: 4, 3: 2.2, 4: 1.1 };
   const HABS = { agar: { name: '寒天', css: '#0c0e09' }, bark: { name: '倒木の裏', css: '#150d07' }, leaf: { name: '落ち葉', css: '#120b07' }, soil: { name: '土の上', css: '#0f0b08' } };
-  const SPEEDS = { slow: 0.5, mid: 1, fast: 3 };
+  const SPEEDS = { vslow: 0.25, slow: 0.5, mid: 1, fast: 2, turbo: 4 };
   const SHAPE_K = { fine: 0.72, mid: 1, bold: 1.6 };
   const EAT = 1 / 3400;           // おまかせのとき、エサが食べられていく速さ
 
@@ -508,6 +547,7 @@ function createSim(W, H, NMAX) {
   const simCv = document.createElement('canvas'), sctx = simCv.getContext('2d');
   const bloomCv = document.createElement('canvas'), bctx = bloomCv.getContext('2d');
   let sim = null, img = null, W = 0, H = 0, cw = 0, ch = 0, dpr = 1, aspect0 = 1;
+  let baseP = null;
   let tool = 'food', acc = 0, emaMs = 8, lastTune = 0, frameNo = 0, running = true;
   const set = { speed: 'mid', sp: 'random', hab: 'random', shape: 'mid', auto: 'off' };
   try { const s = JSON.parse(localStorage.getItem('slime-mold-set2') || '{}'); for (const k in set) if (typeof s[k] === 'string') set[k] = s[k]; } catch (e) {}
@@ -519,6 +559,18 @@ function createSim(W, H, NMAX) {
   const auto = { phase: 'grow', left: 0, next: 0, tick0: 0, idle: 0, t0: 0, sites: [], spores: [], land: null, from: null, fadeIn: 0 };
   const isAuto = () => set.auto === 'on';
   function pick(obj, not) { const k = Object.keys(obj).filter(x => x !== not); return k[(Math.random() * k.length) | 0]; }
+  // 種類は「レア度」と「その場所にいそうか」で重みをつけてえらぶ
+  function pickSp(hab, not) {
+    let ks = Object.keys(SPECIES).filter(k => (SPECIES[k].hab[hab] || 0) > 0); const alt = ks.filter(k => k !== not); if (alt.length) ks = alt;
+    let tot = 0; const w = ks.map(k => { const v = RARE_W[SPECIES[k].rare] * SPECIES[k].hab[hab]; tot += v; return v; });
+    let r = Math.random() * tot; for (let i = 0; i < ks.length; i++) { r -= w[i]; if (r <= 0) return ks[i]; } return ks[0];
+  }
+  function pickHabFor(sp, not) { let hs = Object.keys(HABS).filter(h => (SPECIES[sp].hab[h] || 0) > 0); const alt = hs.filter(h => h !== not); if (alt.length) hs = alt; return hs[(Math.random() * hs.length) | 0]; }
+  let dex = {};
+  try { dex = JSON.parse(localStorage.getItem('slime-mold-dex') || '{}') || {}; } catch (e) { dex = {}; }
+  function saveDex() { try { localStorage.setItem('slime-mold-dex', JSON.stringify(dex)); } catch (e) {} }
+  const known = k => ALWAYS[k] || dex[k];
+  const stars = n => n ? '★'.repeat(n) + '☆'.repeat(4 - n) : '空想';
   function rgb(h) { const v = parseInt(h.slice(1), 16); return [v >> 16 & 255, v >> 8 & 255, v & 255]; }
 
   if (SHOW_BACK_LINK) $('back').style.display = 'block';
@@ -540,12 +592,14 @@ function createSim(W, H, NMAX) {
     simCv.width = W; simCv.height = H; img = sctx.createImageData(W, H);
     bloomCv.width = Math.ceil(W / 4); bloomCv.height = Math.ceil(H / 4);
     sim.onReach = f => { f.t0 = performance.now(); };
+    baseP = Object.assign({}, sim.P);
     newScene(W / 2, H * 0.47, false);
   }
   // 新しい場面：ランダムなら種類と場所をえらび直して、タネを1つ置く
   function newScene(x, y, announce) {
-    if (set.sp === 'random' || !cur.sp) cur.sp = set.sp === 'random' ? pick(SPECIES, cur.sp) : set.sp;
-    if (set.hab === 'random' || !cur.hab) cur.hab = set.hab === 'random' ? pick(HABS, cur.hab) : set.hab;
+    const fs = set.sp !== 'random' ? set.sp : null;
+    cur.hab = set.hab !== 'random' ? set.hab : (fs ? pickHabFor(fs, cur.hab) : pick(HABS, cur.hab));
+    cur.sp = fs || pickSp(cur.hab, cur.sp);
     sim.clear(); sim.setHabitat(cur.hab); applyLook();
     sim.seed(x, y, sim.P.baseN);
     auto.phase = 'grow'; auto.sites = []; auto.spores = []; auto.idle = 0; armAuto(140);
@@ -554,15 +608,17 @@ function createSim(W, H, NMAX) {
   function armAuto(delay) { auto.left = 6 + ((Math.random() * 4) | 0); auto.next = sim.tick + delay; auto.tick0 = sim.tick; }
   function applyLook() {
     const sp = SPECIES[cur.sp]; sim.setLook(sp);
-    Object.assign(sim.P, sp.P); sim.P.SO = sp.P.SO * SHAPE_K[set.shape];
+    Object.assign(sim.P, baseP, sp.P); sim.P.SO = sp.P.SO * SHAPE_K[set.shape];
     sim.P.eat = isAuto() ? EAT : 0;
     const bg = HABS[cur.hab].css;
     document.documentElement.style.background = document.body.style.background = bg;
     const mt = document.querySelector('meta[name=theme-color]'); if (mt) mt.content = bg;
     $('legend').style.background = sim.lutCss();
+    $('spSeg').innerHTML = '<button data-v="random">ランダム</button>' + Object.keys(SPECIES).map(k => known(k)
+      ? '<button data-v="' + k + '"><i class="sw" style="background:' + SPECIES[k].mid + '"></i>' + SPECIES[k].name + '</button>' : '<button disabled>？？？</button>').join('');
     document.querySelectorAll('.seg').forEach(seg => seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === set[seg.dataset.key])));
     $('bAuto').classList.toggle('on', isAuto());
-    $('nowScene').textContent = 'いま：' + HABS[cur.hab].name + ' ・ ' + sp.name;
+    $('nowScene').textContent = 'いま：' + HABS[cur.hab].name + ' ・ ' + sp.name + '（' + sp.zname + '）';
   }
 
   /* ---- おまかせ：エサが現れる → 食べつくす → 子実体と胞子 → 次の場面 ---- */
@@ -583,45 +639,138 @@ function createSim(W, H, NMAX) {
     if (tk - auto.tick0 > 22000) beginFruit(false);
   }
   function beginFruit(dead) {
-    auto.phase = 'fruit'; auto.t0 = performance.now(); sim.fading = true; auto.spores = [];
-    auto.sites = dead ? [] : sim.sampleSites(150).map(s => ({ x: s.x, y: s.y, d: Math.random() * 2.2, h: 8 + Math.random() * 9, r: 2.1 + Math.random() * 1.7, lean: (Math.random() - 0.5) * 0.7 }));
+    const sp = SPECIES[cur.sp], big = { susu: 1, mame: 1, murasaki: 1, tsuno: 1 }[sp.fruit];
+    auto.phase = 'fruit'; auto.t0 = performance.now(); sim.fading = true; auto.spores = []; auto.first = false;
+    auto.sites = dead ? [] : sim.sampleSites(big ? 46 : 110).map(s => ({ x: s.x, y: s.y, d: Math.random() * 2.2, lean: (Math.random() - 0.5) * 0.5, seed: Math.random() * 100 }));
     auto.land = { x: W * (0.25 + Math.random() * 0.5), y: H * (0.25 + Math.random() * 0.45) };
     auto.from = auto.sites.length ? auto.sites[(Math.random() * auto.sites.length) | 0] : { x: W / 2, y: H / 2 };
     auto.wind = Math.random() * 6.2832;
-    if (!auto.sites.length) auto.t0 -= 6500;
+    if (!auto.sites.length) { auto.t0 -= 8000; return; }
+    const d = dex[cur.sp] || (dex[cur.sp] = { n: 0, habs: {} }); auto.first = d.n === 0; d.n++; d.habs[cur.hab] = 1; saveDex();
+    if (auto.first) applyLook();
+  }
+  function mixc(a, b, t) { if (t < 0) t = 0; else if (t > 1) t = 1; return 'rgb(' + ((a[0] + (b[0] - a[0]) * t) | 0) + ',' + ((a[1] + (b[1] - a[1]) * t) | 0) + ',' + ((a[2] + (b[2] - a[2]) * t) | 0) + ')'; }
+  function hr(seed, i) { const v = Math.sin(seed * 12.9898 + i * 78.233) * 43758.5453; return v - Math.floor(v); }
+  // 子実体の絵。特徴（形・色・柄のあるなし）をもとに描いたもの。(x,y)=根もと、s=大きさ、grow=育ち具合、mat=熟し具合
+  function drawBody(g, kind, x, y, s, grow, mat, seed, lean) {
+    const e = 1 - (1 - grow) * (1 - grow); if (e <= 0) return;
+    g.save(); g.translate(x, y); g.lineCap = 'round'; g.lineJoin = 'round';
+    if (kind === 'moji') {
+      const h = 10 * s * e, tx = h * lean, ty = -h;
+      g.strokeStyle = '#d8c36a'; g.lineWidth = Math.max(1, 0.7 * s); g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(tx * 0.2, ty * 0.6, tx, ty); g.stroke();
+      const col = mixc([226, 212, 120], [50, 48, 47], mat * 1.25);
+      for (let k = 0; k < 5; k++) { const a = k / 5 * 6.283 + hr(seed, k) * 0.8, r = 1.7 * s * e * (0.8 + 0.4 * hr(seed, k + 9)), px = tx + Math.cos(a) * 1.9 * s * e, py = ty + Math.sin(a) * 1.3 * s * e - 0.6 * s;
+        g.fillStyle = col; g.beginPath(); g.ellipse(px, py, r, r * 0.8, a, 0, 6.2832); g.fill();
+        g.fillStyle = 'rgba(255,255,255,' + (0.3 - mat * 0.12) + ')'; g.beginPath(); g.arc(px - r * 0.3, py - r * 0.3, r * 0.28, 0, 6.2832); g.fill(); }
+    } else if (kind === 'susu') {
+      const c1 = mixc([250, 222, 80], [146, 108, 60], mat), c2 = mixc([255, 244, 168], [192, 156, 100], mat);
+      for (let k = 0; k < 10; k++) { const r = (2.4 + 2.6 * hr(seed, k + 20)) * s * e, px = (hr(seed, k) - 0.5) * 15 * s * e, py = -r * 0.7 - hr(seed, k + 40) * 2.4 * s * e;
+        g.fillStyle = k % 2 ? c1 : c2; g.beginPath(); g.arc(px, py, r, 0, 6.2832); g.fill(); }
+      g.fillStyle = 'rgba(90,60,20,' + (0.12 + 0.25 * mat) + ')';
+      for (let k = 0; k < 16; k++) { g.beginPath(); g.arc((hr(seed, k + 60) - 0.5) * 14 * s * e, -hr(seed, k + 80) * 6 * s * e - s, 0.45 * s, 0, 6.2832); g.fill(); }
+    } else if (kind === 'murasaki') {
+      const n = 7, col = mixc([244, 224, 214], [82, 50, 54], mat * 1.4);
+      for (let k = 0; k < n; k++) { g.save(); g.translate((k - (n - 1) / 2) * 1.0 * s, 0); g.rotate((k / (n - 1) - 0.5) * 0.85 + (hr(seed, k) - 0.5) * 0.14 + lean * 0.4);
+        const sl = 4.5 * s * e, tl = (8.5 + 3.5 * hr(seed, k + 7)) * s * e, w = 1.5 * s;
+        g.strokeStyle = '#0d0b0b'; g.lineWidth = Math.max(0.8, 0.32 * s); g.beginPath(); g.moveTo(0, 0); g.lineTo(0, -sl); g.stroke();
+        if (tl > w) { g.strokeStyle = col; g.lineWidth = w; g.beginPath(); g.moveTo(0, -sl - w / 2); g.lineTo(0, -sl - tl + w / 2); g.stroke();
+          g.strokeStyle = 'rgba(255,255,255,.2)'; g.lineWidth = w * 0.22; g.beginPath(); g.moveTo(-w * 0.2, -sl - w); g.lineTo(-w * 0.2, -sl - tl + w); g.stroke(); }
+        g.restore(); }
+    } else if (kind === 'mame') {
+      const B = [[-2.9, 3.3], [2.6, 2.9], [0.3, 2.3], [5.6, 1.9]], col = mixc([244, 138, 120], [140, 118, 106], mat), sh = mixc([196, 88, 80], [96, 80, 72], mat);
+      for (let k = 0; k < 4; k++) { const r = B[k][1] * s * e * (0.9 + 0.2 * hr(seed, k)), px = B[k][0] * s * e, py = -r * 0.82;
+        g.fillStyle = sh; g.beginPath(); g.arc(px, py, r, 0, 6.2832); g.fill();
+        g.fillStyle = col; g.beginPath(); g.arc(px - r * 0.12, py - r * 0.14, r * 0.84, 0, 6.2832); g.fill();
+        g.fillStyle = 'rgba(255,255,255,' + (0.42 - 0.25 * mat) + ')'; g.beginPath(); g.arc(px - r * 0.36, py - r * 0.4, r * 0.22, 0, 6.2832); g.fill();
+        g.fillStyle = 'rgba(80,30,30,.16)'; for (let q = 0; q < 6; q++) { g.beginPath(); g.arc(px + (hr(seed, k * 9 + q) - 0.5) * r * 1.3, py + (hr(seed, k * 9 + q + 50) - 0.5) * r * 1.3, r * 0.07, 0, 6.2832); g.fill(); } }
+    } else if (kind === 'tsuno') {
+      for (let pass = 0; pass < 2; pass++) { g.strokeStyle = pass ? 'rgba(244,251,255,.92)' : 'rgba(190,225,255,.2)'; g.lineWidth = (pass ? 1.15 : 2.6) * s;
+        for (let k = 0; k < 7; k++) { const bx = (k - 3) * 1.7 * s + (hr(seed, k) - 0.5) * s, h = (5 + 5 * hr(seed, k + 11)) * s * e, lx = (hr(seed, k + 22) - 0.5) * 2.4 * s + lean * h * 0.3;
+          g.beginPath(); g.moveTo(bx, 0); g.quadraticCurveTo(bx + lx * 0.2, -h * 0.5, bx + lx, -h); g.stroke();
+          if (hr(seed, k + 33) > 0.45 && e > 0.6) { const dir = hr(seed, k + 44) > 0.5 ? 1 : -1; g.beginPath(); g.moveTo(bx + lx * 0.4, -h * 0.55); g.lineTo(bx + lx * 0.4 + dir * 1.6 * s, -h * 0.55 - 2.6 * s * e); g.stroke(); } } }
+    } else if (kind === 'ami') {
+      const h = 10 * s * e, dir = lean >= 0 ? 1 : -1, tx = dir * 2.6 * s * e, ty = -h, r = 2.7 * s * e, cx = tx + dir * 1.0 * s * e, cy = ty + 1.9 * s * e;
+      g.strokeStyle = '#3c2716'; g.lineWidth = Math.max(0.8, 0.45 * s); g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(-dir * 0.6 * s, ty * 0.8, tx, ty); g.stroke();
+      g.globalAlpha = 1 - 0.78 * mat; g.fillStyle = mixc([222, 166, 72], [168, 122, 54], mat); g.beginPath(); g.arc(cx, cy, r, 0, 6.2832); g.fill(); g.globalAlpha = 1;
+      g.fillStyle = 'rgba(96,58,24,.85)'; g.beginPath(); g.arc(cx, cy, r, 3.4, 6.02); g.closePath(); g.fill();
+      g.strokeStyle = '#5c3b1a'; g.lineWidth = Math.max(0.6, 0.2 * s); g.beginPath(); g.arc(cx, cy, r, 0, 6.2832); g.stroke();
+      for (const k of [0.3, 0.72]) { g.beginPath(); g.ellipse(cx, cy, r * k, r, 0, 0, 6.2832); g.stroke(); }
+      for (const k of [-0.45, 0.05, 0.5]) { const yy = cy + r * k, rx = Math.sqrt(Math.max(0, 1 - k * k)) * r; g.beginPath(); g.ellipse(cx, yy, rx, r * 0.18, 0, 0, 3.1416); g.stroke(); }
+    } else if (kind === 'ruri') {
+      const h = 11 * s * e, tx = h * lean * 0.6, ty = -h, r = 2.7 * s * e;
+      g.strokeStyle = '#08080a'; g.lineWidth = Math.max(0.9, 0.5 * s); g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(tx * 0.3, ty * 0.6, tx, ty + r * 0.7); g.stroke();
+      g.strokeStyle = 'rgba(190,200,255,.35)'; g.lineWidth = Math.max(0.4, 0.14 * s); g.beginPath(); g.moveTo(-0.15 * s, -s); g.quadraticCurveTo(tx * 0.3 - 0.15 * s, ty * 0.6, tx - 0.15 * s, ty + r); g.stroke();
+      const gr = g.createRadialGradient(tx - r * 0.35, ty - r * 0.4, r * 0.05, tx, ty, r);
+      gr.addColorStop(0, '#f4fbff'); gr.addColorStop(0.18, '#84c4ff'); gr.addColorStop(0.5, '#4a5ee0'); gr.addColorStop(0.8, '#7c38c8'); gr.addColorStop(1, '#241042');
+      g.fillStyle = gr; g.beginPath(); g.arc(tx, ty, r, 0, 6.2832); g.fill();
+      g.strokeStyle = 'rgba(255,205,125,.6)'; g.lineWidth = r * 0.16; g.beginPath(); g.arc(tx, ty, r * 0.74, 0.5, 1.5); g.stroke();
+      g.strokeStyle = 'rgba(120,255,220,.4)'; g.lineWidth = r * 0.1; g.beginPath(); g.arc(tx, ty, r * 0.86, 2.3, 3.0); g.stroke();
+    } else {
+      const h = 9.5 * s * e, tx = h * lean, ty = -h, r = 2.5 * s * e;
+      g.strokeStyle = 'rgba(160,255,235,.75)'; g.lineWidth = Math.max(0.8, 0.4 * s); g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(tx * 0.2, ty * 0.6, tx, ty); g.stroke();
+      let gr = g.createRadialGradient(tx, ty - r * 0.4, 0, tx, ty - r * 0.4, r * 3.2); gr.addColorStop(0, 'rgba(120,255,230,.35)'); gr.addColorStop(1, 'rgba(120,255,230,0)');
+      g.fillStyle = gr; g.beginPath(); g.arc(tx, ty - r * 0.4, r * 3.2, 0, 6.2832); g.fill();
+      gr = g.createRadialGradient(tx - r * 0.2, ty - r * 0.8, 0, tx, ty - r * 0.4, r * 1.4); gr.addColorStop(0, '#ffffff'); gr.addColorStop(0.4, '#8ff5e0'); gr.addColorStop(1, '#1f8fb8');
+      g.fillStyle = gr; g.beginPath(); g.ellipse(tx, ty - r * 0.4, r, r * 1.35, 0, 0, 6.2832); g.fill();
+    }
+    g.restore();
   }
   function drawFruit(now) {
-    const t = (now - auto.t0) / 1000, sx = cw / W, sy = ch / H, sp = SPECIES[cur.sp], c0 = rgb(sp.mid), c1 = [38, 30, 26];
-    const dark = Math.max(0, Math.min(1, (t - 3.2) / 2.5));
-    const hc = 'rgb(' + (c0[0] + (c1[0] - c0[0]) * dark | 0) + ',' + (c0[1] + (c1[1] - c0[1]) * dark | 0) + ',' + (c0[2] + (c1[2] - c0[2]) * dark | 0) + ')';
-    ctx.lineCap = 'round';
+    const t = (now - auto.t0) / 1000, sx = cw / W, sy = ch / H, sp = SPECIES[cur.sp], kind = sp.fruit;
+    const mat = Math.max(0, Math.min(1, (t - 3.2) / 2.2)), fs = dpr * Math.max(1, Math.min(1.5, sx / 2.6));
     for (const s of auto.sites) {
-      let g = (t - s.d) / 2; if (g <= 0) continue; if (g > 1) g = 1; g = 1 - (1 - g) * (1 - g);
-      const x = s.x * sx, y = s.y * sy, h = s.h * dpr * g, tx = x + h * s.lean, ty = y - h, r = s.r * dpr * Math.min(1, g * 1.2);
-      ctx.strokeStyle = 'rgba(255,250,235,.6)'; ctx.lineWidth = Math.max(1, 0.9 * dpr);
-      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(tx, ty); ctx.stroke();
-      ctx.fillStyle = hc; ctx.beginPath(); ctx.arc(tx, ty, r, 0, 6.2832); ctx.fill();
-      ctx.fillStyle = 'rgba(255,255,255,' + (0.5 * (1 - dark * 0.6)) + ')'; ctx.beginPath(); ctx.arc(tx - r * 0.3, ty - r * 0.3, r * 0.32, 0, 6.2832); ctx.fill();
-      if (t > 4.2 && t < 7.4 && auto.spores.length < 420 && Math.random() < 0.045)
-        auto.spores.push({ x: tx, y: ty, a: auto.wind + (Math.random() - 0.5) * 1.6, v: (10 + Math.random() * 26) * dpr, life: 1, k: 0.25 + Math.random() * 0.3 });
+      const g = Math.min(1, (t - s.d) / 2.2); if (g <= 0) continue;
+      const x = s.x * sx, y = s.y * sy; drawBody(ctx, kind, x, y, fs, g, mat, s.seed, s.lean);
+      if (t > (auto.first ? 5.6 : 4.4) && t < 8.8 && auto.spores.length < 420 && Math.random() < 0.05)
+        auto.spores.push({ x: x + s.lean * 9 * fs, y: y - 9 * fs, a: auto.wind + (Math.random() - 0.5) * 1.6, v: (10 + Math.random() * 26) * dpr, life: 1, k: 0.25 + Math.random() * 0.3 });
     }
-    const pc = rgb(sp.young); ctx.fillStyle = 'rgb(' + pc[0] + ',' + pc[1] + ',' + pc[2] + ')';
+    const pc = rgb(sp.spore); ctx.fillStyle = sp.spore;
     for (let i = auto.spores.length - 1; i >= 0; i--) { const p = auto.spores[i];
       p.a += (Math.random() - 0.5) * 0.25; p.x += Math.cos(p.a) * p.v / 60; p.y += Math.sin(p.a) * p.v / 60 - 0.12 * dpr; p.life -= p.k / 60;
       if (p.life <= 0) { auto.spores.splice(i, 1); continue; }
       ctx.globalAlpha = Math.min(1, p.life * 1.6) * 0.8; ctx.beginPath(); ctx.arc(p.x, p.y, 1.1 * dpr, 0, 6.2832); ctx.fill(); }
     ctx.globalAlpha = 1;
-    const fade = Math.max(0, Math.min(1, (t - 7.8) / 1.7));
+    // ルーペ：はじめての種類はまん中に大きく。2度目からは左下に小さく（胞子が飛ぶあいだも出たまま）
+    if (auto.sites.length) { const big = auto.first, a = Math.max(0, Math.min(1, t / 0.6, ((big ? 5.7 : 9.3) - t) / 0.6));
+      if (a > 0) { const R = big ? Math.min(74 * dpr, cw * 0.2) : 30 * dpr, lx = big ? cw / 2 : 16 * dpr + R, ly = big ? Math.max(ch * 0.27, R + 96 * dpr) : ch - 176 * dpr - R;
+        const font = px => '600 ' + (px * dpr) + 'px "Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic UI",sans-serif';
+        ctx.save(); ctx.globalAlpha = a;
+        ctx.fillStyle = 'rgba(8,10,7,.86)'; ctx.beginPath(); ctx.arc(lx, ly, R, 0, 6.2832); ctx.fill();
+        ctx.save(); ctx.beginPath(); ctx.arc(lx, ly, R - 1, 0, 6.2832); ctx.clip();
+        ctx.fillStyle = 'rgba(' + rgb(sp.mem).join(',') + ',.55)'; ctx.fillRect(lx - R, ly + R * 0.52, R * 2, R);
+        drawBody(ctx, kind, lx, ly + R * 0.54, R / 15, Math.min(1, t / 3), mat, 7.3, 0.12); ctx.restore();
+        ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = (big ? 1.5 : 1) * dpr; ctx.beginPath(); ctx.arc(lx, ly, R, 0, 6.2832); ctx.stroke();
+        ctx.fillStyle = '#f4efd8'; ctx.shadowColor = 'rgba(0,0,0,.85)'; ctx.shadowBlur = 6 * dpr;
+        if (big) { ctx.textAlign = 'center'; ctx.font = font(14); ctx.fillText(sp.zname + '  ' + stars(sp.rare), lx, ly + R + 22 * dpr);
+          ctx.fillStyle = '#ffd53d'; ctx.font = font(12.5); ctx.fillText('はじめての出会い！ 図鑑にのりました', lx, ly + R + 42 * dpr); }
+        else { ctx.textAlign = 'left'; ctx.font = font(13); ctx.fillText(sp.zname, lx + R + 9 * dpr, ly - 1 * dpr);
+          ctx.fillStyle = '#ffd53d'; ctx.font = font(11); ctx.fillText(stars(sp.rare) + '　' + dex[cur.sp].n + '回目', lx + R + 9 * dpr, ly + 16 * dpr); }
+        ctx.restore(); } }
+    const fade = Math.max(0, Math.min(1, (t - 9.2) / 1.7));
     if (fade > 0) { ctx.globalAlpha = fade; ctx.fillStyle = HABS[cur.hab].css; ctx.fillRect(0, 0, cw, ch); ctx.globalAlpha = 1; }
-    if (t > 4.6) { // 次の場面のタネになる胞子が、ふわっと飛んでいく
-      let u = Math.min(1, (t - 4.6) / 4.6); u = u * u * (3 - 2 * u);
+    if (t > 6.0) { // 次の場面のタネになる胞子が、ふわっと飛んでいく
+      let u = Math.min(1, (t - 6.0) / 4.6); u = u * u * (3 - 2 * u);
       const x = (auto.from.x + (auto.land.x - auto.from.x) * u) * sx + Math.sin(t * 2.3) * 9 * dpr * (1 - u),
             y = (auto.from.y + (auto.land.y - auto.from.y) * u) * sy - Math.sin(u * 3.1416) * 40 * dpr;
       const gr = ctx.createRadialGradient(x, y, 0, x, y, 9 * dpr);
       gr.addColorStop(0, 'rgba(' + pc[0] + ',' + pc[1] + ',' + pc[2] + ',.95)'); gr.addColorStop(0.25, 'rgba(' + pc[0] + ',' + pc[1] + ',' + pc[2] + ',.5)'); gr.addColorStop(1, 'rgba(' + pc[0] + ',' + pc[1] + ',' + pc[2] + ',0)');
       ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, 9 * dpr, 0, 6.2832); ctx.fill();
     }
-    if (t >= 9.6) { const l = auto.land; newScene(l.x, l.y, true); auto.fadeIn = now; }
+    if (t >= 11.0) { const l = auto.land; newScene(l.x, l.y, true); auto.fadeIn = now; }
+  }
+  // 図鑑
+  function renderDex() {
+    const keys = Object.keys(SPECIES), got = keys.filter(k => dex[k]).length; let h = '<p class="note">出会った種類 ' + got + ' / ' + keys.length + '　（おまかせで子実体ができると、のります）</p>';
+    for (const k of keys) { const S = SPECIES[k], d = dex[k];
+      const best = Object.keys(S.hab).sort((a, b) => S.hab[b] - S.hab[a])[0];
+      h += '<div class="dx' + (d ? '' : ' no') + '"><canvas width="184" height="184" data-k="' + k + '"></canvas><div><b>' + (d ? S.zname : '？？？') + '</b><span class="st">' + stars(S.rare) + '</span>'
+        + (d ? '<p>' + S.desc + '</p><p class="note">アプリでの名前：' + S.name + '　／　出会った場所：' + Object.keys(d.habs).map(x => HABS[x].name).join('・') + '　／　' + d.n + '回</p>'
+             : '<p class="note">まだ出会っていません。' + HABS[best].name + 'で出会えるかも。</p>') + '</div></div>'; }
+    $('dexList').innerHTML = h;
+    $('dexList').querySelectorAll('canvas').forEach(c => { const g = c.getContext('2d'), k = c.dataset.k, S = SPECIES[k];
+      g.fillStyle = '#0c0e09'; g.fillRect(0, 0, 184, 184);
+      if (dex[k]) { g.fillStyle = 'rgba(' + rgb(S.mem).join(',') + ',.6)'; g.fillRect(0, 142, 184, 42); drawBody(g, S.fruit, 92, 144, 8.2, 1, ({ murasaki: 0.8, moji: 0.8, ami: 0.35 })[S.fruit] || 0.25, 7.3, 0.12); }
+      else { g.fillStyle = 'rgba(255,255,255,.14)'; g.font = '600 84px sans-serif'; g.textAlign = 'center'; g.fillText('？', 92, 122); } });
   }
 
   /* ---- 描画 ---- */
@@ -754,13 +903,16 @@ function createSim(W, H, NMAX) {
   function openSheet(id) { $('scrim').classList.add('on'); $(id).classList.add('on'); }
   function closeSheets() { $('scrim').classList.remove('on'); document.querySelectorAll('.sheet').forEach(s => s.classList.remove('on')); }
   $('bSet').addEventListener('click', () => openSheet('sSet'));
+  $('bDex').addEventListener('click', () => { renderDex(); openSheet('sDex'); });
+  $('bFruitNow').addEventListener('click', () => { closeSheets(); if (auto.phase === 'fruit') return; if (sim.n < 200) { toast('粘菌が小さすぎます'); return; } beginFruit(false); });
   $('bHow').addEventListener('click', () => openSheet('sHow'));
   $('scrim').addEventListener('click', closeSheets);
   document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeSheets));
   document.querySelectorAll('.seg').forEach(seg => seg.addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return; const key = seg.dataset.key, v = b.dataset.v;
+    if (!v) return;
     set[key] = v; saveSet();
-    if (key === 'sp') cur.sp = v === 'random' ? pick(SPECIES, cur.sp) : v;
+    if (key === 'sp') cur.sp = v === 'random' ? pickSp(cur.hab, cur.sp) : v;
     if (key === 'hab') { cur.hab = v === 'random' ? pick(HABS, cur.hab) : v; sim.setHabitat(cur.hab); }
     applyLook();
   }));
