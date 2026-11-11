@@ -50,9 +50,10 @@
   .tool small{font-size:9.5px;color:var(--sub);white-space:nowrap}
   .tool.on{background:var(--accent);color:var(--accent-ink)}
   .tool.on small{color:inherit;opacity:.75}
-  #acts{display:flex;gap:6px}
-  #acts .pill{font-size:12px;padding:8px 13px}
+  #acts{display:flex;gap:5px}
+  #acts .pill{font-size:12px;padding:8px 11px}
   #reset.arm{background:#b3261e;color:#fff;border-color:transparent}
+  #bAuto.on{background:var(--accent);color:var(--accent-ink);border-color:transparent;font-weight:600}
 
   /* 眺めるモードから戻る */
   #unview{position:fixed;right:calc(env(safe-area-inset-right) + 12px);top:calc(env(safe-area-inset-top) + 10px);
@@ -79,6 +80,8 @@
   .sheet h2{font-size:16px;margin:0 0 12px;letter-spacing:.06em;display:flex;justify-content:space-between;align-items:center}
   .sheet h3{font-size:12px;font-weight:600;color:rgba(244,239,216,.6);margin:16px 0 7px;letter-spacing:.08em}
   .x{font:inherit;font-size:13px;color:#f4efd8;background:rgba(255,255,255,.1);border:0;border-radius:999px;padding:6px 13px;cursor:pointer}
+  .seg.wrap{flex-wrap:wrap}
+  .seg.wrap button{flex:1 0 30%}
   .seg{display:flex;background:rgba(255,255,255,.07);border-radius:13px;padding:3px;gap:3px}
   .seg button{flex:1;font:inherit;font-size:13px;color:#f4efd8;background:transparent;border:0;border-radius:10px;padding:9px 4px;cursor:pointer}
   .seg button.on{background:#ffd53d;color:#2a2200;font-weight:600}
@@ -117,6 +120,7 @@
 
 <div id="dock" class="ui">
   <div id="acts">
+    <button class="pill glass" id="bAuto">おまかせ</button>
     <button class="pill glass" id="bScatter">エサをまく</button>
     <button class="pill glass" id="bShot">写す</button>
     <button class="pill glass" id="reset">はじめから</button>
@@ -146,12 +150,25 @@
   <h2>調整 <button class="x" data-close>とじる</button></h2>
   <h3>育つ速さ</h3>
   <div class="seg" data-key="speed"><button data-v="slow">ゆっくり</button><button data-v="mid">ふつう</button><button data-v="fast">はやい</button></div>
-  <h3>色</h3>
-  <div class="seg" data-key="pal">
-    <button data-v="ki"><i class="sw" style="background:#ffd53d"></i>きいろ</button>
+  <h3>種類</h3>
+  <div class="seg wrap" data-key="sp">
+    <button data-v="random">ランダム</button>
+    <button data-v="ki"><i class="sw" style="background:#ffc81f"></i>黄の網</button>
+    <button data-v="pot"><i class="sw" style="background:#f3de5c"></i>ぽってり</button>
+    <button data-v="ito"><i class="sw" style="background:#eef3f1"></i>白い糸</button>
+    <button data-v="shu"><i class="sw" style="background:#ff7d2e"></i>朱の網</button>
     <button data-v="yako"><i class="sw" style="background:#3fe0c5"></i>夜光</button>
-    <button data-v="kanten"><i class="sw" style="background:#e9e2cf"></i>寒天</button>
   </div>
+  <h3>場所</h3>
+  <div class="seg wrap" data-key="hab">
+    <button data-v="random">ランダム</button>
+    <button data-v="agar">寒天</button>
+    <button data-v="bark">倒木の裏</button>
+    <button data-v="leaf">落ち葉</button>
+    <button data-v="soil">土の上</button>
+  </div>
+  <p class="note" id="nowScene" style="margin-top:8px"></p>
+  <p class="note">「ランダム」は、場面が変わるたび（おまかせの場面転換・はじめから）に入れかわります。</p>
   <h3>道のかたち</h3>
   <div class="seg" data-key="shape"><button data-v="fine">こまかい網</button><button data-v="mid">ふつう</button><button data-v="bold">太い道</button></div>
   <p class="note" style="margin-top:14px">「道のかたち」は、つぶが<b>どれくらい先のにおいをかぐか</b>を変えます。近くをかぐと細かい網に、遠くをかぐと太くまっすぐな道になります。</p>
@@ -179,11 +196,16 @@
     <li><b>塩</b>で壁や迷路を描く → よけて回り道をする（本物も塩が苦手）</li>
     <li>太い道を<b>けす</b>で切る → つなぎ直す</li>
     <li>エサにとどくたび、体が少し大きくなる</li>
+    <li>場所を変える → 倒木では木目のみぞに沿い、落ち葉では葉の上を広がり、土では小石をよける</li>
   </ul>
+  <h3>おまかせ（粘菌の一生）</h3>
+  <p>エサがときどき現れて、粘菌が食べつくしては次へ移ります。エサがなくなると、道の上に<b class="kw">子実体</b>（しじつたい＝胞子を作る小さなつぶ）ができて胞子を飛ばし、落ちた所から次の場面が始まります。本物の粘菌も、エサが尽きると子実体に変わります。</p>
+  <h3>種類について</h3>
+  <p class="note">黄の網＝モジホコリ風、ぽってり＝ススホコリ風、白い糸＝ムラサキホコリの仲間風、朱の網＝赤っぽい種類風、夜光＝空想の色。色と道のくせを<b>それらしく</b>寄せたもので、種類ごとの正確な再現ではありません。</p>
   <h3>もとになった研究</h3>
   <p class="note">つぶのルール：Jeff Jones (2010) “Characteristics of pattern formation and evolution in approximations of Physarum transport networks”, <i>Artificial Life</i> 16(2)。<br>
   迷路をとく粘菌：中垣俊之ほか (2000) <i>Nature</i> 407。鉄道網に似たネットワーク：手老篤史ほか (2010) <i>Science</i> 327。</p>
-  <p class="note">※ これは見た目と動きを似せた簡単なモデルで、本物の粘菌の正確な再現ではありません。体の膜がじわじわ広がる部分や、エサの方へ伸びやすくする部分は、遊びやすくするための独自アレンジです。</p>
+  <p class="note">※ これは見た目と動きを似せた簡単なモデルで、本物の粘菌の正確な再現ではありません。体の膜がじわじわ広がる部分、エサの方へ伸びやすくする部分、場所による広がりやすさ、子実体の見た目は、遊びやすくするための独自アレンジです。</p>
 </div>
 
 <div id="shot"><img id="shotImg" alt="写した絵"><p>画像を長押しすると保存できます</p><button class="pill glass" id="shotClose">とじる</button></div>
@@ -207,7 +229,7 @@ function createSim(W, H, NMAX) {
     rate: 0.06, loss: 0.004,      // 膜の広がる速さ・ひっこむ速さ
     dD: 0.012, dGrow: 0.12, dShrink: 0.06,   // 体の「圧」の広がり・膜が広がる/ひっこむ境目
     ws: 3, wn: 7, over: 5, sat: 3, // エサのにおいの効き・エサ自体の引力・こみすぎ・かぎ分けの上限
-    explore: 0.2, turnover: 0.0015, // エサが無いときの広がり・体の中の流れ（入れかわり）
+    explore: 0.2, turnover: 0.0015, eat: 0, // エサが無いときの広がり・体の中の流れ（入れかわり）
     baseN: Math.round(3000 * areaK), perFood: Math.round(2200 * areaK), birth: 2
   };
   const L = 0.3 * Math.hypot(W, H), RN = 4.5;
@@ -215,15 +237,53 @@ function createSim(W, H, NMAX) {
   let pal = null;
 
   for (let i = 0; i < N; i++) grain[i] = Math.random();
-  { // なめらかなムラ（仮足＝のびる腕のでこぼこ用）
-    const cs = 7, gw = Math.ceil(W / cs) + 2, gh = Math.ceil(H / cs) + 2, gr = new Float32Array(gw * gh);
-    for (let i = 0; i < gr.length; i++) gr[i] = Math.random();
+  const hp = new Float32Array(4096);
+  function vn(x, y) { const xi = Math.floor(x), yi = Math.floor(y); let u = x - xi, v = y - yi; u = u * u * (3 - 2 * u); v = v * v * (3 - 2 * v);
+    const a = hp[((xi * 73856093) ^ (yi * 19349663)) & 4095], b = hp[(((xi + 1) * 73856093) ^ (yi * 19349663)) & 4095],
+          c = hp[((xi * 73856093) ^ ((yi + 1) * 19349663)) & 4095], d = hp[(((xi + 1) * 73856093) ^ ((yi + 1) * 19349663)) & 4095];
+    return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v; }
+  function fbm(x, y) { return vn(x, y) * 0.6 + vn(x * 2.1 + 9, y * 2.1 + 4) * 0.28 + vn(x * 4.3 + 3, y * 4.3 + 7) * 0.12; }
+  // 場所（背景の絵と、広がりやすさのムラ）
+  sim.setHabitat = function (kind) {
+    for (let i = 0; i < 4096; i++) hp[i] = Math.random();
+    const cx = W / 2, cy = H / 2, rm = Math.hypot(cx, cy), R0 = Math.random;
+    let leaves = null, stones = null;
+    if (kind === 'leaf') { leaves = []; const K = Math.round(N / 2300);
+      const cols = [[58, 30, 14], [70, 38, 12], [62, 46, 16], [52, 20, 14], [40, 34, 18], [74, 52, 18], [46, 26, 12]];
+      for (let k = 0; k < K; k++) { const a = R0() * TAU, len = 24 + R0() * 18;
+        leaves.push({ x: R0() * W, y: R0() * H, c: Math.cos(a), s: Math.sin(a), il: 1 / len, iw: 1 / (len * (0.42 + R0() * 0.2)), col: cols[(R0() * cols.length) | 0], sh: 0.75 + R0() * 0.45 }); } }
+    if (kind === 'soil') { stones = []; const K = Math.round(N / 5200);
+      for (let k = 0; k < K; k++) { const a = R0() * TAU, r = 4.5 + R0() * 7;
+        stones.push({ x: R0() * W, y: R0() * H, c: Math.cos(a), s: Math.sin(a), ir: 1 / r, iq: 1 / (r * (0.6 + R0() * 0.35)), tone: 0.7 + R0() * 0.5, warm: R0() }); } }
     for (let y = 0, i = 0; y < H; y++) for (let x = 0; x < W; x++, i++) {
-      const fx = x / cs, fy = y / cs, x0 = fx | 0, y0 = fy | 0; let u = fx - x0, v = fy - y0; u = u * u * (3 - 2 * u); v = v * v * (3 - 2 * v);
-      const a = gr[y0 * gw + x0], b = gr[y0 * gw + x0 + 1], c = gr[(y0 + 1) * gw + x0], d = gr[(y0 + 1) * gw + x0 + 1];
-      const q = a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v; lobe[i] = 0.2 + 1.6 * q * q;
-    } }
-
+      let r, g, b, lb; const q = vn(x / 7, y / 7), gn = (grain[i] - 0.5);
+      if (kind === 'bark') {
+        const sv = x * 0.5 + 10 * fbm(x * 0.03, y * 0.011) + 3 * vn(x * 0.12 + 20, y * 0.03);
+        const groove = Math.pow(0.5 + 0.5 * Math.sin(sv), 1.6), mt = 0.72 + 0.5 * fbm(x * 0.02 + 30, y * 0.02), ridge = (0.5 + 0.75 * (1 - groove)) * mt;
+        r = 46 * ridge; g = 30 * ridge; b = 18 * ridge;
+        const mm = fbm(x * 0.03 + 50, y * 0.03 + 11); if (mm > 0.6) { let k = (mm - 0.6) * 3.5; if (k > 0.65) k = 0.65; r += (26 - r) * k; g += (44 - g) * k; b += (20 - b) * k; }
+        r += gn * 7; g += gn * 6; b += gn * 5; lb = 0.14 + 1.75 * groove;
+      } else if (kind === 'leaf') {
+        let top = null, td = 0, tl = 0, tw = 0;
+        for (let k = 0; k < leaves.length; k++) { const L2 = leaves[k], dx = x - L2.x, dy = y - L2.y, lx = (dx * L2.c + dy * L2.s) * L2.il, ly = (-dx * L2.s + dy * L2.c) * L2.iw;
+          const d = lx * lx + ly * ly * (1 + 0.9 * lx * lx + 0.7 * lx); if (d < 1) { top = L2; td = d; tl = lx; tw = ly; } }
+        if (top) { let sh = top.sh * (0.8 + 0.35 * fbm(x * 0.08, y * 0.08)); if (td > 0.8) sh *= 1 - (td - 0.8) * 2.2;
+          const vein = Math.abs(tw) < 0.07 ? 1.35 : (Math.abs(((tl * 5 + Math.abs(tw) * 2.2) % 1 + 1) % 1 - 0.5) < 0.06 ? 1.14 : 1);
+          r = top.col[0] * sh * vein * 0.85; g = top.col[1] * sh * vein * 0.85; b = top.col[2] * sh * vein * 0.85; lb = td > 0.86 ? 0.22 : 0.75 + 0.9 * q; }
+        else { const m2 = 0.6 + 0.6 * fbm(x * 0.06, y * 0.06); r = 17 * m2; g = 12 * m2; b = 9 * m2; lb = 0.4; }
+        r += gn * 5; g += gn * 4; b += gn * 3;
+      } else if (kind === 'soil') {
+        const m2 = 0.55 + 0.85 * fbm(x * 0.045, y * 0.045); r = 30 * m2; g = 22 * m2; b = 15 * m2; lb = 0.25 + 1.5 * q * q;
+        if (grain[i] > 0.975) { r += 34; g += 30; b += 24; } else { r += gn * 9; g += gn * 7; b += gn * 6; }
+        for (let k = 0; k < stones.length; k++) { const S2 = stones[k], dx = x - S2.x, dy = y - S2.y, lx = (dx * S2.c + dy * S2.s) * S2.ir, ly = (-dx * S2.s + dy * S2.c) * S2.iq, d = lx * lx + ly * ly;
+          if (d < 1) { const lit = S2.tone * (0.62 + 0.5 * (-(dx + dy) * S2.ir * 0.5 + 0.5)) * (0.9 + 0.2 * vn(x * 0.3, y * 0.3));
+            r = (58 + 14 * S2.warm) * lit; g = 56 * lit; b = (54 - 10 * S2.warm) * lit; lb = 0.035; }
+          else if (d < 1.7 && lb > 0.04) { const k2 = 0.62 + 0.38 * (d - 1) / 0.7; r *= k2; g *= k2; b *= k2; } }
+      } else { r = 14 + gn * 5; g = 16 + gn * 5; b = 10 + gn * 5; lb = 0.2 + 1.6 * q * q; }
+      let v = Math.hypot(x - cx, y - cy) / rm; v = 1 - 0.6 * v * v * (0.75 + 0.25 * v);
+      bgR[i] = r * v; bgG[i] = g * v; bgB[i] = b * v; lobe[i] = lb;
+    }
+  };
   // エサのにおい：いちばん近い「まだとどいていないエサ」までの、塩をよけた道のり
   const dist = new Float32Array(N); let scentDirty = false;
   function rebuildScent() {
@@ -256,7 +316,7 @@ function createSim(W, H, NMAX) {
     x = Math.max(4, Math.min(W - 5, x)); y = Math.max(4, Math.min(H - 5, y));
     if (B[(y | 0) * W + (x | 0)]) return null;
     for (const f of sim.foods) { const dx = f.x - x, dy = f.y - y; if (dx * dx + dy * dy < 49) return null; }
-    const f = { x, y, reached: false, born: sim.tick, rot: Math.random() * TAU, sz: 0.85 + Math.random() * 0.3, t0: 0, tr: 0 };
+    const f = { x, y, reached: false, born: sim.tick, rot: Math.random() * TAU, sz: 0.85 + Math.random() * 0.3, t0: 0, tr: 0, amt: 1, eatK: 0.75 + Math.random() * 0.5 };
     sim.foods.push(f); scentDirty = true; addNear(f, 1); return f;
   };
   sim.removeFood = function (f) {
@@ -350,7 +410,8 @@ function createSim(W, H, NMAX) {
     if (n > 0) {
       let births = n < cap ? Math.min(P.birth, cap - n) : 0, deaths = n > cap ? Math.min(2, n - cap) : 0;
       if (sim.reached > 0) { const tv = n * P.turnover; let k = tv | 0; if (Math.random() < tv - k) k++; births += k; deaths += k; }
-      for (let q = 0; q < deaths && n > 1; q++) { const j = (Math.random() * n) | 0; n--; ax[j] = ax[n]; ay[j] = ay[n]; ah[j] = ah[n]; }
+      if (sim.fading) { births = 0; deaths += Math.ceil(n * 0.012); }
+      for (let q = 0; q < deaths && n > (sim.fading ? 0 : 1); q++) { const j = (Math.random() * n) | 0; n--; ax[j] = ax[n]; ay[j] = ay[n]; ah[j] = ah[n]; }
       const nf = sim.foods.length;
       for (let q = 0; q < births && n < NMAX; q++) {
         let ok = false;
@@ -367,25 +428,30 @@ function createSim(W, H, NMAX) {
       const i = (f.y | 0) * W + (f.x | 0);
       if ((T[i] + T[i - 1] + T[i + 1] + T[i - W] + T[i + W]) * 0.2 > 1.2) { f.reached = true; f.tr = sim.tick; sim.reached++; scentDirty = true; if (sim.onReach) sim.onReach(f); }
     }
+    if (P.eat > 0) for (let k = sim.foods.length - 1; k >= 0; k--) { const f = sim.foods[k]; if (f.reached) { f.amt -= P.eat * f.eatK; if (f.amt <= 0) sim.removeFood(f); } }
     sim.tick++;
+  };
+  sim.clear = function () {
+    T.fill(0); tmp.fill(0); tmp2.fill(0); M.fill(0); G.fill(0); R.fill(0); D.fill(0); B.fill(0); Sfar.fill(0); Snear.fill(0);
+    sim.foods.length = 0; sim.n = 0; sim.reached = 0; sim.tick = 0; sim.smin = 0; sim.srange = 0; sim.fading = false; scentDirty = false;
+  };
+  // 子実体ができる場所：道の上から、ほどよい間隔でえらぶ
+  sim.sampleSites = function (max) {
+    const out = [], cs = 6;
+    for (let by = 2; by < H - cs - 2; by += cs) for (let bx = 2; bx < W - cs - 2; bx += cs) { let best = 1.0, bi = -1;
+      for (let dy = 0; dy < cs; dy++) for (let dx = 0; dx < cs; dx++) { const i = (by + dy) * W + bx + dx; if (T[i] > best) { best = T[i]; bi = i; } }
+      if (bi >= 0) out.push({ x: bi % W + 0.5, y: ((bi / W) | 0) + 0.5 }); }
+    for (let i = out.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0, t = out[i]; out[i] = out[j]; out[j] = t; }
+    if (out.length > max) out.length = max; return out;
   };
 
   function hex(s) { const v = parseInt(s.slice(1), 16); return [v >> 16 & 255, v >> 8 & 255, v & 255]; }
-  sim.setPalette = function (p) {
-    pal = { bg: hex(p.bg), edge: hex(p.edge), res: hex(p.res), mem: hex(p.mem), hi: hex(p.hi), salt: hex(p.salt), salt2: hex(p.salt2),
-            resA: p.resA, memA: p.memA, kT: p.kT };
+  sim.setLook = function (p) {
+    pal = { res: hex(p.res), mem: hex(p.mem), hi: hex(p.hi), salt: [174, 188, 203], salt2: [246, 251, 255], resA: p.resA, memA: p.memA, kT: p.kT };
     const y0 = hex(p.young), m0 = hex(p.mid), o0 = hex(p.old);
     for (let k = 0; k < 64; k++) { const a = k / 63; let A, Bc, u;
       if (a < 0.4) { A = y0; Bc = m0; u = a / 0.4; } else { A = m0; Bc = o0; u = (a - 0.4) / 0.6; }
       for (let c = 0; c < 3; c++) lut[k * 3 + c] = A[c] + (Bc[c] - A[c]) * u; }
-    const cx = W / 2, cy = H / 2, rm = Math.hypot(cx, cy);
-    for (let y = 0, i = 0; y < H; y++) for (let x = 0; x < W; x++, i++) {
-      let v = Math.hypot(x - cx, y - cy) / rm; v = v * v * (0.75 + 0.25 * v);
-      const gn = (grain[i] - 0.5) * p.grain;
-      bgR[i] = pal.bg[0] + (pal.edge[0] - pal.bg[0]) * v + gn;
-      bgG[i] = pal.bg[1] + (pal.edge[1] - pal.bg[1]) * v + gn;
-      bgB[i] = pal.bg[2] + (pal.edge[2] - pal.bg[2]) * v + gn;
-    }
   };
   sim.lutCss = function () { const s = []; for (let k = 0; k < 64; k += 9) s.push('rgb(' + (lut[k * 3] | 0) + ',' + (lut[k * 3 + 1] | 0) + ',' + (lut[k * 3 + 2] | 0) + ')'); return 'linear-gradient(90deg,' + s.join(',') + ')'; };
 
@@ -424,13 +490,18 @@ function createSim(W, H, NMAX) {
   'use strict';
   const SHOW_BACK_LINK = false;   // 入口ページ（index.html）ができたら true に
 
-  const PALS = {
-    ki:     { light: false, bloom: 0.30, bg: '#0e100a', edge: '#050603', res: '#6f6c48', mem: '#5d4d0c', young: '#fff59a', mid: '#ffc81f', old: '#e2701a', hi: '#fffde6', salt: '#aebccb', salt2: '#f6fbff', resA: 0.16, memA: 0.30, kT: 2.0, grain: 5, theme: '#0c0e09' },
-    yako:   { light: false, bloom: 0.34, bg: '#050a12', edge: '#010307', res: '#2a5566', mem: '#0b3f52', young: '#d8fff6', mid: '#3fe0c5', old: '#2c79e0', hi: '#ffffff', salt: '#8d93b8', salt2: '#eef0ff', resA: 0.20, memA: 0.34, kT: 2.0, grain: 4, theme: '#050a12' },
-    kanten: { light: true,  bloom: 0,    bg: '#ece5d2', edge: '#d6cbb0', res: '#bdb48a', mem: '#ecd66a', young: '#f3cf12', mid: '#e09a0c', old: '#a8521a', hi: '#8a3e12', salt: '#8fa6bb', salt2: '#ffffff', resA: 0.30, memA: 0.55, kT: 1.7, grain: 7, theme: '#ece5d2' }
+  // 種類：色と、道のつくり方のくせ（「〜風」は見た目を寄せたもので、正確な再現ではありません）
+  const SPECIES = {
+    ki:   { name: '黄の網', young: '#fff59a', mid: '#ffc81f', old: '#e2701a', hi: '#fffde6', mem: '#5d4d0c', res: '#6f6c48', memA: 0.30, resA: 0.16, kT: 2.0, bloom: 0.30, P: { SO: 5, SA: 0.5, RA: 0.6, sat: 3, over: 5, mix: 0.3, dGrow: 0.12 } },
+    pot:  { name: 'ぽってり', young: '#fffbd6', mid: '#f3de5c', old: '#cf9a2a', hi: '#ffffff', mem: '#6e5f1c', res: '#75704a', memA: 0.42, resA: 0.18, kT: 2.6, bloom: 0.30, P: { SO: 7.5, SA: 0.45, RA: 0.5, sat: 7, over: 11, mix: 0.45, dGrow: 0.16 } },
+    ito:  { name: '白い糸', young: '#ffffff', mid: '#dbe7e4', old: '#93b0bd', hi: '#ffffff', mem: '#39474a', res: '#5f6a6a', memA: 0.26, resA: 0.16, kT: 1.6, bloom: 0.30, P: { SO: 4, SA: 0.56, RA: 0.64, sat: 3, over: 5, mix: 0.27, dGrow: 0.12 } },
+    shu:  { name: '朱の網', young: '#ffe0a8', mid: '#ff7d2e', old: '#c02818', hi: '#fff1d8', mem: '#5a1d0c', res: '#6a4a3c', memA: 0.32, resA: 0.16, kT: 2.0, bloom: 0.30, P: { SO: 6, SA: 0.5, RA: 0.6, sat: 3.5, over: 6, mix: 0.32, dGrow: 0.12 } },
+    yako: { name: '夜光', young: '#d8fff6', mid: '#3fe0c5', old: '#2c79e0', hi: '#ffffff', mem: '#0b3f52', res: '#2a5566', memA: 0.34, resA: 0.20, kT: 2.0, bloom: 0.34, P: { SO: 5, SA: 0.5, RA: 0.6, sat: 3, over: 5, mix: 0.3, dGrow: 0.12 } }
   };
+  const HABS = { agar: { name: '寒天', css: '#0c0e09' }, bark: { name: '倒木の裏', css: '#150d07' }, leaf: { name: '落ち葉', css: '#120b07' }, soil: { name: '土の上', css: '#0f0b08' } };
   const SPEEDS = { slow: 0.5, mid: 1, fast: 3 };
-  const SHAPES = { fine: { SO: 3.5, SA: 0.62, RA: 0.7 }, mid: { SO: 5, SA: 0.5, RA: 0.6 }, bold: { SO: 8.5, SA: 0.42, RA: 0.5 } };
+  const SHAPE_K = { fine: 0.72, mid: 1, bold: 1.6 };
+  const EAT = 1 / 3400;           // おまかせのとき、エサが食べられていく速さ
 
   const $ = id => document.getElementById(id);
   const cv = $('cv'), ctx = cv.getContext('2d');
@@ -438,10 +509,17 @@ function createSim(W, H, NMAX) {
   const bloomCv = document.createElement('canvas'), bctx = bloomCv.getContext('2d');
   let sim = null, img = null, W = 0, H = 0, cw = 0, ch = 0, dpr = 1, aspect0 = 1;
   let tool = 'food', acc = 0, emaMs = 8, lastTune = 0, frameNo = 0, running = true;
-  const set = { speed: 'mid', pal: 'ki', shape: 'mid' };
-  try { const s = JSON.parse(localStorage.getItem('slime-mold-set') || '{}'); for (const k in set) if (typeof s[k] === 'string') set[k] = s[k]; } catch (e) {}
-  if (!PALS[set.pal]) set.pal = 'ki'; if (!SPEEDS[set.speed]) set.speed = 'mid'; if (!SHAPES[set.shape]) set.shape = 'mid';
-  function saveSet() { try { localStorage.setItem('slime-mold-set', JSON.stringify(set)); } catch (e) {} }
+  const set = { speed: 'mid', sp: 'random', hab: 'random', shape: 'mid', auto: 'off' };
+  try { const s = JSON.parse(localStorage.getItem('slime-mold-set2') || '{}'); for (const k in set) if (typeof s[k] === 'string') set[k] = s[k]; } catch (e) {}
+  if (set.sp !== 'random' && !SPECIES[set.sp]) set.sp = 'random';
+  if (set.hab !== 'random' && !HABS[set.hab]) set.hab = 'random';
+  if (!SPEEDS[set.speed]) set.speed = 'mid'; if (!SHAPE_K[set.shape]) set.shape = 'mid';
+  function saveSet() { try { localStorage.setItem('slime-mold-set2', JSON.stringify(set)); } catch (e) {} }
+  const cur = { sp: null, hab: null };
+  const auto = { phase: 'grow', left: 0, next: 0, tick0: 0, idle: 0, t0: 0, sites: [], spores: [], land: null, from: null, fadeIn: 0 };
+  const isAuto = () => set.auto === 'on';
+  function pick(obj, not) { const k = Object.keys(obj).filter(x => x !== not); return k[(Math.random() * k.length) | 0]; }
+  function rgb(h) { const v = parseInt(h.slice(1), 16); return [v >> 16 & 255, v >> 8 & 255, v & 255]; }
 
   if (SHOW_BACK_LINK) $('back').style.display = 'block';
 
@@ -458,38 +536,107 @@ function createSim(W, H, NMAX) {
     const target = coarse ? 105000 : 150000;
     const sc = Math.sqrt(w * h / target);
     W = Math.max(120, Math.round(w / sc)); H = Math.max(120, Math.round(h / sc));
-    const NMAX = coarse ? 34000 : 52000;
-    sim = createSim(W, H, NMAX);
+    sim = createSim(W, H, coarse ? 34000 : 52000);
     simCv.width = W; simCv.height = H; img = sctx.createImageData(W, H);
     bloomCv.width = Math.ceil(W / 4); bloomCv.height = Math.ceil(H / 4);
     sim.onReach = f => { f.t0 = performance.now(); };
-    applySet();
-    sim.seed(W / 2, H * 0.47, sim.P.baseN);
+    newScene(W / 2, H * 0.47, false);
   }
-  function applySet() {
-    const p = PALS[set.pal]; sim.setPalette(p);
-    Object.assign(sim.P, SHAPES[set.shape]);
-    document.body.classList.toggle('light', p.light);
-    document.documentElement.style.background = document.body.style.background = p.bg;
-    const mt = document.querySelector('meta[name=theme-color]'); if (mt) mt.content = p.theme;
+  // 新しい場面：ランダムなら種類と場所をえらび直して、タネを1つ置く
+  function newScene(x, y, announce) {
+    if (set.sp === 'random' || !cur.sp) cur.sp = set.sp === 'random' ? pick(SPECIES, cur.sp) : set.sp;
+    if (set.hab === 'random' || !cur.hab) cur.hab = set.hab === 'random' ? pick(HABS, cur.hab) : set.hab;
+    sim.clear(); sim.setHabitat(cur.hab); applyLook();
+    sim.seed(x, y, sim.P.baseN);
+    auto.phase = 'grow'; auto.sites = []; auto.spores = []; auto.idle = 0; armAuto(140);
+    if (announce) toast(HABS[cur.hab].name + ' ・ ' + SPECIES[cur.sp].name);
+  }
+  function armAuto(delay) { auto.left = 6 + ((Math.random() * 4) | 0); auto.next = sim.tick + delay; auto.tick0 = sim.tick; }
+  function applyLook() {
+    const sp = SPECIES[cur.sp]; sim.setLook(sp);
+    Object.assign(sim.P, sp.P); sim.P.SO = sp.P.SO * SHAPE_K[set.shape];
+    sim.P.eat = isAuto() ? EAT : 0;
+    const bg = HABS[cur.hab].css;
+    document.documentElement.style.background = document.body.style.background = bg;
+    const mt = document.querySelector('meta[name=theme-color]'); if (mt) mt.content = bg;
     $('legend').style.background = sim.lutCss();
     document.querySelectorAll('.seg').forEach(seg => seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === set[seg.dataset.key])));
+    $('bAuto').classList.toggle('on', isAuto());
+    $('nowScene').textContent = 'いま：' + HABS[cur.hab].name + ' ・ ' + sp.name;
+  }
+
+  /* ---- おまかせ：エサが現れる → 食べつくす → 子実体と胞子 → 次の場面 ---- */
+  function autoFood() {
+    for (let t = 0; t < 40; t++) {
+      const x = W * (0.12 + Math.random() * 0.76), y = H * (0.14 + Math.random() * 0.66); let ok = true;
+      for (const f of sim.foods) if (Math.hypot(f.x - x, f.y - y) < Math.min(W, H) * 0.2) { ok = false; break; }
+      if (ok) { const f = sim.addFood(x, y); if (f) { f.tb = performance.now(); return true; } }
+    }
+    return false;
+  }
+  function autoStep() {
+    if (sim.n === 0) { beginFruit(true); return; }
+    const tk = sim.tick;
+    for (let k = sim.foods.length - 1; k >= 0; k--) { const f = sim.foods[k]; if (!f.reached && tk - f.born > 5200) sim.removeFood(f); }
+    if (auto.left > 0 && tk >= auto.next && sim.foods.length < 3) { if (autoFood()) auto.left--; auto.next = tk + 480 + Math.random() * 520; }
+    if (auto.left === 0 && sim.foods.length === 0) { if (++auto.idle > 200) beginFruit(false); } else auto.idle = 0;
+    if (tk - auto.tick0 > 22000) beginFruit(false);
+  }
+  function beginFruit(dead) {
+    auto.phase = 'fruit'; auto.t0 = performance.now(); sim.fading = true; auto.spores = [];
+    auto.sites = dead ? [] : sim.sampleSites(150).map(s => ({ x: s.x, y: s.y, d: Math.random() * 2.2, h: 8 + Math.random() * 9, r: 2.1 + Math.random() * 1.7, lean: (Math.random() - 0.5) * 0.7 }));
+    auto.land = { x: W * (0.25 + Math.random() * 0.5), y: H * (0.25 + Math.random() * 0.45) };
+    auto.from = auto.sites.length ? auto.sites[(Math.random() * auto.sites.length) | 0] : { x: W / 2, y: H / 2 };
+    auto.wind = Math.random() * 6.2832;
+    if (!auto.sites.length) auto.t0 -= 6500;
+  }
+  function drawFruit(now) {
+    const t = (now - auto.t0) / 1000, sx = cw / W, sy = ch / H, sp = SPECIES[cur.sp], c0 = rgb(sp.mid), c1 = [38, 30, 26];
+    const dark = Math.max(0, Math.min(1, (t - 3.2) / 2.5));
+    const hc = 'rgb(' + (c0[0] + (c1[0] - c0[0]) * dark | 0) + ',' + (c0[1] + (c1[1] - c0[1]) * dark | 0) + ',' + (c0[2] + (c1[2] - c0[2]) * dark | 0) + ')';
+    ctx.lineCap = 'round';
+    for (const s of auto.sites) {
+      let g = (t - s.d) / 2; if (g <= 0) continue; if (g > 1) g = 1; g = 1 - (1 - g) * (1 - g);
+      const x = s.x * sx, y = s.y * sy, h = s.h * dpr * g, tx = x + h * s.lean, ty = y - h, r = s.r * dpr * Math.min(1, g * 1.2);
+      ctx.strokeStyle = 'rgba(255,250,235,.6)'; ctx.lineWidth = Math.max(1, 0.9 * dpr);
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(tx, ty); ctx.stroke();
+      ctx.fillStyle = hc; ctx.beginPath(); ctx.arc(tx, ty, r, 0, 6.2832); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,' + (0.5 * (1 - dark * 0.6)) + ')'; ctx.beginPath(); ctx.arc(tx - r * 0.3, ty - r * 0.3, r * 0.32, 0, 6.2832); ctx.fill();
+      if (t > 4.2 && t < 7.4 && auto.spores.length < 420 && Math.random() < 0.045)
+        auto.spores.push({ x: tx, y: ty, a: auto.wind + (Math.random() - 0.5) * 1.6, v: (10 + Math.random() * 26) * dpr, life: 1, k: 0.25 + Math.random() * 0.3 });
+    }
+    const pc = rgb(sp.young); ctx.fillStyle = 'rgb(' + pc[0] + ',' + pc[1] + ',' + pc[2] + ')';
+    for (let i = auto.spores.length - 1; i >= 0; i--) { const p = auto.spores[i];
+      p.a += (Math.random() - 0.5) * 0.25; p.x += Math.cos(p.a) * p.v / 60; p.y += Math.sin(p.a) * p.v / 60 - 0.12 * dpr; p.life -= p.k / 60;
+      if (p.life <= 0) { auto.spores.splice(i, 1); continue; }
+      ctx.globalAlpha = Math.min(1, p.life * 1.6) * 0.8; ctx.beginPath(); ctx.arc(p.x, p.y, 1.1 * dpr, 0, 6.2832); ctx.fill(); }
+    ctx.globalAlpha = 1;
+    const fade = Math.max(0, Math.min(1, (t - 7.8) / 1.7));
+    if (fade > 0) { ctx.globalAlpha = fade; ctx.fillStyle = HABS[cur.hab].css; ctx.fillRect(0, 0, cw, ch); ctx.globalAlpha = 1; }
+    if (t > 4.6) { // 次の場面のタネになる胞子が、ふわっと飛んでいく
+      let u = Math.min(1, (t - 4.6) / 4.6); u = u * u * (3 - 2 * u);
+      const x = (auto.from.x + (auto.land.x - auto.from.x) * u) * sx + Math.sin(t * 2.3) * 9 * dpr * (1 - u),
+            y = (auto.from.y + (auto.land.y - auto.from.y) * u) * sy - Math.sin(u * 3.1416) * 40 * dpr;
+      const gr = ctx.createRadialGradient(x, y, 0, x, y, 9 * dpr);
+      gr.addColorStop(0, 'rgba(' + pc[0] + ',' + pc[1] + ',' + pc[2] + ',.95)'); gr.addColorStop(0.25, 'rgba(' + pc[0] + ',' + pc[1] + ',' + pc[2] + ',.5)'); gr.addColorStop(1, 'rgba(' + pc[0] + ',' + pc[1] + ',' + pc[2] + ',0)');
+      ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, 9 * dpr, 0, 6.2832); ctx.fill();
+    }
+    if (t >= 9.6) { const l = auto.land; newScene(l.x, l.y, true); auto.fadeIn = now; }
   }
 
   /* ---- 描画 ---- */
   function drawFoods(now) {
-    const sx = cw / W, sy = ch / H, p = PALS[set.pal];
+    const sx = cw / W, sy = ch / H, gc = rgb(SPECIES[cur.sp].mid).join(',');
     for (const f of sim.foods) {
       const x = (f.x + 0.5) * sx, y = (f.y + 0.5) * sy;
       if (!f.t0) f.t0 = now; if (!f.tb) f.tb = now;
       const pop = Math.min(1, (now - f.tb) / 260), e = 1 - Math.pow(1 - pop, 3);
-      const r = Math.max(4.5 * dpr, 2.5 * sx) * f.sz * (0.4 + 0.6 * e);
+      const r = Math.max(4.5 * dpr, 2.5 * sx) * f.sz * (0.4 + 0.6 * e) * (0.4 + 0.6 * Math.max(0, f.amt));
       if (f.reached) {
         const age = (now - f.t0) / 1000, burst = Math.max(0, 1 - age / 1.2);
         const pr = r * (2.6 + 0.35 * Math.sin(now / 700 + f.rot) + burst * 3);
         const g = ctx.createRadialGradient(x, y, r * 0.5, x, y, pr);
-        const col = p.light ? '168,82,26' : (set.pal === 'yako' ? '120,255,230' : '255,225,90');
-        g.addColorStop(0, 'rgba(' + col + ',' + (0.42 + burst * 0.4) + ')'); g.addColorStop(1, 'rgba(' + col + ',0)');
+        g.addColorStop(0, 'rgba(' + gc + ',' + (0.42 + burst * 0.4) + ')'); g.addColorStop(1, 'rgba(' + gc + ',0)');
         ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, pr, 0, 6.2832); ctx.fill();
       }
       ctx.save(); ctx.translate(x, y); ctx.rotate(f.rot);
@@ -504,7 +651,7 @@ function createSim(W, H, NMAX) {
   const brushes = new Map();
   function drawBrush() {
     if (!brushes.size) return; const sx = cw / W;
-    ctx.lineWidth = 1.5 * dpr; ctx.strokeStyle = PALS[set.pal].light ? 'rgba(60,40,10,.5)' : 'rgba(255,255,255,.55)';
+    ctx.lineWidth = 1.5 * dpr; ctx.strokeStyle = 'rgba(255,255,255,.55)';
     brushes.forEach(b => { ctx.beginPath(); ctx.arc(b.x * sx, b.y * (ch / H), b.r * sx, 0, 6.2832); ctx.stroke(); });
   }
   function frame(now) {
@@ -514,24 +661,28 @@ function createSim(W, H, NMAX) {
     acc += SPEEDS[set.speed]; let k = 0;
     while (acc >= 1 && k < 4) { sim.step(); acc -= 1; k++; }
     if (acc > 4) acc = 0;
+    if (isAuto() && auto.phase === 'grow') autoStep();
     sim.render(img.data); sctx.putImageData(img, 0, 0);
     ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
     ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(simCv, 0, 0, cw, ch);
-    const bl = PALS[set.pal].bloom;
+    const bl = SPECIES[cur.sp].bloom;
     if (bl > 0) {
       bctx.imageSmoothingEnabled = true; bctx.drawImage(simCv, 0, 0, bloomCv.width, bloomCv.height);
       ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = bl; ctx.drawImage(bloomCv, 0, 0, cw, ch);
       ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
     }
     drawFoods(now); drawBrush();
+    if (auto.phase === 'fruit') drawFruit(now);
+    else if (auto.fadeIn) { const a = 1 - (now - auto.fadeIn) / 1400; if (a > 0) { ctx.globalAlpha = a; ctx.fillStyle = HABS[cur.hab].css; ctx.fillRect(0, 0, cw, ch); ctx.globalAlpha = 1; } else auto.fadeIn = 0; }
     emaMs += (performance.now() - t0 - emaMs) * 0.05;
     if (now - lastTune > 2500) { lastTune = now; if (emaMs > 21 && sim.capScale > 0.45) sim.capScale *= 0.85; }
     if ((frameNo++ % 20) === 0) stat();
   }
   function stat() {
     const nf = sim.foods.length; let s;
-    if (sim.n === 0) s = '粘菌がいません。「タネ」で置こう';
+    if (auto.phase === 'fruit') s = '胞子をとばしています';
+    else if (sim.n === 0) s = '粘菌がいません。「タネ」で置こう';
     else if (nf === 0) s = 'エサをさがしています';
     else s = 'エサ ' + sim.reached + ' / ' + nf + ' にとどいた';
     if ($('stat').textContent !== s) $('stat').textContent = s;
@@ -541,7 +692,7 @@ function createSim(W, H, NMAX) {
   const ptrs = new Map();
   function gpos(e) { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H }; }
   let toastT = 0;
-  function toast(s) { const t = $('toast'); t.textContent = s; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 1800); }
+  function toast(s) { const t = $('toast'); t.textContent = s; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2400); }
   function putFood(p) {
     if (sim.foods.length >= 48) { toast('エサはここまで（48こ）'); return false; }
     const f = sim.addFood(p.x, p.y); if (f) { f.tb = performance.now(); return true; } return false;
@@ -551,8 +702,9 @@ function createSim(W, H, NMAX) {
     for (let i = 1; i <= n; i++) fn(a.x + (b.x - a.x) * i / n, a.y + (b.y - a.y) * i / n, r);
   }
   cv.addEventListener('pointerdown', e => {
-    e.preventDefault(); try { cv.setPointerCapture(e.pointerId); } catch (_) {}
-    $('hint').classList.add('off');
+    e.preventDefault(); $('hint').classList.add('off');
+    if (auto.phase === 'fruit') return;
+    try { cv.setPointerCapture(e.pointerId); } catch (_) {}
     const p = gpos(e); ptrs.set(e.pointerId, { last: p, placed: p });
     if (tool === 'food') putFood(p);
     else if (tool === 'salt') { sim.salt(p.x, p.y, 3.2); brushes.set(e.pointerId, { x: p.x, y: p.y, r: 3.2 }); }
@@ -560,7 +712,7 @@ function createSim(W, H, NMAX) {
     else if (tool === 'seed') { if (sim.n > sim.NMAX - 400) toast('粘菌がいっぱいです'); else sim.seed(p.x, p.y, Math.min(500, sim.P.baseN)); }
   });
   cv.addEventListener('pointermove', e => {
-    const s = ptrs.get(e.pointerId); if (!s) return; const p = gpos(e);
+    const s = ptrs.get(e.pointerId); if (!s || auto.phase === 'fruit') return; const p = gpos(e);
     if (tool === 'food') { if (Math.hypot(p.x - s.placed.x, p.y - s.placed.y) >= 18) { if (putFood(p)) s.placed = p; } }
     else if (tool === 'salt') { stroke(s.last, p, 3.2, sim.salt); brushes.set(e.pointerId, { x: p.x, y: p.y, r: 3.2 }); }
     else if (tool === 'erase') { stroke(s.last, p, 5.5, sim.erase); brushes.set(e.pointerId, { x: p.x, y: p.y, r: 5.5 }); }
@@ -574,8 +726,15 @@ function createSim(W, H, NMAX) {
   document.querySelectorAll('.tool').forEach(b => b.addEventListener('click', () => {
     tool = b.dataset.tool; document.querySelectorAll('.tool').forEach(x => x.classList.toggle('on', x === b));
   }));
+  $('bAuto').addEventListener('click', () => {
+    $('hint').classList.add('off');
+    set.auto = isAuto() ? 'off' : 'on'; saveSet();
+    if (isAuto()) { armAuto(40); toast('おまかせ：エサが現れて、食べつくすと次の場面へ'); }
+    else { if (auto.phase === 'fruit') { auto.phase = 'grow'; auto.sites = []; auto.spores = []; sim.fading = false; if (sim.n === 0) sim.seed(W / 2, H * 0.47, sim.P.baseN); } toast('おまかせをやめました'); }
+    applyLook();
+  });
   $('bScatter').addEventListener('click', () => {
-    $('hint').classList.add('off'); let made = 0, tries = 0;
+    $('hint').classList.add('off'); if (auto.phase === 'fruit') return; let made = 0, tries = 0;
     while (made < 5 && tries++ < 200 && sim.foods.length < 48) {
       const x = W * (0.12 + Math.random() * 0.76), y = H * (0.16 + Math.random() * 0.62); let ok = true;
       for (const f of sim.foods) if (Math.hypot(f.x - x, f.y - y) < Math.min(W, H) * 0.16) { ok = false; break; }
@@ -586,8 +745,8 @@ function createSim(W, H, NMAX) {
   let armT = 0;
   $('reset').addEventListener('click', () => {
     const b = $('reset');
-    if (b.classList.contains('arm')) { clearTimeout(armT); b.classList.remove('arm'); b.textContent = 'はじめから'; build(); }
-    else { b.classList.add('arm'); b.textContent = 'もう一度おすと消える'; armT = setTimeout(() => { b.classList.remove('arm'); b.textContent = 'はじめから'; }, 2600); }
+    if (b.classList.contains('arm')) { clearTimeout(armT); b.classList.remove('arm'); b.textContent = 'はじめから'; newScene(W / 2, H * 0.47, true); }
+    else { b.classList.add('arm'); b.textContent = 'もう一度で消える'; armT = setTimeout(() => { b.classList.remove('arm'); b.textContent = 'はじめから'; }, 2600); }
   });
   $('bView').addEventListener('click', () => document.body.classList.add('viewing'));
   $('unview').addEventListener('click', () => document.body.classList.remove('viewing'));
@@ -599,7 +758,11 @@ function createSim(W, H, NMAX) {
   $('scrim').addEventListener('click', closeSheets);
   document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeSheets));
   document.querySelectorAll('.seg').forEach(seg => seg.addEventListener('click', e => {
-    const b = e.target.closest('button'); if (!b) return; set[seg.dataset.key] = b.dataset.v; saveSet(); applySet();
+    const b = e.target.closest('button'); if (!b) return; const key = seg.dataset.key, v = b.dataset.v;
+    set[key] = v; saveSet();
+    if (key === 'sp') cur.sp = v === 'random' ? pick(SPECIES, cur.sp) : v;
+    if (key === 'hab') { cur.hab = v === 'random' ? pick(HABS, cur.hab) : v; sim.setHabitat(cur.hab); }
+    applyLook();
   }));
 
   /* ---- 写す ---- */
