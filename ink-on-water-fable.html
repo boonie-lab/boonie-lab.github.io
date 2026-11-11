@@ -169,6 +169,7 @@ const STEP = 1000 / 60;    // 1ステップの時間(ms)
 const PRESSURE_ITER = 22;  // 圧力計算の反復回数
 const INK_KEEP = 0.9998;   // 墨の薄れ方（ほんのり薄れる）
 const VORT = 0.28;         // 渦を保つ強さ
+const SMOOTH = 0.2;        // マス目ごとの細かいガタつきを毎コマならす強さ
 const MAXD = 3.2;          // 墨の濃さの上限
 let velKeep = 0.9965;      // 流れの持ち（「流れの長さ」スライダーで変わる）
 let strength = 1;          // 引っぱる強さ（「流れの強さ」スライダーで変わる）
@@ -289,7 +290,7 @@ function applyFlow() {
 
 /* ---------- 水の流れ ---------- */
 let W, H, DW, DH, cw, ch;
-let u, v, u0, v0, p, div, curl, dye, dye0, buf32, imgData, noise;
+let u, v, u0, v0, ub, vb, tmp, p, div, curl, dye, dye0, buf32, imgData, noise;
 let clearing = 0, calming = 0;
 const blooms = [];
 
@@ -324,6 +325,7 @@ function init() {
   const n = W * H;
   u = new Float32Array(n); v = new Float32Array(n);
   u0 = new Float32Array(n); v0 = new Float32Array(n);
+  ub = new Float32Array(n); vb = new Float32Array(n); tmp = new Float32Array(n);
   p = new Float32Array(n); div = new Float32Array(n); curl = new Float32Array(n);
   sizeDye(null);
   blooms.length = 0;
@@ -404,6 +406,28 @@ function project() {
   for (let i = 0; i < w; i++) { v[i] = 0; v[i + (h - 1) * w] = 0; }
 }
 
+/* 流れをなめらかにする：
+   マス目1つおきにガタガタする成分（計算上のくせで、本物の水にはない）だけを消す。
+   となり同士を 1:2:1 で混ぜると、その成分はちょうど打ち消される。 */
+function blur121(src, dst) {
+  const w = W, h = H;
+  for (let j = 0; j < h; j++) {
+    const r = j * w;
+    tmp[r] = (src[r] * 3 + src[r + 1]) * 0.25;
+    for (let i = 1; i < w - 1; i++) tmp[r + i] = (src[r + i - 1] + 2 * src[r + i] + src[r + i + 1]) * 0.25;
+    tmp[r + w - 1] = (src[r + w - 2] + src[r + w - 1] * 3) * 0.25;
+  }
+  for (let j = 0; j < h; j++) {
+    const r = j * w, a = j > 0 ? r - w : r, b = j < h - 1 ? r + w : r;
+    for (let i = 0; i < w; i++) dst[r + i] = (tmp[a + i] + 2 * tmp[r + i] + tmp[b + i]) * 0.25;
+  }
+}
+function smoothVel() {
+  blur121(u, ub); blur121(v, vb);
+  for (let i = 0; i < u.length; i++) { u[i] += (ub[i] - u[i]) * SMOOTH; v[i] += (vb[i] - v[i]) * SMOOTH; }
+  blur121(u, ub); blur121(v, vb);          // 墨を運ぶのには、ならした流れ(ub, vb)を使う
+}
+
 /* 墨を水の流れに乗せて運ぶ */
 function advectDye(decay) {
   const mx = W - 1.0001, my = H - 1.0001, dmx = DW - 1.0001, dmy = DH - 1.0001;
@@ -417,8 +441,8 @@ function advectDye(decay) {
       const i0 = vx | 0, fx = vx - i0;
       const a = rowA + i0, b = a + 1, c = rowB + i0, d = c + 1;
       const a00 = (1 - fx) * (1 - fy), a10 = fx * (1 - fy), a01 = (1 - fx) * fy, a11 = fx * fy;
-      const uu = u[a] * a00 + u[b] * a10 + u[c] * a01 + u[d] * a11;
-      const vv = v[a] * a00 + v[b] * a10 + v[c] * a01 + v[d] * a11;
+      const uu = ub[a] * a00 + ub[b] * a10 + ub[c] * a01 + ub[d] * a11;
+      const vv = vb[a] * a00 + vb[b] * a10 + vb[c] * a01 + vb[d] * a11;
       let x = i - S * uu, y = j - S * vv;
       if (x < 0) x = 0; else if (x > dmx) x = dmx;
       if (y < 0) y = 0; else if (y > dmy) y = dmy;
@@ -666,6 +690,7 @@ function step() {
   vorticity();
   advectVel();
   project();
+  smoothVel();
 
   let decay = INK_KEEP;
   if (clearing > 0) { decay *= 0.9; clearing--; }
