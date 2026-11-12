@@ -63,7 +63,11 @@
   .dx p{margin:4px 0 0;font-size:12.5px;line-height:1.7}
   .dx.no b{color:rgba(244,239,216,.5)}
   #reset.arm{background:#b3261e;color:#fff;border-color:transparent}
-  #bAuto.on{background:var(--accent);color:var(--accent-ink);border-color:transparent;font-weight:600}
+  .x.on{background:#ffd53d;color:#2a2200;font-weight:600}
+  .go{display:block;width:100%;text-align:left;font:inherit;font-size:14px;font-weight:600;color:#2a2200;background:#ffd53d;border:0;border-radius:14px;padding:12px 15px;cursor:pointer;margin-top:10px}
+  .go small{display:block;font-size:11.5px;font-weight:400;margin-top:3px;line-height:1.6;opacity:.85}
+  .go.alt{background:rgba(255,255,255,.1);color:#f4efd8}
+  #bMaze.on,#bAuto.on{background:var(--accent);color:var(--accent-ink);border-color:transparent;font-weight:600}
 
   /* 眺めるモードから戻る */
   #unview{position:fixed;right:calc(env(safe-area-inset-right) + 12px);top:calc(env(safe-area-inset-top) + 10px);
@@ -123,6 +127,7 @@
     <button class="pill glass" id="bSet">調整</button>
     <button class="pill glass" id="bView">眺める</button>
     <button class="pill glass" id="bDex">図鑑</button>
+    <button class="pill glass" id="bMaze">迷路</button>
   </div>
 </div>
 
@@ -208,12 +213,32 @@
   </ul>
   <h3>おまかせ（粘菌の一生）</h3>
   <p>エサがときどき現れて、粘菌が食べつくしては次へ移ります。エサがなくなると、道の上に<b class="kw">子実体</b>（しじつたい＝胞子を作る小さなつぶ）ができて胞子を飛ばし、落ちた所から次の場面が始まります。本物の粘菌も、エサが尽きると子実体に変わります。</p>
+  <h3>迷路のしくみ</h3>
+  <p><b class="kw">実験どおり</b>は、中垣俊之さんたちの実験（2000年）と同じ順番。粘菌は「探しながら進む」のではなく、まず全体に広がって、いらない所を捨てることで近道を残します。</p>
+  <p>近道を決めているのは<b>管のモデル</b>（手老・小林・中垣 2007年）。マスとマスをつなぐ管に液を流し、「たくさん流れる管は太り、流れない管は細る」をくり返すだけで、答えは教えていません。つぶつぶは、太い管に集まって体を作ります。</p>
+  <p class="note">※ つぶのルールだけ（管のモデルなし・においなし）でも試しましたが、粘菌が2つのエサのまわりに縮んで、道が切れてしまいました。そこで、つぶには体の見た目を、近道さがしには管のモデルを使っています。行き止まりが先っぽから引く動きは演出です。本物の粘菌はゆらぎがあり、いつも最短とはかぎりません。</p>
+  <p><b class="kw">においをたどる</b>は、エサのにおいが「壁をよけた道のり」で届くので、粘菌は答えを知った状態で進みます。</p>
   <h3>種類と子実体について</h3>
   <p class="note">種類ごとに、変形体（動き回る体）の色と、子実体の形を作り分けています。くわしくは「図鑑」へ。色や形は資料の説明をもとに<b>それらしく</b>描いたもので、写真を写したものでも、正確な再現でもありません。レア度と「どの場所で出やすいか」は、遊びのための設定です。</p>
   <h3>もとになった研究</h3>
   <p class="note">つぶのルール：Jeff Jones (2010) “Characteristics of pattern formation and evolution in approximations of Physarum transport networks”, <i>Artificial Life</i> 16(2)。<br>
   迷路をとく粘菌：中垣俊之ほか (2000) <i>Nature</i> 407。鉄道網に似たネットワーク：手老篤史ほか (2010) <i>Science</i> 327。</p>
   <p class="note">※ これは見た目と動きを似せた簡単なモデルで、本物の粘菌の正確な再現ではありません。体の膜がじわじわ広がる部分、エサの方へ伸びやすくする部分、場所による広がりやすさ、子実体の見た目は、遊びやすくするための独自アレンジです。</p>
+</div>
+
+<div class="sheet" id="sMaze">
+  <div class="grab"></div>
+  <h2>迷路 <button class="x" data-close>とじる</button></h2>
+  <p>寒天の上に、塩の壁で迷路を作ります。挑戦するのは、いまの種類の粘菌。入口は左上、出口は右下です。</p>
+  <h3>大きさ</h3>
+  <div class="seg" data-key="mz"><button data-v="s">小</button><button data-v="m">中</button><button data-v="l">大</button></div>
+  <h3>はじめる</h3>
+  <button class="go" id="mzReal">実験どおり<small>迷路ぜんたいに広げてから、入口と出口にエサを置く。行き止まりから体を引いて、近道が残るかを見る。粘菌に答えは教えません。</small></button>
+  <button class="go alt" id="mzScent">においをたどる<small>入口に粘菌、出口にエサ。エサのにおいが通路を伝ってくるので、迷わず進みます（答えを知っている状態）。</small></button>
+  <h3>そのほか</h3>
+  <button class="x" id="mzAns" style="padding:10px 16px">答え合わせ（本当の近道を点線で）</button>
+  <button class="x" id="mzQuit" style="padding:10px 16px;margin-left:6px">迷路をやめる</button>
+  <p class="note" style="margin-top:12px">壁は「塩」で足せて、「けす」で穴をあけられます。近道を作ったり、残った道をふさいだりしてみてください。エサを足すこともできます。</p>
 </div>
 
 <div class="sheet" id="sDex">
@@ -232,7 +257,7 @@ function createSim(W, H, NMAX) {
   const T = new Float32Array(N), tmp = new Float32Array(N), M = new Float32Array(N),
         G = new Float32Array(N), R = new Float32Array(N), B = new Uint8Array(N),
         Sfar = new Float32Array(N), Snear = new Float32Array(N), grain = new Float32Array(N),
-        D = new Float32Array(N), tmp2 = new Float32Array(N), lobe = new Float32Array(N), fing = new Float32Array(N);
+        D = new Float32Array(N), tmp2 = new Float32Array(N), lobe = new Float32Array(N), fing = new Float32Array(N), Gd = new Float32Array(N);
   const ax = new Float32Array(NMAX), ay = new Float32Array(NMAX), ah = new Float32Array(NMAX);
   const bgR = new Float32Array(N), bgG = new Float32Array(N), bgB = new Float32Array(N);
   const lut = new Float32Array(64 * 3);
@@ -245,6 +270,7 @@ function createSim(W, H, NMAX) {
     dD: 0.012, dGrow: 0.12, dShrink: 0.06,   // 体の「圧」の広がり・膜が広がる/ひっこむ境目
     ws: 3, wn: 7, over: 5, sat: 3, // エサのにおいの効き・エサ自体の引力・こみすぎ・かぎ分けの上限
     explore: 0.2, turnover: 0.0015, eat: 0,
+    tubeDt: 0.008, wTube: 4, evict: 0.03, stream: 0.0015, perLen: 3,                      // 迷路（実験どおり）：管の太り細りの速さ・つぶが太い管に引かれる強さ
     finger: 0.5, pulse: 0, bias: 1, wander: 0.14,   // 先っぽの指っぽさ・脈打ち・エサへのまっすぐさ・ふらつき（わき道の多さ） // エサが無いときの広がり・体の中の流れ（入れかわり）
     baseN: Math.round(3000 * areaK), perFood: Math.round(2200 * areaK), birth: 2
   };
@@ -303,11 +329,12 @@ function createSim(W, H, NMAX) {
   // エサのにおい：いちばん近い「まだとどいていないエサ」までの、塩をよけた道のり
   const dist = new Float32Array(N); let scentDirty = false;
   function rebuildScent() {
-    scentDirty = false; let un = 0; dist.fill(1e9);
+    scentDirty = false; if (sim.noScent) { Sfar.fill(0); return; }
+    let un = 0; dist.fill(1e9);
     for (const f of sim.foods) if (!f.reached) { dist[(f.y | 0) * W + (f.x | 0)] = 0; un++; }
     if (!un) { Sfar.fill(0); return; }
     const D2 = 1.41421, W1 = W - 1, H1 = H - 1;
-    for (let it = 0; it < 48; it++) { let ch = false;
+    for (let it = 0; it < 240; it++) { let ch = false;
       for (let y = 1; y < H1; y++) { let i = y * W + 1; for (let x = 1; x < W1; x++, i++) { if (B[i]) continue;
         let d = dist[i], v = dist[i - 1] + 1; if (v < d) d = v; v = dist[i - W] + 1; if (v < d) d = v;
         v = dist[i - W - 1] + D2; if (v < d) d = v; v = dist[i - W + 1] + D2; if (v < d) d = v;
@@ -345,12 +372,13 @@ function createSim(W, H, NMAX) {
     for (let yy = y0; yy <= y1; yy++) for (let xx = x0; xx <= x1; xx++) {
       const dx = xx + 0.5 - x, dy = yy + 0.5 - y; if (dx * dx + dy * dy <= r2) fn(yy * W + xx); }
   }
-  sim.seed = function (x, y, count) {
+  sim.seed = function (x, y, count, rad) {
+    rad = rad || 9;
     x = Math.max(12, Math.min(W - 13, x)); y = Math.max(12, Math.min(H - 13, y));
-    disc(x, y, 9, i => { B[i] = 0; M[i] = 1; });
+    disc(x, y, rad, i => { B[i] = 0; M[i] = 1; });
     count = Math.min(count, NMAX - sim.n);
     for (let k = 0; k < count; k++) {
-      const a = Math.random() * TAU, r = Math.sqrt(Math.random()) * 7, j = sim.n++;
+      const a = Math.random() * TAU, r = Math.sqrt(Math.random()) * (rad - 2), j = sim.n++;
       ax[j] = x + Math.cos(a) * r; ay[j] = y + Math.sin(a) * r; ah[j] = Math.random() * TAU;
     }
   };
@@ -363,24 +391,27 @@ function createSim(W, H, NMAX) {
 
   sim.step = function () {
     if (scentDirty && (sim.tick & 3) === 0) rebuildScent();
+    if (sim.tube && sim.maze) { if ((sim.tick & 31) === 0) refreshPass(); tubeStep(P.tubeDt); if ((sim.tick & 7) === 0) paintGd(); }
     const SO = P.SO, cSA = Math.cos(P.SA), sSA = Math.sin(P.SA), RA = P.RA, st = P.step, dep = P.dep, over = P.over, wn = P.wn;
     const wander = P.wander, sat = P.sat, smin = sim.smin, invS = sim.srange > 1e-9 ? P.ws / sim.srange : 0, capS = P.ws * 1.5, W1 = W - 1, H1 = H - 1;
+    const gk = sim.tube && sim.maze ? P.wTube : 0;
     let n = sim.n, lo = 1e9, hi = -1e9;
     for (let i = 0; i < n; i++) {
       const x = ax[i], y = ay[i]; let h = ah[i];
       const ci = (y | 0) * W + (x | 0);
       if (M[ci] < 0.5) { n--; ax[i] = ax[n]; ay[i] = ay[n]; ah[i] = ah[n]; i--; continue; }
+      if (gk) { const gv = Gd[ci]; if (Math.random() < (gv < 0.15 ? P.evict * (1 - gv * 6.6) : P.stream)) { tubeSpot(i); continue; } }
       const c = Math.cos(h), s = Math.sin(h);
       let F0 = -1, F1 = -1, F2 = -1, px, py, k, v, t;
       px = x + c * SO; py = y + s * SO;
       if (px >= 1 && py >= 1 && px < W1 && py < H1) { k = (py | 0) * W + (px | 0);
-        if (M[k] >= 0.5) { v = (Sfar[k] - smin) * invS; t = T[k]; F0 = (t > sat ? sat : t) + (v > capS ? capS : v) + wn * Snear[k]; } }
+        if (M[k] >= 0.5) { v = (Sfar[k] - smin) * invS; t = T[k]; F0 = (t > sat ? sat : t) + (v > capS ? capS : v) + wn * Snear[k] + gk * Gd[k]; } }
       px = x + (c * cSA + s * sSA) * SO; py = y + (s * cSA - c * sSA) * SO;
       if (px >= 1 && py >= 1 && px < W1 && py < H1) { k = (py | 0) * W + (px | 0);
-        if (M[k] >= 0.5) { v = (Sfar[k] - smin) * invS; t = T[k]; F1 = (t > sat ? sat : t) + (v > capS ? capS : v) + wn * Snear[k]; } }
+        if (M[k] >= 0.5) { v = (Sfar[k] - smin) * invS; t = T[k]; F1 = (t > sat ? sat : t) + (v > capS ? capS : v) + wn * Snear[k] + gk * Gd[k]; } }
       px = x + (c * cSA - s * sSA) * SO; py = y + (s * cSA + c * sSA) * SO;
       if (px >= 1 && py >= 1 && px < W1 && py < H1) { k = (py | 0) * W + (px | 0);
-        if (M[k] >= 0.5) { v = (Sfar[k] - smin) * invS; t = T[k]; F2 = (t > sat ? sat : t) + (v > capS ? capS : v) + wn * Snear[k]; } }
+        if (M[k] >= 0.5) { v = (Sfar[k] - smin) * invS; t = T[k]; F2 = (t > sat ? sat : t) + (v > capS ? capS : v) + wn * Snear[k] + gk * Gd[k]; } }
       const rnd = Math.random();
       if (F0 >= F1 && F0 >= F2) h += (rnd - 0.5) * wander;
       else if (F0 < F1 && F0 < F2) h += rnd < 0.5 ? -RA : RA;
@@ -423,19 +454,20 @@ function createSim(W, H, NMAX) {
       } }
 
     // 体の大きさ：とどいたエサの数で決まる。新しいつぶは、とどいたエサから生まれて道を流れる
-    const cap = Math.min(NMAX * sim.capScale, P.baseN + sim.reached * P.perFood) | 0;
+    const cap = sim.nFloor ? sim.nFloor | 0 : Math.min(NMAX * sim.capScale, P.baseN + sim.reached * P.perFood) | 0;
     n = sim.n;
     if (n > 0) {
-      let births = n < cap ? Math.min(P.birth, cap - n) : 0, deaths = n > cap ? Math.min(2, n - cap) : 0;
+      let births = n < cap ? Math.min(gk ? 6 : P.birth, cap - n) : 0, deaths = n > cap ? Math.min(sim.nFloor ? sim.cull : 2, n - cap) : 0;
       if (sim.reached > 0) { const tv = n * P.turnover; let k = tv | 0; if (Math.random() < tv - k) k++; births += k; deaths += k; }
       if (sim.fading) { births = 0; deaths += Math.ceil(n * 0.012); }
       for (let q = 0; q < deaths && n > (sim.fading ? 0 : 1); q++) { const j = (Math.random() * n) | 0; n--; ax[j] = ax[n]; ay[j] = ay[n]; ah[j] = ah[n]; }
       const nf = sim.foods.length;
       for (let q = 0; q < births && n < NMAX; q++) {
         let ok = false;
-        if (sim.reached > 0) { const f = sim.foods[(Math.random() * nf) | 0];
+        if (sim.reached > 0 && !gk) { const f = sim.foods[(Math.random() * nf) | 0];
           if (f.reached) { const x = f.x + (Math.random() - 0.5) * 4, y = f.y + (Math.random() - 0.5) * 4;
             if (M[(y | 0) * W + (x | 0)] >= 0.5) { ax[n] = x; ay[n] = y; ok = true; } } }
+        if (!ok && gk) ok = tubeSpot(n);
         if (!ok) { const j = (Math.random() * n) | 0; ax[n] = ax[j]; ay[n] = ay[j]; }
         ah[n] = Math.random() * TAU; n++;
       }
@@ -452,6 +484,96 @@ function createSim(W, H, NMAX) {
   sim.clear = function () {
     T.fill(0); tmp.fill(0); tmp2.fill(0); M.fill(0); G.fill(0); R.fill(0); D.fill(0); B.fill(0); Sfar.fill(0); Snear.fill(0);
     sim.foods.length = 0; sim.n = 0; sim.reached = 0; sim.tick = 0; sim.smin = 0; sim.srange = 0; sim.fading = false; scentDirty = false;
+    sim.noScent = false; sim.tube = false; Gd.fill(0); sim.nFloor = 0; sim.cull = 2; sim.maze = null;
+  };
+  /* ---- 迷路 ---- */
+  // 塩の壁で迷路を描く。1本道の迷路を作ってから、壁を少しぬいて回り道と近道を作る
+  sim.buildMaze = function (x0, y0, cols, rows, cell, wt, loopP) {
+    const nc = cols * rows, EH = (cols - 1) * rows, E = EH + cols * (rows - 1), open = new Uint8Array(E);
+    const nb = (c, k) => { const x = c % cols, y = (c / cols) | 0;
+      if (k === 0) return x < cols - 1 ? [y * (cols - 1) + x, c + 1] : null; if (k === 1) return x > 0 ? [y * (cols - 1) + x - 1, c - 1] : null;
+      if (k === 2) return y < rows - 1 ? [EH + y * cols + x, c + cols] : null; return y > 0 ? [EH + (y - 1) * cols + x, c - cols] : null; };
+    const vis = new Uint8Array(nc), st = [(Math.random() * nc) | 0]; vis[st[0]] = 1;
+    while (st.length) { const c = st[st.length - 1], o = []; for (let k = 0; k < 4; k++) { const r = nb(c, k); if (r && !vis[r[1]]) o.push(r); }
+      if (!o.length) { st.pop(); continue; } const r = o[(Math.random() * o.length) | 0]; open[r[0]] = 1; vis[r[1]] = 1; st.push(r[1]); }
+    for (let e = 0; e < E; e++) if (!open[e] && Math.random() < loopP) open[e] = 1;
+    const x1 = x0 + cols * cell + wt, y1 = y0 + rows * cell + wt;
+    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) { const i = y * W + x; B[i] = 1; T[i] = 0; M[i] = 0; G[i] = 0; D[i] = 0; R[i] = 0; }
+    const carve = (ax0, ay0, ax1, ay1) => { for (let y = ay0; y < ay1; y++) for (let x = ax0; x < ax1; x++) B[y * W + x] = 0; };
+    for (let cy = 0; cy < rows; cy++) for (let cx = 0; cx < cols; cx++) { const px = x0 + wt + cx * cell, py = y0 + wt + cy * cell, w = cell - wt;
+      carve(px, py, px + w, py + w);
+      if (cx < cols - 1 && open[cy * (cols - 1) + cx]) carve(px + w, py, px + cell, py + w);
+      if (cy < rows - 1 && open[EH + cy * cols + cx]) carve(px, py + w, px + w, py + cell); }
+    const ea = new Int32Array(E), eb = new Int32Array(E);
+    for (let y = 0; y < rows; y++) for (let x = 0; x < cols - 1; x++) { const e = y * (cols - 1) + x; ea[e] = y * cols + x; eb[e] = ea[e] + 1; }
+    for (let y = 0; y < rows - 1; y++) for (let x = 0; x < cols; x++) { const e = EH + y * cols + x; ea[e] = y * cols + x; eb[e] = ea[e] + cols; }
+    const mz = sim.maze = { x0, y0, x1, y1, cols, rows, cell, wt, nb, nc, E, EH, ea, eb, open, Dt: new Float64Array(E), pair: 0, term: [],
+      wk: [0, 1, 2, 3, 4, 5, 6].map(() => new Float64Array(nc)), deg: new Uint8Array(nc),
+      cellOf: (x, y) => { const cx = Math.floor((x - x0 - wt / 2) / cell), cy = Math.floor((y - y0 - wt / 2) / cell); return cx < 0 || cy < 0 || cx >= cols || cy >= rows ? -1 : cy * cols + cx; },
+      cx: c => x0 + wt + (c % cols) * cell + (cell - wt) / 2, cy: c => y0 + wt + ((c / cols) | 0) * cell + (cell - wt) / 2 };
+    scentDirty = true; return mz;
+  };
+  // 迷路ぜんたいに粘菌を広げる
+  sim.fillMaze = function (count) {
+    const mz = sim.maze; if (!mz) return; count = Math.min(count, NMAX);
+    for (let y = mz.y0; y < mz.y1; y++) for (let x = mz.x0; x < mz.x1; x++) { const i = y * W + x; if (!B[i]) M[i] = 1; }
+    let n = 0, guard = 0; while (n < count && guard++ < count * 20) { const x = mz.x0 + Math.random() * (mz.x1 - mz.x0), y = mz.y0 + Math.random() * (mz.y1 - mz.y0);
+      if (B[(y | 0) * W + (x | 0)]) continue; ax[n] = x; ay[n] = y; ah[n] = Math.random() * TAU; n++; }
+    sim.n = n; for (let e = 0; e < mz.E; e++) mz.Dt[e] = mz.open[e] ? 1 : 0; paintGd();
+  };
+  // 管のモデル（手老・小林・中垣 2007）：マスとマスをつなぐ管に液を流し、たくさん流れる管は太り、流れない管は細る
+  function edgeScan(e, fn) { const mz = sim.maze, { cols, cell, wt, x0, y0, EH } = mz, w = cell - wt;
+    if (e < EH) { const cy = (e / (cols - 1)) | 0, cx = e % (cols - 1), xm = x0 + wt + cx * cell + w + (wt >> 1), py = y0 + wt + cy * cell; for (let q = 0; q < w; q++) fn((py + q) * W + xm); }
+    else { const k = e - EH, cy = (k / cols) | 0, cx = k % cols, ym = y0 + wt + cy * cell + w + (wt >> 1), px = x0 + wt + cx * cell; for (let q = 0; q < w; q++) fn(ym * W + px + q); } }
+  function refreshPass() { const mz = sim.maze, w = mz.cell - mz.wt;
+    for (let e = 0; e < mz.E; e++) { let bl = 0; edgeScan(e, i => { if (B[i]) bl++; }); const ok = bl < w * 0.5;
+      if (ok && !mz.open[e]) { mz.open[e] = 1; mz.Dt[e] = 1e-3; } else if (!ok && mz.open[e]) { mz.open[e] = 0; mz.Dt[e] = 0; } } }
+  // 管の太さを、つぶが感じる「道しるべ」に写す（通路のまん中ほど強い）。あわせて、体の大きさ＝残っている管の長さに合わせる
+  function paintGd() { const mz = sim.maze, { E, ea, eb, open, Dt } = mz, hw = ((mz.cell - mz.wt) >> 1) + 1, sl = mz.strong || (mz.strong = []);
+    for (let y = mz.y0; y < mz.y1; y++) Gd.fill(0, y * W + mz.x0, y * W + mz.x1);
+    sl.length = 0; let len = 0;
+    for (let e = 0; e < E; e++) { if (!open[e]) continue; let v = Dt[e]; if (v > 1.2) v = 1.2; if (v < 0.01) continue;
+      len += v > 1 ? 1 : v; if (v > 0.3) sl.push(e);
+      const xa = mz.cx(ea[e]) | 0, ya = mz.cy(ea[e]) | 0, xb = mz.cx(eb[e]) | 0, yb = mz.cy(eb[e]) | 0, hz = ya === yb;
+      for (let y = ya - hw; y <= yb + hw; y++) for (let x = xa - hw; x <= xb + hw; x++) {
+        let dd = hz ? Math.abs(y - ya) : Math.abs(x - xa); const al = hz ? (x < xa ? xa - x : x > xb ? x - xb : 0) : (y < ya ? ya - y : y > yb ? y - yb : 0); if (al > dd) dd = al;
+        const g = v * (1 - 0.8 * dd / hw), i = y * W + x; if (Gd[i] < g) Gd[i] = g; } }
+    sim.nFloor = Math.max(300, Math.min(NMAX * sim.capScale * 0.6, len * mz.cell * P.perLen));
+  }
+  function tubeSpot(i) { const mz = sim.maze, sl = mz.strong; if (!sl || !sl.length) return false;
+    const e = sl[(Math.random() * sl.length) | 0], u = Math.random(), a = mz.ea[e], b = mz.eb[e];
+    ax[i] = mz.cx(a) + (mz.cx(b) - mz.cx(a)) * u + (Math.random() - 0.5) * 3; ay[i] = mz.cy(a) + (mz.cy(b) - mz.cy(a)) * u + (Math.random() - 0.5) * 3; ah[i] = Math.random() * TAU; return true; }
+  function tubeStep(dt) { const mz = sim.maze, { E, ea, eb, open, Dt, nc, deg } = mz, [p, r, z, d, q, diag, isT] = mz.wk;
+    const term = mz.term; term.length = 0; isT.fill(0);
+    for (const f of sim.foods) { const c = mz.cellOf(f.x, f.y); if (c >= 0 && !isT[c]) { isT[c] = 1; term.push(c); } }
+    if (term.length < 2) return;
+    let k = mz.pair++ % (term.length * (term.length - 1) / 2), i0 = 0, j0 = 1; while (k > 0) { j0++; if (j0 >= term.length) { i0++; j0 = i0 + 1; } k--; }
+    const mv = (x, out) => { for (let i = 0; i < nc; i++) out[i] = x[i] * 1e-9; for (let e = 0; e < E; e++) { if (!open[e]) continue; const a = ea[e], c = eb[e], f = Dt[e] * (x[a] - x[c]); out[a] += f; out[c] -= f; } };
+    for (let i = 0; i < nc; i++) diag[i] = 1e-9; for (let e = 0; e < E; e++) if (open[e]) { diag[ea[e]] += Dt[e]; diag[eb[e]] += Dt[e]; }
+    mv(p, q); let rz = 0; for (let i = 0; i < nc; i++) { r[i] = (i === term[i0] ? 1 : i === term[j0] ? -1 : 0) - q[i]; z[i] = r[i] / diag[i]; d[i] = z[i]; rz += r[i] * z[i]; }
+    for (let it = 0; it < 300; it++) { let rr = 0; for (let i = 0; i < nc; i++) rr += r[i] * r[i]; if (rr < 1e-14) break;
+      mv(d, q); let dq = 0; for (let i = 0; i < nc; i++) dq += d[i] * q[i]; if (dq <= 0) break; const al = rz / dq;
+      let rz2 = 0; for (let i = 0; i < nc; i++) { p[i] += al * d[i]; r[i] -= al * q[i]; z[i] = r[i] / diag[i]; rz2 += r[i] * z[i]; }
+      const be = rz2 / rz; rz = rz2; for (let i = 0; i < nc; i++) d[i] = z[i] + be * d[i]; }
+    for (let e = 0; e < E; e++) { if (!open[e]) continue; const f = Dt[e] * (p[ea[e]] - p[eb[e]]); let v = Dt[e] + dt * (Math.abs(f) - Dt[e]); Dt[e] = v < 1e-4 ? 1e-4 : v; }
+    deg.fill(0); for (let e = 0; e < E; e++) if (open[e] && Dt[e] > 0.02) { deg[ea[e]]++; deg[eb[e]]++; }   // 行き止まりは先っぽから引く（見た目のための演出）
+    const tk = Math.max(0, 1 - 14 * dt);
+    for (let e = 0; e < E; e++) if (open[e] && Dt[e] > 0.02) { const a = ea[e], c = eb[e]; if ((deg[a] === 1 && !isT[a]) || (deg[c] === 1 && !isT[c])) Dt[e] *= tk; }
+  }
+  // いまの様子をしらべる：マスとマスの間が「通れるか」「道（跡）が残っているか」
+  sim.mazeStat = function (a, b, th, useTube) {
+    const mz = sim.maze; if (!mz) return null; const { cols, rows, cell, wt, x0, y0, nc, nb } = mz, w = cell - wt, EH = (cols - 1) * rows;
+    const pass = new Uint8Array(EH + cols * (rows - 1)), strong = new Uint8Array(pass.length); let ns = 0;
+    for (let cy = 0; cy < rows; cy++) for (let cx = 0; cx < cols; cx++) { const px = x0 + wt + cx * cell, py = y0 + wt + cy * cell;
+      if (cx < cols - 1) { const e = cy * (cols - 1) + cx, xm = px + w + (wt >> 1); let blocked = 0, mx = 0; for (let q = 0; q < w; q++) { const i = (py + q) * W + xm; if (B[i]) blocked++; else if (T[i] > mx) mx = T[i]; }
+        if (blocked < w) { pass[e] = 1; if (useTube ? mz.Dt[e] > th : mx > th) { strong[e] = 1; ns++; } } }
+      if (cy < rows - 1) { const e = EH + cy * cols + cx, ym = py + w + (wt >> 1); let blocked = 0, mx = 0; for (let q = 0; q < w; q++) { const i = ym * W + px + q; if (B[i]) blocked++; else if (T[i] > mx) mx = T[i]; }
+        if (blocked < w) { pass[e] = 1; if (useTube ? mz.Dt[e] > th : mx > th) { strong[e] = 1; ns++; } } } }
+    const bfs = (ok, path) => { const ds = new Int32Array(nc).fill(-1), pv = new Int32Array(nc).fill(-1), qu = [a]; ds[a] = 0;
+      for (let h = 0; h < qu.length; h++) { const u = qu[h]; if (u === b) break; for (let k = 0; k < 4; k++) { const r = nb(u, k); if (r && ok[r[0]] && ds[r[1]] < 0) { ds[r[1]] = ds[u] + 1; pv[r[1]] = u; qu.push(r[1]); } } }
+      if (path && ds[b] >= 0) { let u = b; while (u >= 0) { path.push(u); u = pv[u]; } } return ds[b]; };
+    const path = []; const sp = bfs(pass, path), ml = bfs(strong, null);
+    return { sp, ml, strong: ns, path };
   };
   // 子実体ができる場所：道の上から、ほどよい間隔でえらぶ
   sim.sampleSites = function (max) {
@@ -549,7 +671,7 @@ function createSim(W, H, NMAX) {
   let sim = null, img = null, W = 0, H = 0, cw = 0, ch = 0, dpr = 1, aspect0 = 1;
   let baseP = null;
   let tool = 'food', acc = 0, emaMs = 8, lastTune = 0, frameNo = 0, running = true;
-  const set = { speed: 'mid', sp: 'random', hab: 'random', shape: 'mid', auto: 'off' };
+  const set = { speed: 'mid', sp: 'random', hab: 'random', shape: 'mid', auto: 'off', mz: 'm' };
   try { const s = JSON.parse(localStorage.getItem('slime-mold-set2') || '{}'); for (const k in set) if (typeof s[k] === 'string') set[k] = s[k]; } catch (e) {}
   if (set.sp !== 'random' && !SPECIES[set.sp]) set.sp = 'random';
   if (set.hab !== 'random' && !HABS[set.hab]) set.hab = 'random';
@@ -557,7 +679,9 @@ function createSim(W, H, NMAX) {
   function saveSet() { try { localStorage.setItem('slime-mold-set2', JSON.stringify(set)); } catch (e) {} }
   const cur = { sp: null, hab: null };
   const auto = { phase: 'grow', left: 0, next: 0, tick0: 0, idle: 0, t0: 0, sites: [], spores: [], land: null, from: null, fadeIn: 0 };
-  const isAuto = () => set.auto === 'on';
+  const MZ = { s: 28, m: 23, l: 19 };
+  const mazeS = { on: false, kind: 'real', ans: false, placed: false, foodAt: 0, a: 0, b: 0, last: -1, lastTick: 0, path: [] };
+  const isAuto = () => set.auto === 'on' && !mazeS.on;
   function pick(obj, not) { const k = Object.keys(obj).filter(x => x !== not); return k[(Math.random() * k.length) | 0]; }
   // 種類は「レア度」と「その場所にいそうか」で重みをつけてえらぶ
   function pickSp(hab, not) {
@@ -597,6 +721,7 @@ function createSim(W, H, NMAX) {
   }
   // 新しい場面：ランダムなら種類と場所をえらび直して、タネを1つ置く
   function newScene(x, y, announce) {
+    mazeS.on = false;
     const fs = set.sp !== 'random' ? set.sp : null;
     cur.hab = set.hab !== 'random' ? set.hab : (fs ? pickHabFor(fs, cur.hab) : pick(HABS, cur.hab));
     cur.sp = fs || pickSp(cur.hab, cur.sp);
@@ -610,6 +735,8 @@ function createSim(W, H, NMAX) {
     const sp = SPECIES[cur.sp]; sim.setLook(sp);
     Object.assign(sim.P, baseP, sp.P); sim.P.SO = sp.P.SO * SHAPE_K[set.shape];
     sim.P.eat = isAuto() ? EAT : 0;
+    if (mazeS.on && mazeS.kind === 'real') sim.P.turnover = 0;
+    $('bMaze').classList.toggle('on', mazeS.on); $('mzAns').classList.toggle('on', mazeS.ans); $('mzQuit').style.display = mazeS.on ? '' : 'none';
     const bg = HABS[cur.hab].css;
     document.documentElement.style.background = document.body.style.background = bg;
     const mt = document.querySelector('meta[name=theme-color]'); if (mt) mt.content = bg;
@@ -619,6 +746,46 @@ function createSim(W, H, NMAX) {
     document.querySelectorAll('.seg').forEach(seg => seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === set[seg.dataset.key])));
     $('bAuto').classList.toggle('on', isAuto());
     $('nowScene').textContent = 'いま：' + HABS[cur.hab].name + ' ・ ' + sp.name + '（' + sp.zname + '）';
+  }
+
+  /* ---- 迷路 ---- */
+  function startMaze(kind) {
+    if (auto.phase === 'fruit') { auto.sites = []; auto.spores = []; }
+    auto.phase = 'grow'; auto.fadeIn = 0; cur.hab = 'agar'; sim.clear(); sim.setHabitat('agar');
+    const ky = H / window.innerHeight, cell = MZ[set.mz] || 23, wt = 5, y0 = Math.ceil(106 * ky), availH = H - y0 - Math.ceil(184 * ky);
+    const cols = Math.max(3, Math.floor((W - 8 - wt) / cell)), rows = Math.max(3, Math.floor((availH - wt) / cell)), x0 = ((W - cols * cell - wt) / 2) | 0;
+    const mz = sim.buildMaze(x0, y0, cols, rows, cell, wt, 0.1);
+    Object.assign(mazeS, { on: true, kind, placed: false, a: 0, b: mz.nc - 1, last: -1, lastTick: 0, path: [], foodAt: 110 });
+    applyLook();
+    if (kind === 'real') { sim.noScent = true; sim.tube = true; let oe = 0; for (let e = 0; e < mz.E; e++) oe += mz.open[e];
+      sim.fillMaze(Math.min(sim.NMAX * sim.capScale * 0.6, oe * cell * 3) | 0); }
+    else { sim.seed(mz.cx(0), mz.cy(0), sim.P.baseN, ((cell - wt) >> 1) - 1); const f = sim.addFood(mz.cx(mazeS.b), mz.cy(mazeS.b)); if (f) f.tb = performance.now(); mazeS.placed = true; }
+    $('hint').classList.add('off');
+    toast(kind === 'real' ? 'まず、迷路ぜんたいに広がります' : '出口のエサのにおいをたどります');
+  }
+  function mazeTick(now) {
+    if (mazeS.kind === 'real' && !mazeS.placed && sim.tick >= mazeS.foodAt) { const mz = sim.maze; mazeS.placed = true;
+      for (const c of [mazeS.a, mazeS.b]) { const f = sim.addFood(mz.cx(c), mz.cy(c)); if (f) f.tb = now; }
+      toast('入口と出口にエサを置いたよ'); }
+  }
+  function mazeText() {
+    const mz = sim.maze;
+    if (mazeS.kind === 'real') {
+      if (!mazeS.placed) return '迷路に広がっています';
+      const t = mz.term; if (t.length < 2) { mazeS.path = []; return 'エサを2つ以上置こう'; }
+      const st = sim.mazeStat(t[0], t[1], 0.1, true); mazeS.path = st.path;
+      if (st.strong !== mazeS.last) { mazeS.last = st.strong; mazeS.lastTick = sim.tick; }
+      if (st.sp < 0) return '壁でエサに行けません';
+      if (sim.tick - mazeS.lastTick > 500 && t.length === 2) {
+        if (st.ml === st.sp) return st.strong === st.sp ? '近道だけ残った（' + st.sp + 'マス）' : '近道が残った（複数）';
+        return st.ml < 0 ? '道が切れてしまった' : '回り道 ' + st.ml + ' ／ 近道 ' + st.sp + 'マス'; }
+      return '残り ' + st.strong + 'マス ／ 近道 ' + st.sp + 'マス';
+    }
+    const f = sim.foods[0]; if (!f) { mazeS.path = []; return 'エサを置こう'; }
+    const b = mz.cellOf(f.x, f.y), st = sim.mazeStat(mazeS.a, b < 0 ? mazeS.b : b, 1, false); mazeS.path = st.path;
+    if (sim.n === 0) return '粘菌がいません。「タネ」で置こう';
+    if (!f.reached) return 'においをたどっています';
+    return st.ml > 0 ? 'とどいた！ 道 ' + st.ml + ' ／ 近道 ' + st.sp + 'マス' : 'とどいた！（近道は ' + st.sp + 'マス）';
   }
 
   /* ---- おまかせ：エサが現れる → 食べつくす → 子実体と胞子 → 次の場面 ---- */
@@ -811,6 +978,7 @@ function createSim(W, H, NMAX) {
     while (acc >= 1 && k < 4) { sim.step(); acc -= 1; k++; }
     if (acc > 4) acc = 0;
     if (isAuto() && auto.phase === 'grow') autoStep();
+    if (mazeS.on && auto.phase === 'grow') mazeTick(now);
     sim.render(img.data); sctx.putImageData(img, 0, 0);
     ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
     ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
@@ -822,6 +990,9 @@ function createSim(W, H, NMAX) {
       ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
     }
     drawFoods(now); drawBrush();
+    if (mazeS.on && mazeS.ans && sim.maze && mazeS.path.length > 1 && auto.phase !== 'fruit') { const mz = sim.maze, kx = cw / W, ky = ch / H; // 答え合わせ：別に計算した本当の最短
+      ctx.strokeStyle = 'rgba(140,220,255,.95)'; ctx.lineWidth = 2 * dpr; ctx.setLineDash([5 * dpr, 6 * dpr]); ctx.beginPath();
+      mazeS.path.forEach((c, i) => { const x = mz.cx(c) * kx, y = mz.cy(c) * ky; if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y); }); ctx.stroke(); ctx.setLineDash([]); }
     if (auto.phase === 'fruit') drawFruit(now);
     else if (auto.fadeIn) { const a = 1 - (now - auto.fadeIn) / 1400; if (a > 0) { ctx.globalAlpha = a; ctx.fillStyle = HABS[cur.hab].css; ctx.fillRect(0, 0, cw, ch); ctx.globalAlpha = 1; } else auto.fadeIn = 0; }
     emaMs += (performance.now() - t0 - emaMs) * 0.05;
@@ -831,6 +1002,7 @@ function createSim(W, H, NMAX) {
   function stat() {
     const nf = sim.foods.length; let s;
     if (auto.phase === 'fruit') s = '胞子をとばしています';
+    else if (mazeS.on && sim.maze) s = mazeText();
     else if (sim.n === 0) s = '粘菌がいません。「タネ」で置こう';
     else if (nf === 0) s = 'エサをさがしています';
     else s = 'エサ ' + sim.reached + ' / ' + nf + ' にとどいた';
@@ -877,6 +1049,7 @@ function createSim(W, H, NMAX) {
   }));
   $('bAuto').addEventListener('click', () => {
     $('hint').classList.add('off');
+    if (mazeS.on) { toast('迷路のあいだは、おまかせにできません'); return; }
     set.auto = isAuto() ? 'off' : 'on'; saveSet();
     if (isAuto()) { armAuto(40); toast('おまかせ：エサが現れて、食べつくすと次の場面へ'); }
     else { if (auto.phase === 'fruit') { auto.phase = 'grow'; auto.sites = []; auto.spores = []; sim.fading = false; if (sim.n === 0) sim.seed(W / 2, H * 0.47, sim.P.baseN); } toast('おまかせをやめました'); }
@@ -903,6 +1076,11 @@ function createSim(W, H, NMAX) {
   function openSheet(id) { $('scrim').classList.add('on'); $(id).classList.add('on'); }
   function closeSheets() { $('scrim').classList.remove('on'); document.querySelectorAll('.sheet').forEach(s => s.classList.remove('on')); }
   $('bSet').addEventListener('click', () => openSheet('sSet'));
+  $('bMaze').addEventListener('click', () => openSheet('sMaze'));
+  $('mzReal').addEventListener('click', () => { closeSheets(); startMaze('real'); });
+  $('mzScent').addEventListener('click', () => { closeSheets(); startMaze('scent'); });
+  $('mzAns').addEventListener('click', () => { mazeS.ans = !mazeS.ans; $('mzAns').classList.toggle('on', mazeS.ans); if (mazeS.ans && mazeS.on) closeSheets(); });
+  $('mzQuit').addEventListener('click', () => { closeSheets(); newScene(W / 2, H * 0.47, true); });
   $('bDex').addEventListener('click', () => { renderDex(); openSheet('sDex'); });
   $('bFruitNow').addEventListener('click', () => { closeSheets(); if (auto.phase === 'fruit') return; if (sim.n < 200) { toast('粘菌が小さすぎます'); return; } beginFruit(false); });
   $('bHow').addEventListener('click', () => openSheet('sHow'));
