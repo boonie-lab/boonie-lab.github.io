@@ -8,7 +8,7 @@
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:#1f2a1c;color:#f3f1e6;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Yu Gothic UI",sans-serif;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 #app{position:relative;display:flex;flex-direction:column;height:100vh;height:100dvh;max-width:980px;margin:0 auto}
-header{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;gap:8px}
+header{display:flex;justify-content:space-between;align-items:center;padding:calc(6px + env(safe-area-inset-top)) 12px 6px;gap:8px}
 #clock{font-size:13px;line-height:1.35}
 #clock b{font-weight:600;font-size:15px}
 .seg{display:flex;border:1px solid #5d6b55;border-radius:8px;overflow:hidden;flex-shrink:0}
@@ -17,13 +17,14 @@ button{font:inherit;color:inherit;background:transparent;border:0;cursor:pointer
 .seg button:first-child{border-left:0}
 .seg button.on{background:#dfe8c8;color:#22301d}
 #main{flex:1;min-height:0;display:flex;flex-direction:column}
-#stage{flex:1;position:relative;min-height:0;display:flex;align-items:center;justify-content:center;padding:0 8px}
+#stage{flex:1;position:relative;min-height:0;overflow:hidden}
+#cv{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)}
 canvas{border-radius:10px;touch-action:none;display:block}
 #toast{position:absolute;top:8px;left:50%;transform:translateX(-50%);max-width:94%;background:rgba(31,42,28,.9);padding:6px 12px;border-radius:16px;font-size:13px;text-align:center;opacity:0;transition:opacity .5s;cursor:pointer}
 #tip{position:absolute;display:none;background:rgba(31,42,28,.92);padding:3px 8px;border-radius:6px;font-size:12px;white-space:nowrap;pointer-events:none}
 #side{flex:none;padding:8px 12px calc(8px + env(safe-area-inset-bottom))}
 #sc{width:100%}
-#panel{min-height:70px;padding:6px 2px 0;font-size:13px;line-height:1.5}
+#panel{height:68px;overflow:hidden;padding:6px 2px 0;font-size:13px;line-height:1.5}
 #panel .nm{font-size:16px;font-weight:600}
 #panel .sub{color:#b9c4a8}
 .bar{display:inline-block;vertical-align:middle;width:90px;height:8px;border-radius:4px;background:#46553f;overflow:hidden;margin:0 6px}
@@ -506,9 +507,9 @@ function resize(){
   var wide=window.innerWidth>=window.innerHeight;
   dpr=window.devicePixelRatio||1;
   scw=Math.max(200,side.clientWidth-24);
-  sch=wide?Math.round(Math.min(260,window.innerHeight*0.4)):Math.round(clamp(window.innerHeight*0.22,140,220));
+  sch=wide?Math.round(Math.min(260,window.innerHeight*0.4)):Math.round(clamp(window.innerHeight*0.3,150,290));
   sc.style.height=sch+'px';sc.width=Math.floor(scw*dpr);sc.height=Math.floor(sch*dpr);
-  var w=st.clientWidth-16,h=st.clientHeight;
+  var w=st.clientWidth-16,h=st.clientHeight-4;
   scale=Math.max(0.2,Math.min(w/W,h/H));
   cv.style.width=Math.floor(W*scale)+'px';cv.style.height=Math.floor(H*scale)+'px';
   cv.width=Math.floor(W*scale*dpr);cv.height=Math.floor(H*scale*dpr);
@@ -592,6 +593,7 @@ function drawSheep(g,px,py,u,c,T,sel){
   var old=c.age>c.life*0.8;
   g.save();g.translate(px,py);g.scale(dir,1);
   g.fillStyle='rgba(0,0,0,.16)';ell(g,0,0,u*1.5,u*0.2);
+  if(sel){g.strokeStyle='#b9b0ff';g.lineWidth=2.5;g.beginPath();g.ellipse(0,0,u*1.9,u*0.42,0,0,6.2832);g.stroke()}
   g.fillStyle=face;
   if(!lying){
     var lx=[-u*0.8,-u*0.45,u*0.45,u*0.8];
@@ -632,11 +634,15 @@ function drawSheep(g,px,py,u,c,T,sel){
   }
   g.fillStyle=darkFace?'rgba(255,255,255,.35)':'rgba(60,30,20,.45)';ell(g,hx+u*0.5,hy+u*0.08,u*0.04,u*0.03);
   g.restore();
-  var top=py+(lying?-u*1.75:-u*2.35);
+  var top=py+(lying?-u*1.75:-u*2.35)-(sel?6:0);
   if(st==='sleep'){g.fillStyle='rgba(255,255,255,.9)';g.font='13px sans-serif';g.fillText('z',px+dir*u*1.6,py-u*1.3-Math.sin(T*1.5+c.id)*2)}
   g.font=(sel?'600 13px ':'11px ')+'sans-serif';g.textAlign='center';
-  g.fillStyle='rgba(20,30,15,.55)';g.fillText(c.name,px+1,top+1);
-  g.fillStyle=sel?'#ffffff':'rgba(255,255,255,.82)';g.fillText(c.name,px,top);
+  if(sel){
+    var tw=g.measureText(c.name).width+14;
+    g.fillStyle='#6f63d6';g.beginPath();g.moveTo(px-5,top+5);g.lineTo(px+5,top+5);g.lineTo(px,top+11);g.fill();
+    g.fillRect(px-tw/2,top-13,tw,19);
+  }else{g.fillStyle='rgba(20,30,15,.55)';g.fillText(c.name,px+1,top+1)}
+  g.fillStyle=sel?'#ffffff':'rgba(255,255,255,.85)';g.fillText(c.name,px,top);
   g.textAlign='left';
 }
 function mixc(a,b,t){return 'rgb('+Math.round(a[0]+(b[0]-a[0])*t)+','+Math.round(a[1]+(b[1]-a[1])*t)+','+Math.round(a[2]+(b[2]-a[2])*t)+')'}
@@ -673,6 +679,7 @@ function drawScope(T){
     g.moveTo(blades[i]+3,blades[i+1]);g.lineTo(blades[i]+2,blades[i+1]-bh*0.8);
   }
   g.stroke();
+  g.restore();
   var items=[],o,rx=w/2/Z+16;
   for(i=0;i<S.poo.length;i++){o=S.poo[i];if(Math.abs(o[0]-scx)<rx)items.push({y:o[1],k:0,o:o})}
   for(i=0;i<S.fl.length;i++){o=S.fl[i];if(Math.abs(o[0]-scx)<rx)items.push({y:o[1],k:1,o:o})}
@@ -682,7 +689,7 @@ function drawScope(T){
   for(i=0;i<items.length;i++){
     var it=items[i];o=it.o;
     if(it.k===2){px=(o.x-scx)*Z+w/2;py=gy0+(o.y-scy)*VY}else{px=(o[0]-scx)*Z+w/2;py=gy0+(o[1]-scy)*VY}
-    if(py<hor-4||py>h+50)continue;
+    if(py<hor+1||py>h+50)continue;
     var dep=clamp(1+(it.y-scy)*0.006,0.7,1.35);
     if(it.k===0){
       g.fillStyle='#4a3520';ell(g,px,py,3*dep,1.6*dep);ell(g,px+3*dep,py+1,2.2*dep,1.3*dep);ell(g,px+1,py-1.6*dep,2*dep,1.2*dep);
@@ -697,7 +704,6 @@ function drawScope(T){
       hits.push({id:o.id,x:px,y:py-u,r:u*1.8});
     }
   }
-  g.restore();
   if(dk>0){g.fillStyle='rgba(12,22,60,'+(0.36*dk)+')';g.fillRect(0,hor,w,h-hor)}
   if(!c&&!memorial){
     g.fillStyle='rgba(20,30,15,.6)';g.fillRect(0,h-26,w,26);
@@ -848,6 +854,7 @@ document.addEventListener('visibilitychange',function(){
 });
 window.addEventListener('pagehide',save);
 window.addEventListener('resize',resize);
+if(window.ResizeObserver){new ResizeObserver(function(){var st=document.getElementById('stage');if(Math.abs(st.clientHeight-4-H*scale)>2&&Math.abs(st.clientWidth-16-W*scale)>2||H*scale>st.clientHeight)resize()}).observe(document.getElementById('stage'))}
 
 (function init(){
   var real=load();
