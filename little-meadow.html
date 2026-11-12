@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>ちいさな草原</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#1f2a1c;color:#f3f1e6;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Yu Gothic UI",sans-serif;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+#app{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width:720px;margin:0 auto}
+header{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;gap:8px}
+#clock{font-size:14px;line-height:1.35}
+#clock b{font-weight:600;font-size:15px}
+.seg{display:flex;border:1px solid #5d6b55;border-radius:8px;overflow:hidden;flex-shrink:0}
+button{font:inherit;color:inherit;background:transparent;border:0;cursor:pointer}
+.seg button{padding:7px 9px;font-size:13px;border-left:1px solid #5d6b55}
+.seg button:first-child{border-left:0}
+.seg button.on{background:#dfe8c8;color:#22301d}
+#stage{flex:1;position:relative;min-height:0;display:flex;align-items:center;justify-content:center;padding:0 8px}
+canvas{border-radius:10px;touch-action:none;display:block}
+#toast{position:absolute;top:10px;left:50%;transform:translateX(-50%);max-width:92%;background:rgba(31,42,28,.86);padding:6px 12px;border-radius:16px;font-size:13px;text-align:center;opacity:0;transition:opacity .5s;pointer-events:none}
+footer{padding:8px 12px calc(10px + env(safe-area-inset-bottom))}
+#panel{min-height:92px;background:#2b3826;border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.55}
+#panel .nm{font-size:16px;font-weight:600}
+#panel .sub{color:#b9c4a8;font-size:13px}
+.bar{display:inline-block;vertical-align:middle;width:110px;height:8px;border-radius:4px;background:#46553f;overflow:hidden;margin:0 6px}
+.bar i{display:block;height:100%;background:#a9d06b}
+#tools{display:flex;gap:8px;margin-top:8px}
+#tools button{flex:1;padding:10px 8px;border:1px solid #5d6b55;border-radius:8px;font-size:14px}
+#tools button.on{background:#dfe8c8;color:#22301d}
+#modal{position:absolute;inset:0;background:rgba(15,22,13,.78);display:none;align-items:center;justify-content:center;padding:20px;z-index:5}
+#modal .box{background:#2b3826;border-radius:12px;padding:18px 18px 14px;max-width:420px;width:100%;font-size:14px;line-height:1.7}
+#modal h2{margin:0 0 6px;font-size:18px;font-weight:600}
+#modal ul{margin:8px 0;padding-left:1.2em}
+#modal button{margin-top:10px;width:100%;padding:11px;border-radius:8px;background:#dfe8c8;color:#22301d;font-size:15px}
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+<div id="clock"></div>
+<div class="seg" id="speeds"></div>
+</header>
+<div id="stage">
+<canvas id="cv"></canvas>
+<div id="toast"></div>
+<div id="modal"><div class="box" id="mbox"></div></div>
+</div>
+<footer>
+<div id="panel"></div>
+<div id="tools">
+<button id="sow">草の種をまく</button>
+<button id="reset">新しい世界にする</button>
+</div>
+</footer>
+</div>
+<script>
+//SIM-START
+var COLS=40,ROWS=60,CELL=10,W=COLS*CELL,H=ROWS*CELL,N=COLS*ROWS;
+var DAY=86400,LIFE=3*DAY,MATURE=12*3600,COOLDOWN=5*3600,MAXPOP=50;
+var GROW=0.0003,SPREAD=0.00012,BITE=0.02,GAIN=0.4,FLOOR=0.22,RICH=0.5;
+var SYL='モコピルタンポナミクトリハユキソラマロチ'.split('');
+var S=null;
+var hooks={event:function(){}};
+
+function rnd(a,b){return a+Math.random()*(b-a)}
+function clamp(v,a,b){return v<a?a:v>b?b:v}
+function makeName(){
+  var n,i,len,taken;
+  do{
+    len=Math.random()<0.6?2:3;n='';
+    for(i=0;i<len;i++)n+=SYL[Math.floor(Math.random()*SYL.length)];
+    taken=S.cr.some(function(c){return c.name===n});
+  }while(n[0]==='ン'||taken);
+  return n;
+}
+function mkCreature(x,y,t,pa,pb){
+  var c={id:S.nid++,name:makeName(),x:x,y:y,h:rnd(0,6.28),age:0,life:LIFE*rnd(0.8,1.2),e:45,
+    sp:t.sp,vis:t.vis,lazy:t.lazy,hung:t.hung,hue:t.hue,
+    st:'rest',tx:x,ty:y,timer:rnd(5,40),cd:0,kids:0,pa:pa||'',pb:pb||'',tid:-1,dead:false};
+  S.cr.push(c);return c;
+}
+function randTraits(){return{sp:rnd(4.5,7.5),vis:rnd(3,6),lazy:Math.random(),hung:rnd(48,62),hue:rnd(14,46)}}
+function mixTraits(a,b){
+  function m(k,lo,hi,d){return clamp((a[k]+b[k])/2+rnd(-d,d),lo,hi)}
+  return{sp:m('sp',3.5,8.5,0.45),vis:m('vis',2.5,7,0.4),lazy:m('lazy',0,1,0.12),hung:m('hung',44,66,2),hue:m('hue',8,52,5)};
+}
+function newWorld(){
+  var now=new Date(),i,x,y,c;
+  S={t:now.getHours()*3600+now.getMinutes()*60+now.getSeconds(),gacc:0,imm:0,nid:1,
+     g:new Float32Array(N),f:new Float32Array(N),cr:[],gavg:0.6};
+  var p1=rnd(0,6),p2=rnd(0,6),p3=rnd(0,6);
+  for(y=0;y<ROWS;y++)for(x=0;x<COLS;x++){
+    S.g[y*COLS+x]=clamp(0.62+0.25*Math.sin(x*0.31+p1)+0.25*Math.sin(y*0.23+p2)+0.15*Math.sin((x+y)*0.17+p3)+rnd(-0.06,0.06),0.15,1);
+  }
+  for(i=0;i<12;i++){
+    c=mkCreature(rnd(40,W-40),rnd(60,H-60),randTraits());
+    c.age=rnd(0,0.4)*c.life;c.e=rnd(60,95);
+  }
+}
+function darkness(t){
+  var h=(t%DAY)/3600;
+  if(h<4.5||h>=19.5)return 1;
+  if(h<6)return 1-(h-4.5)/1.5;
+  if(h>=18)return (h-18)/1.5;
+  return 0;
+}
+function cellOf(c){
+  var cx=clamp(Math.floor(c.x/CELL),0,COLS-1),cy=clamp(Math.floor(c.y/CELL),0,ROWS-1);
+  return cy*COLS+cx;
+}
+function growGrass(dt){
+  var g=S.g,f=S.f,r=GROW*dt,sp=SPREAD*dt,dec=1-dt/20000,i=0,x,y,v,na,sum=0;
+  for(y=0;y<ROWS;y++)for(x=0;x<COLS;x++,i++){
+    v=g[i];
+    na=((x>0?g[i-1]:v)+(x<COLS-1?g[i+1]:v)+(y>0?g[i-COLS]:v)+(y<ROWS-1?g[i+COLS]:v))/4;
+    v+=(r*Math.max(v,0.02)*(1-v)+sp*na*(1-v))*(1+2*f[i]);
+    g[i]=v>1?1:v;sum+=g[i];
+    f[i]*=dec;
+  }
+  S.gavg=sum/N;
+}
+function eligible(c){
+  return !c.dead&&c.age>=MATURE&&c.age<c.life*0.9&&c.e>70&&c.cd<=0&&c.st!=='sleep'&&S.gavg>RICH&&S.cr.length<MAXPOP;
+}
+function findMate(c){
+  var best=null,bd=c.vis*CELL*2.5,i,o,d;
+  for(i=0;i<S.cr.length;i++){
+    o=S.cr[i];if(o===c||!eligible(o))continue;
+    d=Math.sqrt((o.x-c.x)*(o.x-c.x)+(o.y-c.y)*(o.y-c.y));
+    if(d<bd){bd=d;best=o}
+  }
+  return best;
+}
+function byId(id){for(var i=0;i<S.cr.length;i++)if(S.cr[i].id===id)return S.cr[i];return null}
+function seekFood(c){
+  var cx=clamp(Math.floor(c.x/CELL),0,COLS-1),cy=clamp(Math.floor(c.y/CELL),0,ROWS-1);
+  var R=Math.round(c.vis),best=-1,bs=-9,x,y,gv,s;
+  for(y=Math.max(0,cy-R);y<=Math.min(ROWS-1,cy+R);y++)for(x=Math.max(0,cx-R);x<=Math.min(COLS-1,cx+R);x++){
+    gv=S.g[y*COLS+x];if(gv<0.38)continue;
+    s=gv-0.05*Math.sqrt((x-cx)*(x-cx)+(y-cy)*(y-cy))+((x*7+y*13+c.id)%5)*0.01;
+    if(s>bs){bs=s;best=y*COLS+x}
+  }
+  if(best<0)return false;
+  c.tx=(best%COLS)*CELL+CELL/2+rnd(-3,3);c.ty=Math.floor(best/COLS)*CELL+CELL/2+rnd(-3,3);
+  c.st='seek';return true;
+}
+function roam(c){
+  var a=c.h+rnd(-0.7,0.7),d=rnd(90,170);
+  var tx=c.x+Math.cos(a)*d,ty=c.y+Math.sin(a)*d;
+  if(tx<8||tx>W-8||ty<8||ty>H-8){a=Math.atan2(H/2-c.y,W/2-c.x)+rnd(-0.8,0.8);tx=c.x+Math.cos(a)*d;ty=c.y+Math.sin(a)*d}
+  c.tx=clamp(tx,6,W-6);c.ty=clamp(ty,6,H-6);c.st='roam';
+}
+function wander(c){
+  var tx,ty,o;
+  if(S.cr.length>1&&Math.random()<0.35){
+    o=S.cr[Math.floor(Math.random()*S.cr.length)];
+    tx=o.x+rnd(-25,25);ty=o.y+rnd(-25,25);
+  }else{tx=c.x+rnd(-60,60);ty=c.y+rnd(-60,60)}
+  c.tx=clamp(tx,6,W-6);c.ty=clamp(ty,6,H-6);c.st='wander';
+}
+function decide(c,night){
+  var hung=night?30:c.hung,o;
+  if(c.e<hung){
+    if(S.g[cellOf(c)]>0.4){c.st='eat';return}
+    if(seekFood(c))return;
+    roam(c);return;
+  }
+  if(night){c.st='sleep';return}
+  if(eligible(c)){o=findMate(c);if(o){c.st='court';c.tid=o.id;return}}
+  if(Math.random()<0.25+0.5*c.lazy){c.st='rest';c.timer=rnd(60,240)*(0.6+c.lazy)}
+  else wander(c);
+}
+function mate(a,b){
+  a.e-=20;b.e-=20;a.cd=COOLDOWN*rnd(0.8,1.2);b.cd=COOLDOWN*rnd(0.8,1.2);a.kids++;b.kids++;
+  var ch=mkCreature((a.x+b.x)/2,(a.y+b.y)/2,mixTraits(a,b),a.name,b.name);
+  a.st='rest';a.timer=60;b.st='rest';b.timer=60;
+  hooks.event('birth',{c:ch,a:a,b:b});
+}
+function die(c,why){
+  c.dead=true;
+  var cx=clamp(Math.floor(c.x/CELL),0,COLS-1),cy=clamp(Math.floor(c.y/CELL),0,ROWS-1),x,y,i;
+  for(y=cy-1;y<=cy+1;y++)for(x=cx-1;x<=cx+1;x++){
+    if(x<0||y<0||x>=COLS||y>=ROWS)continue;
+    i=y*COLS+x;S.f[i]=Math.min(1.5,S.f[i]+(x===cx&&y===cy?1:0.5));
+    if(S.g[i]<0.12)S.g[i]=0.12;
+  }
+  hooks.event('death',{c:c,why:why});
+}
+function updateCreature(c,dt,night){
+  if(c.dead)return;
+  c.age+=dt;if(c.cd>0)c.cd-=dt;
+  var juv=c.age<MATURE,old=c.age>c.life*0.8,st=c.st;
+  var drain=st==='sleep'?0.001:st==='rest'?0.002:st==='eat'?0.003:0.004*(0.6+0.4*c.sp/6);
+  if(juv)drain*=0.8;
+  c.e-=drain*dt;
+  if(c.e<=0){die(c,'starve');return}
+  if(c.age>=c.life){die(c,'age');return}
+  if(st==='eat'){
+    var i=cellOf(c),take=Math.min(Math.max(0,S.g[i]-FLOOR),BITE*dt);
+    S.g[i]-=take;c.e=Math.min(100,c.e+take*GAIN);
+    if(c.e>=92)decide(c,night);
+    else if(S.g[i]<FLOOR+0.03){if(!seekFood(c))roam(c)}
+    return;
+  }
+  if(st==='rest'){c.timer-=dt;if(c.timer<=0||c.e<c.hung)decide(c,night);return}
+  if(st==='sleep'){if(!night||c.e<28)decide(c,night);return}
+  var tx=c.tx,ty=c.ty,o=null;
+  if(st==='court'){
+    o=byId(c.tid);
+    if(!o||!eligible(o)||!eligible(c)){decide(c,night);return}
+    tx=o.x;ty=o.y;
+  }
+  var dx=tx-c.x,dy=ty-c.y,d=Math.sqrt(dx*dx+dy*dy);
+  var v=c.sp*(c.e<20?0.55:1)*(old?0.7:1)*(juv?0.8:1),stp=v*dt;
+  if(d>0.01)c.h=Math.atan2(dy,dx);
+  if(st==='court'&&d<7+stp){mate(c,o);return}
+  if(d<=stp){
+    c.x=tx;c.y=ty;
+    if(st==='seek'){if(S.g[cellOf(c)]>FLOOR+0.05)c.st='eat';else decide(c,night)}
+    else decide(c,night);
+  }else{c.x+=dx/d*stp;c.y+=dy/d*stp}
+}
+function addImmigrant(){
+  var side=Math.floor(Math.random()*4),x,y;
+  if(side===0){x=6;y=rnd(20,H-20)}else if(side===1){x=W-6;y=rnd(20,H-20)}
+  else if(side===2){x=rnd(20,W-20);y=6}else{x=rnd(20,W-20);y=H-6}
+  var c=mkCreature(x,y,randTraits());
+  c.age=rnd(0.2,0.35)*c.life;c.e=85;c.h=Math.atan2(H/2-y,W/2-x);
+  hooks.event('immigrant',{c:c});
+}
+function step(dt){
+  S.t+=dt;S.gacc+=dt;
+  if(S.gacc>=30){
+    growGrass(S.gacc);S.imm-=S.gacc;S.gacc=0;
+    if(S.cr.length<=2&&S.imm<=0){addImmigrant();S.imm=1800}
+  }
+  var night=darkness(S.t)>0.6,i,dead=false;
+  for(i=0;i<S.cr.length;i++){updateCreature(S.cr[i],dt,night);if(S.cr[i].dead)dead=true}
+  if(dead)S.cr=S.cr.filter(function(c){return !c.dead});
+}
+//SIM-END
+
+var KEY='little-meadow-v1';
+var cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+var gc=document.createElement('canvas');gc.width=COLS;gc.height=ROWS;
+var gctx=gc.getContext('2d'),img=gctx.createImageData(COLS,ROWS);
+var tex=new Float32Array(N);(function(){for(var i=0;i<N;i++)tex[i]=0.94+Math.random()*0.12})();
+var scale=1,dpr=1,speed=1,busy=false,selId=null,memorial='',sowing=false;
+var fx=[],trail=[],trailAcc=0,rep=null,toastTimer=0,lastSave=0,hiddenAt=0;
+var elClock=document.getElementById('clock'),elPanel=document.getElementById('panel'),elToast=document.getElementById('toast');
+var elModal=document.getElementById('modal'),elBox=document.getElementById('mbox');
+
+function dayOf(t){return Math.floor(t/DAY)+1}
+function ageDays(c){return Math.floor(c.age/DAY)+1}
+function fmtDur(s){
+  if(s<3600)return Math.max(1,Math.round(s/60))+'分';
+  if(s<DAY)return Math.round(s/360)/10+'時間';
+  return Math.round(s/8640)/10+'日';
+}
+function toast(msg){
+  elToast.textContent=msg;elToast.style.opacity=1;
+  clearTimeout(toastTimer);toastTimer=setTimeout(function(){elToast.style.opacity=0},6000);
+}
+hooks.event=function(type,d){
+  var c=d.c,msg='';
+  if(type==='birth'){
+    msg=d.a.name+' と '+d.b.name+' に「'+c.name+'」が生まれました';
+    if(rep)rep.born.push(c.name);else fx.push({k:'heart',x:c.x,y:c.y,t:performance.now()/1000});
+  }else if(type==='death'){
+    msg=d.why==='age'?c.name+' が寿命で旅立ちました（'+ageDays(c)+'日め）':c.name+' がおなかをすかせて旅立ちました';
+    if(rep){if(d.why==='age')rep.aged++;else rep.starved++}
+    else fx.push({k:'gone',x:c.x,y:c.y,t:performance.now()/1000});
+    if(c.id===selId){
+      memorial='<span class="nm">'+c.name+'</span><br>'+ageDays(c)+'日めに、'+(d.why==='age'?'寿命でしずかに旅立ちました。':'おなかをすかせて旅立ちました。')+
+        '<br><span class="sub">のこした子ども：'+c.kids+'匹</span>';
+      if(rep)rep.watched=memorial;
+      selId=null;trail=[];
+    }
+  }else if(type==='immigrant'){
+    msg='旅の者「'+c.name+'」がやってきました';
+    if(rep)rep.imm++;
+  }
+  if(!rep&&msg)toast(msg);
+};
+
+function save(){
+  if(!S||busy)return;
+  try{
+    var o={v:1,t:S.t,gacc:S.gacc,imm:S.imm,nid:S.nid,sel:selId,real:Date.now(),
+      g:Array.prototype.map.call(S.g,function(v){return Math.round(v*100)}),
+      f:Array.prototype.map.call(S.f,function(v){return Math.round(v*100)}),
+      cr:S.cr.map(function(c){return{id:c.id,name:c.name,x:Math.round(c.x*10)/10,y:Math.round(c.y*10)/10,h:c.h,age:Math.round(c.age),life:Math.round(c.life),
+        e:Math.round(c.e*100)/100,sp:c.sp,vis:c.vis,lazy:c.lazy,hung:c.hung,hue:c.hue,st:c.st,tx:c.tx,ty:c.ty,timer:c.timer,cd:Math.round(c.cd),kids:c.kids,pa:c.pa,pb:c.pb,tid:c.tid,dead:false}})};
+    localStorage.setItem(KEY,JSON.stringify(o));
+  }catch(e){}
+}
+function load(){
+  try{
+    var o=JSON.parse(localStorage.getItem(KEY)||'null');
+    if(!o||o.v!==1||!o.g||o.g.length!==N||!o.cr)return null;
+    S={t:o.t,gacc:o.gacc||0,imm:o.imm||0,nid:o.nid,g:new Float32Array(N),f:new Float32Array(N),cr:o.cr,gavg:0.5};
+    for(var i=0;i<N;i++){S.g[i]=o.g[i]/100;S.f[i]=(o.f?o.f[i]:0)/100}
+    selId=o.sel==null?null:o.sel;
+    return o.real||null;
+  }catch(e){return null}
+}
+
+function catchUp(sec,showReport){
+  if(busy)return;
+  var total=Math.min(sec,7*DAY),rem=total;
+  busy=true;
+  rep={born:[],aged:0,starved:0,imm:0,watched:''};
+  var watchedBefore=selId;
+  if(showReport){elModal.style.display='flex';elBox.innerHTML='<h2>おかえりなさい</h2>留守の間のできごとを計算しています… <span id="pct">0</span>%'}
+  function chunk(){
+    var t0=performance.now();
+    while(rem>0&&performance.now()-t0<24){var d=Math.min(10,rem);step(d);rem-=d}
+    if(rem>0){var p=document.getElementById('pct');if(p)p.textContent=Math.round((1-rem/total)*100);setTimeout(chunk,0);return}
+    var r=rep;rep=null;busy=false;trail=[];
+    if(showReport)report(r,sec,total,watchedBefore);
+    save();
+  }
+  chunk();
+}
+function report(r,sec,total,watchedBefore){
+  var h='<h2>おかえりなさい</h2>留守にしていた約'+fmtDur(sec)+'のあいだに…'+(sec>total?'<br><span style="color:#b9c4a8;font-size:13px">（計算したのは7日分までです）</span>':'')+'<ul>';
+  var any=false;
+  if(r.born.length){any=true;h+='<li>'+r.born.length+'匹が生まれました'+(r.born.length<=6?'（'+r.born.join('、')+'）':'')+'</li>'}
+  if(r.aged){any=true;h+='<li>'+r.aged+'匹が寿命で旅立ちました</li>'}
+  if(r.starved){any=true;h+='<li>'+r.starved+'匹がおなかをすかせて旅立ちました</li>'}
+  if(r.imm){any=true;h+='<li>旅の者が'+r.imm+'匹やってきました</li>'}
+  if(!any)h+='<li>草原はしずかでした</li>';
+  h+='<li>いまは'+S.cr.length+'匹が暮らしています（'+dayOf(S.t)+'日め）</li></ul>';
+  if(watchedBefore!=null){
+    var c=byId(watchedBefore);
+    if(c)h+='見守っていた '+c.name+' は元気です（おなか'+Math.round(c.e)+'%）。';
+    else if(r.watched)h+='見守っていた子：<br>'+r.watched;
+  }
+  h+='<button id="mok">草原を見る</button>';
+  elBox.innerHTML=h;
+  document.getElementById('mok').onclick=function(){elModal.style.display='none'};
+}
+
+function resize(){
+  var st=document.getElementById('stage'),w=st.clientWidth-16,h=st.clientHeight;
+  scale=Math.max(0.2,Math.min(w/W,h/H));dpr=window.devicePixelRatio||1;
+  cv.style.width=Math.floor(W*scale)+'px';cv.style.height=Math.floor(H*scale)+'px';
+  cv.width=Math.floor(W*scale*dpr);cv.height=Math.floor(H*scale*dpr);
+}
+function grassColor(v,o,d){
+  var r,g,b,k;
+  if(v<0.35){k=v/0.35;r=198+(178-198)*k;g=172+(200-172)*k;b=128+(112-128)*k}
+  else if(v<0.7){k=(v-0.35)/0.35;r=178+(112-178)*k;g=200+(166-200)*k;b=112+(72-112)*k}
+  else{k=(v-0.7)/0.3;r=112+(60-112)*k;g=166+(124-166)*k;b=72+(52-72)*k}
+  d[o]=r;d[o+1]=g;d[o+2]=b;d[o+3]=255;
+}
+function ell(x,y,rx,ry){ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,6.2832);ctx.fill()}
+function drawC(c,T){
+  var juv=c.age<MATURE,old=c.age>c.life*0.8;
+  var s=6.2*(juv?0.5+0.5*c.age/MATURE:1);
+  var st=c.st,moving=st==='seek'||st==='wander'||st==='roam'||st==='court';
+  var bob=moving?Math.sin(T*10+c.id)*0.1:0;
+  if(c.rh===undefined)c.rh=c.h;
+  var da=c.h-c.rh;while(da>3.1416)da-=6.2832;while(da<-3.1416)da+=6.2832;
+  c.rh+=da*(speed>20?1:0.15);
+  ctx.save();ctx.translate(c.x,c.y);
+  ctx.fillStyle='rgba(20,30,10,.2)';ell(0.8,s*0.55,s*1.35,s*0.75);
+  ctx.rotate(c.rh);
+  var sat=old?20:58,body='hsl('+c.hue+','+sat+'%,45%)',head='hsl('+c.hue+','+sat+'%,56%)';
+  ctx.fillStyle='#f4ecd8';ell(-s*1.25,0,s*0.34,s*0.34);
+  ctx.fillStyle=body;ell(0,0,s*1.25,s*(0.88+bob));
+  var hx=s*1.15+(st==='eat'?Math.sin(T*7+c.id)*s*0.18:0);
+  ell(hx-s*0.3,-s*0.5,s*0.27,s*0.27);ell(hx-s*0.3,s*0.5,s*0.27,s*0.27);
+  ctx.fillStyle=head;ell(hx,0,s*0.62,s*0.62);
+  if(st!=='sleep'){ctx.fillStyle='#2a1c12';ell(hx+s*0.26,-s*0.28,s*0.12,s*0.12);ell(hx+s*0.26,s*0.28,s*0.12,s*0.12)}
+  ctx.restore();
+  if(st==='sleep'){
+    ctx.fillStyle='rgba(255,255,255,.85)';ctx.font='10px sans-serif';
+    ctx.fillText('z',c.x+s*1.3,c.y-s*1.3-Math.sin(T*1.5+c.id)*1.2);
+  }
+}
+function draw(T){
+  var d=img.data,g=S.g,i,k=scale*dpr,c;
+  for(i=0;i<N;i++)grassColor(clamp(g[i]*tex[i],0,1),i*4,d);
+  gctx.putImageData(img,0,0);
+  ctx.setTransform(k,0,0,k,0,0);
+  ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+  ctx.drawImage(gc,0,0,W,H);
+  if(trail.length>1){
+    ctx.strokeStyle='rgba(120,100,210,.45)';ctx.lineWidth=1.4;ctx.lineJoin='round';ctx.beginPath();
+    ctx.moveTo(trail[0][0],trail[0][1]);for(i=1;i<trail.length;i++)ctx.lineTo(trail[i][0],trail[i][1]);
+    ctx.stroke();
+  }
+  var list=S.cr.slice().sort(function(a,b){return a.y-b.y});
+  for(i=0;i<list.length;i++)drawC(list[i],T);
+  for(i=fx.length-1;i>=0;i--){
+    var f=fx[i],a=(T-f.t);
+    if(a>3){fx.splice(i,1);continue}
+    if(f.k==='heart'){ctx.fillStyle='rgba(240,110,130,'+(1-a/3)+')';ctx.font='11px sans-serif';ctx.fillText('♥',f.x-4,f.y-8-a*8)}
+    else if(f.k==='gone'){ctx.strokeStyle='rgba(255,255,255,'+(0.8*(1-a/3))+')';ctx.lineWidth=1;ctx.beginPath();ctx.arc(f.x,f.y,4+a*7,0,6.2832);ctx.stroke()}
+    else if(f.k==='seed'){ctx.fillStyle='rgba(240,250,200,'+(1-a/1.2)+')';if(a<1.2)ell(f.x,f.y,1.6,1.6)}
+  }
+  var dk=darkness(S.t);
+  if(dk>0){ctx.fillStyle='rgba(12,22,60,'+(0.42*dk)+')';ctx.fillRect(0,0,W,H)}
+  if(selId!=null){
+    c=byId(selId);
+    if(c){ctx.strokeStyle='#a79df0';ctx.lineWidth=1.6;ctx.beginPath();ctx.arc(c.x,c.y,15,0,6.2832);ctx.stroke()}
+  }
+}
+var STATUS={eat:'草を食べている',seek:'草のほうへ歩いている',roam:'草をさがしている',wander:'さんぽ中',rest:'ひとやすみ',sleep:'ねむっている',court:'相手のところへ'};
+function personality(c){
+  var a=[];
+  if(c.lazy>0.62)a.push('のんびり屋');else if(c.lazy<0.3)a.push('はたらき者');
+  if(c.sp>6.8)a.push('足が速い');else if(c.sp<5.2)a.push('ゆっくり歩き');
+  if(c.vis>5)a.push('目がいい');
+  if(c.hung>58)a.push('食いしんぼう');
+  return a.length?a.slice(0,2).join('・'):'ふつう';
+}
+function updateUI(){
+  var t=S.t%DAY,hh=Math.floor(t/3600),mm=Math.floor(t%3600/60);
+  elClock.innerHTML='<b>'+dayOf(S.t)+'日め</b> '+(hh<10?'0':'')+hh+':'+(mm<10?'0':'')+mm+'<br>'+S.cr.length+'匹が暮らしています';
+  var c=selId!=null?byId(selId):null;
+  if(c){
+    var stage=c.age<MATURE?'こども':c.age>c.life*0.8?'お年より':'おとな';
+    elPanel.innerHTML='<span class="nm">'+c.name+'</span> <span class="sub">'+ageDays(c)+'日め・'+stage+'・'+personality(c)+'</span><br>'+
+      'おなか<span class="bar"><i style="width:'+Math.round(c.e)+'%"></i></span>'+Math.round(c.e)+'%　子ども '+c.kids+'匹<br>'+
+      '<span class="sub">いま：'+STATUS[c.st]+(c.pa?'　親：'+c.pa+' と '+c.pb:'')+'</span>';
+  }else if(memorial){elPanel.innerHTML=memorial}
+  else elPanel.innerHTML='<span class="sub">生き物をタップすると、その子を見守れます。<br>放っておいても草は育ち、生き物は食べ、出会い、子が生まれ、やがて旅立ちます。</span>';
+}
+
+function toWorld(ev){var r=cv.getBoundingClientRect();return[(ev.clientX-r.left)/r.width*W,(ev.clientY-r.top)/r.height*H]}
+function sowAt(p){
+  var cx=Math.floor(p[0]/CELL),cy=Math.floor(p[1]/CELL),x,y,i;
+  for(y=cy-1;y<=cy+1;y++)for(x=cx-1;x<=cx+1;x++){
+    if(x<0||y<0||x>=COLS||y>=ROWS)continue;
+    i=y*COLS+x;S.g[i]=Math.min(1,S.g[i]+(x===cx&&y===cy?0.3:0.12));
+  }
+  fx.push({k:'seed',x:p[0]+rnd(-6,6),y:p[1]+rnd(-6,6),t:performance.now()/1000});
+}
+var pdown=false;
+cv.addEventListener('pointerdown',function(ev){
+  if(busy)return;
+  var p=toWorld(ev);pdown=true;
+  if(sowing){sowAt(p);return}
+  var best=null,bd=22,i,c,d;
+  for(i=0;i<S.cr.length;i++){c=S.cr[i];d=Math.hypot(c.x-p[0],c.y-p[1]);if(d<bd){bd=d;best=c}}
+  if(best){selId=best.id;memorial='';trail=[[best.x,best.y]]}
+  else{selId=null;trail=[]}
+  updateUI();
+});
+cv.addEventListener('pointermove',function(ev){if(pdown&&sowing&&!busy)sowAt(toWorld(ev))});
+window.addEventListener('pointerup',function(){pdown=false});
+window.addEventListener('pointercancel',function(){pdown=false});
+
+var elSow=document.getElementById('sow'),elReset=document.getElementById('reset'),resetArmed=0;
+elSow.onclick=function(){sowing=!sowing;elSow.className=sowing?'on':'';elSow.textContent=sowing?'種まき中（なぞってね）':'草の種をまく'};
+elReset.onclick=function(){
+  if(Date.now()-resetArmed<3500){
+    newWorld();selId=null;memorial='';trail=[];fx=[];save();updateUI();
+    elReset.textContent='新しい世界にする';resetArmed=0;toast('新しい草原がはじまりました');
+  }else{
+    resetArmed=Date.now();elReset.textContent='本当に？ もう一度押す';
+    setTimeout(function(){if(resetArmed&&Date.now()-resetArmed>=3400){elReset.textContent='新しい世界にする';resetArmed=0}},3500);
+  }
+};
+(function(){
+  var box=document.getElementById('speeds');
+  [1,10,100,1000].forEach(function(v){
+    var b=document.createElement('button');b.textContent='×'+v;if(v===1)b.className='on';
+    b.onclick=function(){speed=v;Array.prototype.forEach.call(box.children,function(x){x.className=''});b.className='on'};
+    box.appendChild(b);
+  });
+})();
+
+var last=performance.now(),uiAcc=0;
+function frame(now){
+  var rdt=Math.min(0.1,(now-last)/1000);last=now;
+  if(!busy){
+    var sdt=rdt*speed,n=Math.max(1,Math.ceil(sdt/4)),i;
+    for(i=0;i<n;i++)step(sdt/n);
+    if(selId!=null){
+      trailAcc+=sdt;
+      if(trailAcc>=20){trailAcc=0;var c=byId(selId);if(c){trail.push([c.x,c.y]);if(trail.length>140)trail.shift()}}
+    }
+    uiAcc+=rdt;if(uiAcc>0.25){uiAcc=0;updateUI()}
+    if(now-lastSave>10000){lastSave=now;save()}
+  }
+  draw(now/1000);
+  requestAnimationFrame(frame);
+}
+document.addEventListener('visibilitychange',function(){
+  if(document.hidden){save();hiddenAt=Date.now()}
+  else if(hiddenAt){
+    var el=(Date.now()-hiddenAt)/1000;hiddenAt=0;last=performance.now();
+    if(el>5)catchUp(el,el>600);
+  }
+});
+window.addEventListener('pagehide',save);
+window.addEventListener('resize',resize);
+
+(function init(){
+  var real=load();
+  if(!S)newWorld();
+  resize();updateUI();
+  if(real){var el=(Date.now()-real)/1000;if(el>30)catchUp(el,el>600)}
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
