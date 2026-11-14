@@ -1548,11 +1548,13 @@ function renderLog(){
 }
 function snapLabel(sn){var d=dayOf(S.t)-dayOf(sn.t);return (d<=0?'きょう':d===1?'きのう':d+'日前')+'の'+(Math.abs(sn.t%DAY-DAY/2)<120?'昼':hm(sn.t))}
 function drawSnap(cvs,sn){
-  var d=img.data,i,g=cvs.getContext('2d'),k=cvs.width/W,px=cvs.width/dpr/W,v,dv=dryVis,r,c,f,fr=Math.max(2.6,3/px),mk=clamp(0.5/px,1,3);
+  // iPhone(Safari)では、同じ下絵用キャンバスを続けて使うと、先に描いた絵まで後の内容に置きかわることがある。絵ごとに専用の下絵を使う
+  if(!cvs._gc){cvs._gc=document.createElement('canvas');cvs._gc.width=COLS;cvs._gc.height=ROWS;cvs._gx=cvs._gc.getContext('2d');cvs._im=cvs._gx.createImageData(COLS,ROWS)}
+  var d=cvs._im.data,i,g=cvs.getContext('2d'),k=cvs.width/W,px=cvs.width/dpr/W,v,dv=dryVis,r,c,f,fr=Math.max(2.6,3/px),mk=clamp(0.5/px,1,3);
   dryVis=sn.dry?1:0;
   for(i=0;i<N;i++){v=parseInt(sn.s.charAt(i),36)/35;grassColor(clamp(v*tex[i],0,1),i*4,d)}
-  dryVis=dv;gctx.putImageData(img,0,0);
-  g.setTransform(k,0,0,k,0,0);g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';g.drawImage(gc,0,0,W,H);
+  dryVis=dv;cvs._gx.putImageData(cvs._im,0,0);
+  g.setTransform(k,0,0,k,0,0);g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';g.drawImage(cvs._gc,0,0,W,H);
   for(i=0;i<sn.f.length;i++){f=sn.f[i];g.fillStyle=FLOWER[f[2]];ell(g,f[0],f[1],fr,fr);g.fillStyle='#f0b030';ell(g,f[0],f[1],fr*0.4,fr*0.4)}
   for(i=0;i<sn.c.length;i++){
     c=sn.c[i];r=5.4*mk*c[5]/10;
