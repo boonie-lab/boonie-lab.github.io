@@ -1333,12 +1333,20 @@ function zoomTo(z,ax,ay,wp){
   zcur=zT=clamp(z,ZMIN,ZMAX);camSetup();
   if(!(follow&&byId(selId)))camPlace(wp,ax,ay,0.3);
 }
+function peekSheep(c){
+  peek('<b>'+c.name+'</b>'+(c.bell?' 🔔':'')+'　おなか'+Math.round(c.e)+'%・'+['はらぺこ','ふつう','まんぷく'][tummy(c)]+'<br>'+statusText(c)+'<br><span style="color:#b9c4a8">'+(c.bell||c.id===selId?[c.bell?'🔔鈴がついています':'',c.id===selId?'いま見守っている子です':''].filter(Boolean).join('　'):'ダブルタップでこの子を見守る')+'</span>',2800);
+}
 function tapScope(x,y){
   var now=performance.now(),T=nowT(),i,h,e,best=null,bd=1e9,d,c,w,fb=null,dbl=false;
   if(sowing){if(y>scHor+2)sowAt(scopeWorld(x,y,0.1));return}
   for(i=0;i<edges.length;i++){
     e=edges[i];
-    if(x>=e.x0-8&&x<=e.x1+8&&y>=e.y0-8&&y<=e.y1+8){select(e.id);return}
+    if(x>=e.x0-2&&x<=e.x1+2&&y>=e.y0-2&&y<=e.y1+2){
+      c=byId(e.id);if(!c)return;
+      if(e.id===selId){follow=true;return}
+      follow=false;vx=vy=0;scx=c.x;scy=c.y;insId=c.id;insT=T;fx.push({k:'ping',x:c.x,y:c.y,t:T});
+      peekSheep(c);sheepTap={id:null,t:0};lastTap=0;return;
+    }
   }
   for(i=0;i<hits.length;i++){h=hits[i];d=Math.sqrt((h.x-x)*(h.x-x)+(h.y-y)*(h.y-y));if(d<h.r&&d<bd){bd=d;best=h}}
   if(best){
@@ -1352,7 +1360,7 @@ function tapScope(x,y){
       peek('<b>'+c.name+'</b> を見守ります',2500);return;
     }else{
       insId=best.id;insT=T;
-      peek('<b>'+c.name+'</b>'+(c.bell?' 🔔':'')+'　おなか'+Math.round(c.e)+'%・'+['はらぺこ','ふつう','まんぷく'][tummy(c)]+'<br>'+statusText(c)+'<br><span style="color:#b9c4a8">'+(c.bell||best.id===selId?[c.bell?'🔔鈴がついています':'',best.id===selId?'いま見守っている子です':''].filter(Boolean).join('　'):'ダブルタップでこの子を見守る')+'</span>',2800);
+      peekSheep(c);
     }
   }else{
     for(i=0;i<fhits.length;i++){h=fhits[i];d=Math.sqrt((h.x-x)*(h.x-x)+(h.y-y)*(h.y-y));if(d<h.r&&d<bd){bd=d;fb=h}}
