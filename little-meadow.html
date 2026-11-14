@@ -520,6 +520,7 @@ hooks.tick=function(){
 };
 
 function nowT(){return performance.now()/1000}
+function bellTarget(){var c=insId!=null&&nowT()-insT<10?byId(insId):null;return c||byId(selId)}
 function dayOf(t){return Math.floor(t/DAY)+1}
 function ageDays(c){return Math.floor(c.age/DAY)+1}
 function fmtDur(s){
@@ -1079,7 +1080,7 @@ function drawScope(T){
       if(o[7])drawBell(g,px+6*dep,py-2.5*dep,Math.max(1.2,2.6*dep));
       if(py<h+10)fhits.push({f:o,x:px,y:py-fh*0.6,r:Math.max(16,fh*0.9)});
     }else{
-      var u=Z*4.6*s*o.size*ageScale(o),isSel=o.id===selId||(o.id===insId&&T-insT<5);
+      var u=Z*4.6*s*o.size*ageScale(o),isSel=o.id===selId||(o.id===insId&&T-insT<10);
       if(py-u*2.6>h)continue;
       if(u<4){
         var dr=Math.cos(o.h)>=0?1:-1;
@@ -1220,7 +1221,7 @@ function updateUI(){
   var c=byId(selId),f,tt,cr,h,kids,extra;
   h='<b>'+dayOf(S.t)+'日め</b> '+hm(S.t)+(S.dr.until>0?'　日照り':'')+(speed>1?' <span class="spd">×'+speed+'</span>':'')+'<span class="c2">'+S.cr.length+'匹<span class="lg">が暮らしています</span></span>';
   if(h!==clockHtml){clockHtml=h;elClock.innerHTML=h}
-  elBell.textContent=c&&c.bell?'鈴をはずす':'鈴をつける';elBell.className=c?'':'off';
+  var bc=bellTarget();elBell.textContent=bc&&bc.bell?'鈴をはずす':'鈴をつける';elBell.className=bc?'':'off';
   if(c){
     f=byId(c.bf);tt=titlesOf(c);cr=careOf(c);
     kids=c.kl.map(function(k){return nm(k[0],k[1])}).join('、');extra=c.kids-c.kl.length;
@@ -1438,7 +1439,7 @@ var elSow=document.getElementById('sow'),elBell=document.getElementById('bell');
 document.getElementById('roster').onclick=function(){if(!busy)openRoster()};
 elSow.onclick=function(){sowing=!sowing;elSow.className=sowing?'on':'';elSow.textContent=sowing?'種まき中':'種をまく';if(sowing)toast('草原をタップすると、おいしい草の種がまかれます')};
 elBell.onclick=function(){
-  var c=byId(selId);
+  var c=bellTarget();
   if(busy)return;
   if(!c){toast('鈴をつけたい子を、先にタップしてください');return}
   c.bell=!c.bell;c.et=nowT();updateUI();save();
