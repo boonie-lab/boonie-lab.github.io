@@ -143,10 +143,23 @@ h3.month{font-family:var(--serif);font-size:15px;color:var(--ink2);margin:16px 2
 .sheet-head{display:flex;align-items:center;gap:6px;padding:6px 8px;border-bottom:1px solid var(--line);background:var(--paper2);min-height:52px}
 .sheet-head .back{background:none;border:0;min-width:64px;min-height:44px;font-size:16px;color:var(--accent);text-align:left;padding:0 8px}
 .sheet-title{font-family:var(--serif);font-weight:700;font-size:17px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sheet-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 14px 30px;
+.sheet-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 14px 30px;touch-action:pan-y;
   background-image:repeating-linear-gradient(to bottom,transparent 0 31px,rgba(140,120,90,.07) 31px 32px)}
 .sheet-foot{padding:10px 12px calc(10px + var(--sb));border-top:1px solid var(--line);background:var(--paper2);display:flex;gap:8px}
 .sheet-foot .btn{flex:1}
+.sheet-foot .btn.pg{flex:0 0 auto;min-width:84px;padding:8px 10px}
+.sheet-foot .pos{flex:1;align-self:center;text-align:center;font-family:var(--serif);color:var(--ink2)}
+.tpos{font-family:var(--serif);font-weight:400;font-size:13px;color:var(--ink3);margin-left:6px}
+.gal{position:relative;margin:-2px -14px 6px;background:var(--paper3)}
+.gal img{display:block;width:100%;height:min(62vh,440px);object-fit:contain}
+.gal .ga{position:absolute;top:50%;transform:translateY(-50%);width:48px;height:48px;border-radius:24px;border:0;
+  background:rgba(255,253,248,.72);color:var(--ink);font-size:30px;line-height:44px;padding:0;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.gal .ga.prev{left:8px}.gal .ga.next{right:8px}
+.gal .ga[hidden]{display:none}
+.gal .dots{position:absolute;left:0;right:0;bottom:6px;text-align:center;pointer-events:none}
+.gal .dots i{display:inline-block;width:8px;height:8px;border-radius:4px;margin:0 3px;background:rgba(255,255,255,.6);box-shadow:0 0 2px rgba(0,0,0,.5)}
+.gal .dots i.on{background:var(--accent)}
+.hitlabel{display:inline-block;font-size:11px;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:0 4px;margin-top:2px}
 
 /* register */
 .rcard{position:relative;background:var(--paper2);border:1px solid var(--line);border-left:7px solid var(--gc,#bbb);border-radius:6px;
@@ -248,7 +261,7 @@ h3.month{font-family:var(--serif);font-size:15px;color:var(--ink2);margin:16px 2
 /* ============================================================
    なんでも図鑑 (my-field-guide) v1
    ============================================================ */
-const APP_VERSION = '1.0';
+const APP_VERSION = '1.1';
 const SCHEMA_VERSION = 1;
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -581,8 +594,10 @@ function openSheet(opts){
   document.body.appendChild(wrap);
   const sh = {wrap, opts, body:$('.sheet-body', wrap), foot:$('.sheet-foot', wrap), titleEl:$('.sheet-title', wrap)};
   sh.titleEl.textContent = opts.title || '';
-  sh.refresh = () => {
-    const st = sh.body.scrollTop; sh.foot.innerHTML = '';
+  sh.pager = opts.pager || null;
+  if (sh.pager) setupPager(sh);
+  sh.refresh = toTop => {
+    const st = toTop ? 0 : sh.body.scrollTop; sh.foot.innerHTML = '';
     opts.build(sh); hydrate(sh.body);
     sh.foot.style.display = sh.foot.childElementCount ? '' : 'none';
     sh.body.scrollTop = st;
@@ -592,6 +607,69 @@ function openSheet(opts){
   sheets.push(sh); document.body.classList.add('noscroll');
   sh.refresh(); return sh;
 }
+/* ---------- ページめくり ---------- */
+function setupPager(sh){
+  const p = sh.pager;
+  p.list = () => p.ids.filter(id => id === p.cur || p.alive(id));
+  p.move = async dir => {
+    if (p.busy) return;
+    const L = p.list(), i = L.indexOf(p.cur), j = i + dir;
+    if (i < 0 || j < 0 || j >= L.length) return;
+    p.busy = true;
+    try {
+      if (p.before && !(await p.before())) return;
+      p.cur = L[j];
+      sh.refresh(true);
+      if (sh.body.animate) sh.body.animate([{transform:`translateX(${dir * 28}px)`, opacity:.35}, {transform:'none', opacity:1}], {duration:160, easing:'ease-out'});
+    } finally { p.busy = false; }
+  };
+  sh.foot.addEventListener('click', ev => { const b = ev.target.closest('[data-pg]'); if (b && !b.disabled) p.move(+b.dataset.pg); });
+  const body = sh.body; let t0 = null;
+  body.addEventListener('touchstart', ev => {
+    if (ev.touches.length !== 1 || swipeBlocked(ev.target, body)) { t0 = null; return; }
+    t0 = {x:ev.touches[0].clientX, y:ev.touches[0].clientY};
+  }, {passive:true});
+  body.addEventListener('touchmove', ev => { if (ev.touches.length > 1) t0 = null; }, {passive:true});
+  body.addEventListener('touchcancel', () => { t0 = null; }, {passive:true});
+  body.addEventListener('touchend', ev => {
+    if (!t0) return;
+    const t = ev.changedTouches[0], dx = t.clientX - t0.x, dy = t.clientY - t0.y; t0 = null;
+    if (Math.abs(dx) >= 60 && Math.abs(dx) >= 2 * Math.abs(dy)) p.move(dx < 0 ? 1 : -1);
+  });
+}
+/** 入力欄・横スクロールする部品・候補リストの上から始めたスワイプはめくりにしない */
+function swipeBlocked(el, root){
+  if (el.closest && el.closest('input,textarea,select,.suggest,.chips')) return true;
+  for (let n = el; n && n !== root; n = n.parentElement) {
+    if (n.scrollWidth > n.clientWidth + 2) { const ox = getComputedStyle(n).overflowX; if (ox === 'auto' || ox === 'scroll') return true; }
+  }
+  return false;
+}
+/** 下の帯：‹ 前 ［真ん中］ 次 ›。1件だけなら真ん中だけ */
+function pagerFoot(sh, middle){
+  const p = sh.pager, L = p ? p.list() : [];
+  if (!p || L.length <= 1) { sh.foot.innerHTML = middle || ''; return; }
+  const i = L.indexOf(p.cur);
+  sh.foot.innerHTML = `<button class="btn pg" data-pg="-1" ${i <= 0 ? 'disabled' : ''}>‹ 前</button>`
+    + (middle || `<span class="pos">${i + 1} / ${L.length}</span>`)
+    + `<button class="btn pg" data-pg="1" ${i >= L.length - 1 ? 'disabled' : ''}>次 ›</button>`;
+}
+function pagerPos(sh){
+  const p = sh.pager, L = p ? p.list() : [];
+  return L.length > 1 ? `<span class="tpos">${L.indexOf(p.cur) + 1} / ${L.length}</span>` : '';
+}
+document.addEventListener('keydown', ev => {
+  if (ev.key !== 'ArrowLeft' && ev.key !== 'ArrowRight') return;
+  const top = sheets[sheets.length - 1];
+  if (!top || !top.pager || document.querySelector('.reveal')) return;
+  const a = document.activeElement;
+  if (a && a.closest && a.closest('input,textarea,select,[contenteditable]')) return;
+  ev.preventDefault(); top.pager.move(ev.key === 'ArrowRight' ? 1 : -1);
+});
+const entryAlive = id => { const e = S.entries.get(id); return !!(e && !e.deleted); };
+const speciesAlive = id => { const s = S.species.get(id); return !!(s && !s.deleted); };
+const allSpeciesByNo = () => live(S.species).sort((a, b) => a.no - b.no).map(s => s.id);
+
 function closeSheet(sh, force){
   if (!force && sh.opts.beforeClose && sh.opts.beforeClose() === false) return;
   const i = sheets.indexOf(sh); if (i < 0) return;
@@ -641,6 +719,7 @@ function renderLog(v){
     + genresSorted().map(g => `<button class="chip g ${S.logGenre===g.id?'on':''}" data-lg="${g.id}" style="--gc:${h(g.color)}">${h(g.emoji)} ${h(g.name)}</button>`).join('')
     + `<button class="chip toggle ${S.onlyNazo?'on':''}" id="onlyNazo">？ なぞだけ</button></div>`;
   const list = all.filter(e => (!S.logGenre || entryGenre(e).id === S.logGenre) && (!S.onlyNazo || !e.speciesId));
+  S.logList = list.map(e => e.id); S.logAll = all.map(e => e.id);
   if (!all.length) html += `<div class="empty">まだ記録がありません。<br>下の <b>＋</b> からカメラロールの写真を選んで登録しましょう。<br>名前がわからなくても大丈夫です。</div>`;
   else if (!list.length) html += `<div class="empty">この条件の記録はありません。</div>`;
   let cur = '';
@@ -652,7 +731,8 @@ function renderLog(v){
   v.innerHTML = html;
   v.onclick = ev => {
     const t = ev.target;
-    const en = t.closest('[data-entry]'); if (en) return openEntry(en.dataset.entry);
+    const en = t.closest('[data-entry]');
+    if (en) { const id = en.dataset.entry; return openEntry(id, S.logList.includes(id) ? S.logList.slice() : S.logAll.slice()); }
     const lg = t.closest('[data-lg]'); if (lg) { S.logGenre = lg.dataset.lg || null; return render(); }
     if (t.closest('#onlyNazo')) { S.onlyNazo = !S.onlyNazo; return render(); }
     if (t.closest('#goBackup')) { ev.preventDefault(); S.tab = 'settings'; render(); window.scrollTo(0,0); return; }
@@ -682,7 +762,7 @@ function renderZukan(v){
   $('#zsort', v).addEventListener('change', e => { S.zSort = e.target.value; renderGrid(); });
   v.onclick = ev => {
     const zg = ev.target.closest('[data-zg]'); if (zg) { S.zGenre = zg.dataset.zg || null; return render(); }
-    const c = ev.target.closest('[data-sp]'); if (c) openSpecies(c.dataset.sp);
+    const c = ev.target.closest('[data-sp]'); if (c) openSpecies(c.dataset.sp, (S.zList || []).slice());
   };
   renderGrid();
 }
@@ -693,14 +773,25 @@ function renderGrid(){
   const encounters = list.reduce((a,s) => a + (idx.get(s.id)?.count || 0), 0);
   $('#zTally').textContent = `${g ? g.emoji + ' ' + g.name : 'ぜんぶ'}　${list.length}種・出会い ${encounters}回`;
   const q = normName(S.zQuery);
-  if (q) list = list.filter(s => normName(s.name).includes(q) || normName(s.myMemo).includes(q) || normName(s.group).includes(q)
-    || (idx.get(s.id)?.entries || []).some(e => normName(e.note).includes(q)));
+  const hit = new Map();   // id → {name, sumOnly}
+  if (q) {
+    list = list.filter(s => {
+      const name = normName(s.name).includes(q);
+      const other = normName(s.myMemo).includes(q) || normName(s.group).includes(q)
+        || (idx.get(s.id)?.entries || []).some(e => normName(e.note).includes(q));
+      const sum = normName(s.summary).includes(q);
+      if (!name && !other && !sum) return false;
+      hit.set(s.id, {name, sumOnly: !name && !other && sum});
+      return true;
+    });
+  }
   const cmp = {
     no: (a,b) => a.no - b.no,
     name: (a,b) => a.name.localeCompare(b.name, 'ja'),
     recent: (a,b) => ((idx.get(b.id)?.last || '') > (idx.get(a.id)?.last || '') ? 1 : -1),
   }[S.zSort];
-  list.sort(cmp);
+  list.sort((a, b) => q ? ((hit.get(b.id).name ? 1 : 0) - (hit.get(a.id).name ? 1 : 0)) || cmp(a, b) : cmp(a, b));
+  S.zList = list.map(s => s.id);
   const box = $('#zGrid');
   if (!live(S.species).length) { box.innerHTML = `<div class="empty">まだ種のページがありません。<br>名前を付けて登録するか、「なぞ」で名前がわかると、ここにページが増えていきます。</div>`; return; }
   if (!list.length) { box.innerHTML = `<div class="empty">見つかりませんでした。</div>`; return; }
@@ -709,7 +800,7 @@ function renderGrid(){
     return `<button class="scard ${st ? '' : 'zero'}" data-sp="${s.id}" style="--gc:${h(gg.color)}">
       ${cv ? `<img data-photo="${cv}" alt="">` : `<img alt="" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=">`}
       <div class="lb"><div class="no">No.${String(s.no).padStart(3,'0')}</div><div class="nm">${h(s.name)}</div>
-      <div class="st">${st ? `${st.count}回・初 ${fmtDate(st.first)}` : '出会い 0回'}</div></div></button>`;
+      <div class="st">${st ? `${st.count}回・初 ${fmtDate(st.first)}` : '出会い 0回'}</div>${hit.get(s.id)?.sumOnly ? '<span class="hitlabel">説明文に一致</span>' : ''}</div></button>`;
   }).join('') + `</div>`;
   hydrate(box);
 }
@@ -942,14 +1033,59 @@ async function saveRegister(){
 }
 
 /* ================= 出会いの詳細 ================= */
-function galleryHTML(ids){ return `<div class="gallery ${ids.length === 1 ? 'one' : ''}">${ids.map(pid => `<img data-full="${pid}" alt="">`).join('')}</div>`; }
-function openEntry(id){
-  const e0 = S.entries.get(id); if (!e0 || e0.deleted) return;
-  const sp0 = e0.speciesId && S.species.get(e0.speciesId);
-  const st = {name: sp0 ? sp0.name : '', confidence:e0.confidence || 'unknown', genreId:e0.genreId, takenAt:e0.takenAt,
-    place:e0.place || '', candidates:(e0.candidates || []).join('\n'), note:e0.note || ''};
-  openSheet({title:'出会いの記録', form:true, build(sh){
-    const e = S.entries.get(id);
+/** 写真は1枚ずつ表示。2枚以上なら端の ‹ › で切り替え */
+function galleryHTML(ids){
+  const many = ids.length > 1;
+  return `<div class="gal" data-ids="${ids.join(',')}" data-i="0"><img data-full="${ids[0]}" alt="">`
+    + (many ? `<button class="ga prev" data-ga="-1" aria-label="前の写真" hidden>‹</button><button class="ga next" data-ga="1" aria-label="次の写真">›</button>
+      <div class="dots">${ids.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>` : '') + `</div>`;
+}
+document.addEventListener('click', async ev => {
+  const b = ev.target.closest('.gal [data-ga]'); if (!b) return;
+  ev.stopPropagation();
+  const g = b.closest('.gal'), ids = g.dataset.ids.split(','), i = Math.max(0, Math.min(ids.length - 1, +g.dataset.i + (+b.dataset.ga)));
+  g.dataset.i = i;
+  $('.prev', g).hidden = i === 0; $('.next', g).hidden = i === ids.length - 1;
+  $$('.dots i', g).forEach((d, k) => d.classList.toggle('on', k === i));
+  const img = $('img', g); img.dataset.full = ids[i];
+  const u = await fullURL(ids[i]); if (u && g.dataset.i == i) img.src = u;
+}, true);
+function entryState(id){
+  const e = S.entries.get(id), sp = e.speciesId && S.species.get(e.speciesId);
+  return {name: sp ? sp.name : '', confidence:e.confidence || 'unknown', genreId:e.genreId, takenAt:e.takenAt,
+    place:e.place || '', candidates:(e.candidates || []).join('\n'), note:e.note || ''};
+}
+async function saveEntryState(id, st){
+  const ops = [];
+  const ok = await safeWrite(async () => {
+    const e2 = S.entries.get(id);
+    if (st.name.trim()) {
+      const {sp} = resolveSpecies(st.name, st.genreId, ops);
+      e2.speciesId = sp.id; e2.confidence = st.confidence === 'unknown' ? 'sure' : st.confidence;
+    } else { e2.speciesId = null; e2.confidence = 'unknown'; }
+    Object.assign(e2, {genreId:st.genreId, takenAt:st.takenAt, place:st.place.trim(),
+      candidates:st.candidates.split('\n').map(s => s.trim()).filter(Boolean), note:st.note.trim()});
+    ops.push({store:'entries', rec:e2});
+    await Store.putMany(ops);
+  });
+  if (!ok) await loadAll();
+  return ok;
+}
+/** list：めくる順番（開いたときの一覧の id の並び） */
+function openEntry(id0, list){
+  const e0 = S.entries.get(id0); if (!e0 || e0.deleted) return;
+  const ed = {id:null, st:null, orig:''};
+  const pager = {ids: list && list.includes(id0) ? list : [id0], cur:id0, alive:entryAlive,
+    async before(){
+      if (!ed.st || JSON.stringify(ed.st) === ed.orig) return true;
+      if (!confirm('変更を保存してめくりますか？')) return false;
+      return saveEntryState(ed.id, ed.st);
+    }};
+  openSheet({title:'出会いの記録', form:true, pager, build(sh){
+    const id = sh.pager.cur, e = S.entries.get(id);
+    if (ed.id !== id) { ed.id = id; ed.st = entryState(id); ed.orig = JSON.stringify(ed.st); }
+    const st = ed.st;
+    sh.titleEl.innerHTML = '出会いの記録' + pagerPos(sh);
     sh.body.innerHTML = `${galleryHTML(e.photoIds)}
       <label class="fl">名前</label><div class="sg-wrap"><input id="f-name" value="${h(st.name)}" placeholder="わからなければ空欄（なぞ）" autocomplete="off"></div>
       <div class="seg" id="f-conf">${confSeg(st.confidence)}</div>
@@ -962,7 +1098,7 @@ function openEntry(id){
       <p class="hint">元の写真：${e.photoIds.length}枚 <span id="f-orig"></span></p>
       ${e.speciesId ? `<button class="btn block" id="f-sp" style="margin:8px 0">📖 種のページを見る</button>` : ''}
       <button class="btn danger block" id="f-del" style="margin-top:18px">この出会いを削除</button>`;
-    Promise.all(e.photoIds.map(p => Store.get('photos', p))).then(ps => { const o = $('#f-orig', sh.body); if (o) o.textContent = ps.filter(Boolean).map(p => p.originalName).join('、'); });
+    Promise.all(e.photoIds.map(p => Store.get('photos', p))).then(ps => { const o = $('#f-orig', sh.body); if (o && sh.pager.cur === id) o.textContent = ps.filter(Boolean).map(p => p.originalName).join('、'); });
     const nm = $('#f-name', sh.body);
     nm.addEventListener('input', () => {
       st.name = nm.value;
@@ -980,22 +1116,9 @@ function openEntry(id){
       if (!confirm('この出会いを削除しますか？\n（この記録の写真もアプリから消えます。カメラロールの元の写真はそのままです）')) return;
       if (await deleteEntry(id)) { closeSheet(sh, true); pinToast('削除しました'); }
     };
-    sh.foot.innerHTML = `<button class="btn primary" id="f-save">保存</button>`;
+    pagerFoot(sh, `<button class="btn primary" id="f-save">保存</button>`);
     $('#f-save', sh.foot).onclick = async () => {
-      const ops = [];
-      const ok = await safeWrite(async () => {
-        const e2 = S.entries.get(id);
-        if (st.name.trim()) {
-          const {sp} = resolveSpecies(st.name, st.genreId, ops);
-          e2.speciesId = sp.id; e2.confidence = st.confidence === 'unknown' ? 'sure' : st.confidence;
-        } else { e2.speciesId = null; e2.confidence = 'unknown'; }
-        Object.assign(e2, {genreId:st.genreId, takenAt:st.takenAt, place:st.place.trim(),
-          candidates:st.candidates.split('\n').map(s => s.trim()).filter(Boolean), note:st.note.trim()});
-        ops.push({store:'entries', rec:e2});
-        await Store.putMany(ops);
-      });
-      if (ok) { closeSheet(sh, true); pinToast('保存しました'); }
-      else await loadAll();
+      if (await saveEntryState(id, st)) { closeSheet(sh, true); pinToast('保存しました'); }
     };
   }});
 }
@@ -1071,8 +1194,11 @@ function reveal(sp, first){
 }
 
 /* ================= 種のページ ================= */
-function openSpecies(id){
-  openSheet({title:'種のページ', build(sh){
+/** list：めくる順番。なければ全種の図鑑番号順 */
+function openSpecies(id0, list){
+  const ids = list && list.includes(id0) ? list : allSpeciesByNo();
+  openSheet({title:'種のページ', pager:{ids: ids.includes(id0) ? ids : [id0], cur:id0, alive:speciesAlive}, build(sh){
+    const id = sh.pager.cur;
     const sp = S.species.get(id);
     if (!sp || sp.deleted) { sh.body.innerHTML = `<div class="empty">このページはほかの種に統合されたか、削除されました。</div>`; return; }
     const st = buildIndex().get(id), g = genreOf(sp.genreId) || NOGENRE, cv = coverPhotoOf(sp, st);
@@ -1099,9 +1225,10 @@ function openSpecies(id){
         <div class="n">${h(e.note)}</div></div></button>`).join('') : '<p class="hint">出会いの記録はありません。</p>'}
       <div class="row-btns" style="margin-top:20px"><button class="btn" id="s-edit">✏️ 編集</button><button class="btn" id="s-cover" ${st ? '' : 'disabled'}>🖼 表紙を変える</button></div>
       <div class="row-btns"><button class="btn" id="s-merge">🔗 別の種と統合</button>${st ? '' : `<button class="btn danger" id="s-del">このページを消す</button>`}</div>`;
+    pagerFoot(sh);
     sh.body.onclick = async ev => {
       const t = ev.target;
-      const en = t.closest('[data-entry]'); if (en) return openEntry(en.dataset.entry);
+      const en = t.closest('[data-entry]'); if (en) return openEntry(en.dataset.entry, st ? st.entries.map(e => e.id) : null);
       const dl = t.closest('[data-dl]');
       if (dl) { if (!confirm('このリンクを消しますか？')) return; sp.links.splice(+dl.dataset.dl, 1); if (await safeWrite(() => Store.put('species', sp))) sh.refresh(); return; }
       if (t.closest('#s-ladd')) {
