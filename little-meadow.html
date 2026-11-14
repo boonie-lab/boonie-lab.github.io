@@ -36,6 +36,8 @@ button{font:inherit;color:inherit;background:transparent;border:0;cursor:pointer
 #panel .sub{color:#b9c4a8}
 #panel .ttl{color:#f2d470}
 #panel .care{color:#ffb38a}
+.foot{position:sticky;bottom:0;background:#1f2a1c;padding:3px 0 2px;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}
+.back{display:inline-block;padding:2px 10px;border:1px solid #6f7d5e;border-radius:10px;color:#e9f1d4;cursor:pointer}
 .go{text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px;color:#e9f1d4;cursor:pointer}
 .go.gone{opacity:.5}
 .bar{display:inline-block;vertical-align:middle;width:90px;height:8px;border-radius:4px;background:#46553f;overflow:hidden;margin:0 6px}
@@ -1231,7 +1233,8 @@ function updateUI(){
       '<span class="sub">'+statusText(c)+(f?'　なかよし：'+nm(f.id,f.name):'')+
       (cr||tt?'<br>'+(cr?'<span class="care">'+cr+'</span>　':'')+(tt?'<span class="ttl">'+tt+'</span>':''):'')+
       (c.pa||kids?'<br>'+(c.pa?'親：'+nm(c.ma,c.pa)+'・'+nm(c.mb,c.pb)+'　':'')+(kids?'子ども：'+kids:''):'')+
-      (follow?'':'<br>（名前のほかをタップで追いかける）')+'</span>';
+      '</span>';
+    if(!follow)h+='<div class="foot"><span class="back">↩ 見守り中の子へ戻る</span></div>';
   }else if(memorial){h=memorial}
   else h='<span class="sub">放っておいても草は育ち、ひつじたちは食べ、出会い、子が生まれ、やがて旅立ちます。</span>';
   if(h!==panelHtml){panelHtml=h;elPanel.innerHTML=h}
@@ -1349,7 +1352,7 @@ function tapScope(x,y){
       peek('<b>'+c.name+'</b> を見守ります',2500);return;
     }else{
       insId=best.id;insT=T;
-      peek('<b>'+c.name+'</b>'+(c.bell?' 🔔':'')+'　おなか'+Math.round(c.e)+'%・'+['はらぺこ','ふつう','まんぷく'][tummy(c)]+'<br>'+statusText(c)+(best.id===selId?'<br><span style="color:#b9c4a8">いま見守っている子です</span>':'<br><span style="color:#b9c4a8">見守る子にするには、ダブルタップ</span>'),4500);
+      peek('<b>'+c.name+'</b>'+(c.bell?' 🔔':'')+'　おなか'+Math.round(c.e)+'%・'+['はらぺこ','ふつう','まんぷく'][tummy(c)]+'<br>'+statusText(c)+'<br><span style="color:#b9c4a8">'+(c.bell||best.id===selId?[c.bell?'🔔鈴がついています':'',best.id===selId?'いま見守っている子です':''].filter(Boolean).join('　'):'ダブルタップでこの子を見守る')+'</span>',2800);
     }
   }else{
     for(i=0;i<fhits.length;i++){h=fhits[i];d=Math.sqrt((h.x-x)*(h.x-x)+(h.y-y)*(h.y-y));if(d<h.r&&d<bd){bd=d;fb=h}}
