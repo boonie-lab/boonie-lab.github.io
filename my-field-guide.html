@@ -124,7 +124,7 @@ h3.month{font-family:var(--serif);font-size:15px;color:var(--ink2);margin:16px 2
 .zband{position:sticky;top:var(--st);z-index:6;display:flex;align-items:center;gap:8px;margin:0 -12px 10px;padding:4px 12px 4px 4px;
   background:var(--paper2);border-bottom:3px solid var(--gc);box-shadow:0 2px 6px rgba(60,40,20,.08)}
 .zband #zback{background:none;border:0;min-height:44px;min-width:76px;color:var(--accent);font-size:15px;text-align:left;padding:0 8px;flex:0 0 auto}
-.zband .bn{font-family:var(--serif);font-weight:700;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.zband .bn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .zband .bs{font-size:12px;color:var(--ink2);margin-left:auto;white-space:nowrap}
 .zsort{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
 .zsort select{width:auto;flex:0 0 auto;min-height:40px;padding:6px 10px}
@@ -133,6 +133,35 @@ h3.month{font-family:var(--serif);font-size:15px;color:var(--ink2);margin:16px 2
 h3.zsec{font-family:var(--serif);font-size:16px;margin:18px 2px 8px;padding:2px 8px;border-left:6px solid var(--gc);color:var(--ink)}
 h3.zsec:first-child{margin-top:4px}
 h4.nzh{font-family:var(--serif);font-size:14px;color:var(--ink2);margin:14px 2px 6px;letter-spacing:.05em}
+.toc2{margin-top:4px;border-top:1px solid var(--line)}
+.trow{display:flex;align-items:center;border-bottom:1px solid var(--line);background:var(--paper2);border-left:6px solid var(--gc)}
+.trow.dim{opacity:.45}
+.trow .tg{flex:0 0 48px;min-height:52px;background:none;border:0;font-size:17px;color:var(--ink2);font-family:var(--serif)}
+.trow .tn{flex:1;min-height:52px;background:none;border:0;text-align:left;font-family:var(--serif);font-weight:700;font-size:18px;padding:0 4px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.trow .tc{flex:0 0 auto;font-size:13px;color:var(--ink2);padding-right:12px}
+.trow .tcz{color:var(--red)}
+.tl2{border-bottom:1px solid var(--line);padding:2px 0 6px 54px;background:var(--paper)}
+.tl2 .ts,.tl2 .tz{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;background:none;border:0;border-bottom:1px dotted var(--line);
+  text-align:left;padding:4px 10px 4px 0;font-family:var(--serif);font-size:16px}
+.tl2 .ts.zero{opacity:.55}
+.tl2 .ts img,.tl2 .ts .ni{flex:0 0 38px;width:38px;height:38px;border-radius:4px;object-fit:cover;background:var(--paper3);display:block}
+.tl2 .tsn{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tl2 .tno{font-size:12px;color:var(--ink3)}
+.tl2 .tz{color:var(--red);border-bottom:0;padding-left:2px}
+.zband #zpick{background:var(--paper);border:1px solid var(--line);border-radius:18px;min-height:40px;padding:2px 12px;color:var(--ink);
+  font-family:var(--serif);font-weight:700;font-size:17px}
+.zband #zpick .cv{font-size:12px;color:var(--ink2)}
+.zmenu{position:absolute;left:8px;right:8px;top:100%;margin-top:4px;background:var(--paper2);border:1px solid var(--line);border-radius:8px;
+  box-shadow:0 8px 24px rgba(40,25,10,.25);max-height:60vh;overflow-y:auto;z-index:8;animation:rf .12s}
+.zmenu button{display:flex;align-items:center;gap:8px;width:100%;min-height:48px;background:none;border:0;border-left:6px solid var(--gc);
+  border-bottom:1px solid var(--line);text-align:left;padding:4px 12px}
+.zmenu button:last-child{border-bottom:0}
+.zmenu button.on{background:#fff7e0}
+.zmenu button.dim{opacity:.5}
+.zmenu .mn{flex:1;font-family:var(--serif);font-weight:700;font-size:16px}
+.zmenu .mc{font-size:12px;color:var(--ink2)}
+.zmenu .ck{color:var(--accent);font-weight:700}
 .toc{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
 .toc .ch{display:flex;flex-direction:column;padding:0;text-align:left;background:var(--paper2);border:1px solid var(--line);
   border-top:7px solid var(--gc);border-radius:4px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.06);min-height:44px}
@@ -240,6 +269,24 @@ h4.nzh{font-family:var(--serif);font-size:14px;color:var(--ink2);margin:14px 2px
 .rcard.sel{outline:3px solid var(--accent)}
 .rcard .ph{display:flex;gap:6px;overflow-x:auto;margin-right:40px}
 .rcard .ph img,.rcard .ph .ld{width:96px;height:96px;flex:0 0 96px;object-fit:cover;border-radius:3px;background:var(--paper3)}
+.rcard .ph .pw{position:relative;flex:0 0 96px}
+.rcard .ph .pw img{display:block}
+.rcard .ph .zb{position:absolute;right:3px;bottom:3px;background:rgba(255,253,248,.92);border-radius:12px;font-size:14px;line-height:22px;padding:0 5px;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.rcard .geo{font-size:12px;margin-left:auto}
+.rcard .geo.no{opacity:.45}
+.fpi.crop{overflow:hidden}
+.fpi .frame{position:absolute;border:2px solid #fff;box-shadow:0 0 0 2px rgba(0,0,0,.35),0 0 0 9999px rgba(20,12,4,.45);pointer-events:none;border-radius:2px}
+input[type=range]{width:100%;min-height:40px;accent-color:var(--accent)}
+.uprow{display:flex;gap:8px;justify-content:space-between;margin:2px 0 4px}
+.placebox{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0 2px}
+#f-pc{margin-top:4px}
+#f-pc:empty{display:none}
+label.sw{display:flex;align-items:center;gap:10px;min-height:44px;font-size:16px}
+label.sw input{width:24px;height:24px;accent-color:var(--accent)}
+.gal .upb,.viewer .vb{display:none;position:absolute;left:8px;top:8px;background:rgba(255,253,248,.9);color:var(--ink);border-radius:10px;font-size:12px;padding:1px 8px;pointer-events:none;z-index:2}
+.gal.isdetail .upb{display:block}
+.viewer .vb{top:calc(18px + var(--st))}
+.viewer.isdetail .vb{display:block}
 .rcard .ph .ld{display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--ink2);text-align:center;padding:4px}
 .rcard .rm{position:absolute;top:6px;right:6px;width:40px;height:40px;border-radius:20px;border:1px solid var(--line);background:var(--paper);font-size:18px}
 .rcard .ck{position:absolute;top:6px;right:6px;width:40px;height:40px;border-radius:20px;border:2px solid var(--accent);background:#fff;font-size:22px;color:var(--accent);font-weight:700}
@@ -351,6 +398,7 @@ ul.cands{margin:4px 0;padding-left:1.3em;font-family:var(--serif)}
   <button data-tab="settings"><span class="ic">⚙️</span>設定</button>
 </div></nav>
 <input type="file" id="fileIn" accept="image/*" multiple hidden>
+<input type="file" id="upIn" accept="image/*" hidden>
 <input type="file" id="importIn" accept=".json,application/json" multiple hidden>
 
 <script>
@@ -358,7 +406,7 @@ ul.cands{margin:4px 0;padding-left:1.3em;font-family:var(--serif)}
 /* ============================================================
    なんでも図鑑 (my-field-guide) v1.2
    ============================================================ */
-const APP_VERSION = '1.2-2';
+const APP_VERSION = '1.2';
 const SCHEMA_VERSION = 1;
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -445,7 +493,7 @@ const DEFAULT_GENRES = [
 ];
 const S = {
   entries:new Map(), species:new Map(), genres:new Map(), meta:null,
-  tab:'log', logGenre:null, onlyNazo:false, zCh:null, zSort:'no', zRev:false, zSplit:true, zQuery:'', zKeys:[],
+  tab:'log', logGenre:null, onlyNazo:false, zCh:null, zSort:'no', zRev:false, zSplit:true, zQuery:'', zKeys:[], zOpen:new Set(),
   persisted:null,
 };
 const live = m => [...m.values()].filter(r => !r.deleted);
@@ -526,10 +574,13 @@ const thumbCache = new Map();
 const fullCache = new Map();
 /** 写真ごとの主役の位置（0〜1）。写真を読んだときに覚える */
 const focusCache = new Map();
-function noteFocus(p){ if (!p) return; if (p.focusX != null && p.focusY != null) focusCache.set(p.id, [p.focusX, p.focusY]); else focusCache.delete(p.id); }
+const detailSet = new Set();   // アップ（kind:'detail'）の写真のid
+function noteFocus(p){ if (!p) return; if (p.kind === 'detail' && !p.deleted) detailSet.add(p.id); else detailSet.delete(p.id); if (p.focusX != null && p.focusY != null) focusCache.set(p.id, [p.focusX, p.focusY]); else focusCache.delete(p.id); }
 /** 切り抜いて見せる写真の中心を主役に合わせる。虫眼鏡カード（.lensable）には位置を渡す */
 function applyFocus(img, pid){
   if (img.closest('.fpick,.fprev')) return;   // 表紙を変える画面は自前で位置を描く
+  const g = img.closest('.gal');
+  if (g) { g.classList.toggle('isdetail', detailSet.has(pid)); g.dispatchEvent(new CustomEvent('galshow', {detail:pid})); }
   const f = focusCache.get(pid);
   img.style.objectPosition = f ? `${(f[0] * 100).toFixed(1)}% ${(f[1] * 100).toFixed(1)}%` : '';
   const ln = img.closest('.lensable');
@@ -1115,6 +1166,18 @@ function renderZukan(v){
   });
   v.onclick = ev => {
     const t = ev.target;
+    if (t.closest('#zpick')) return toggleZMenu();
+    const menu = $('.zmenu', v); if (menu && !t.closest('.zmenu')) menu.remove();
+    const tg = t.closest('[data-tg]');
+    if (tg) { const k = tg.dataset.tg; S.zOpen.has(k) ? S.zOpen.delete(k) : S.zOpen.add(k); return drawZ(); }
+    const ts = t.closest('[data-tsp]');
+    if (ts) { const k = ts.dataset.tch; return openSpecies(ts.dataset.tsp, chapterData(k, '').keys, chWhere(k)); }
+    const tz = t.closest('[data-tnz]');
+    if (tz) {   // なぞの1行：その章の、なぞの並びまで進む
+      S.zCh = tz.dataset.tnz; S.zQuery = ''; $('#zq').value = ''; drawZ();
+      const hd = $('#zBody h4.nzh'); const bt = $('#zBand').offsetHeight;
+      window.scrollTo(0, hd ? Math.max(0, hd.getBoundingClientRect().top + window.scrollY - bt - 8) : 0); return;
+    }
     const ch = t.closest('[data-ch]'); if (ch) { S.zCh = ch.dataset.ch; drawZ(); window.scrollTo(0, 0); return; }
     if (t.closest('#zback')) { S.zCh = null; S.zQuery = ''; $('#zq').value = ''; drawZ(); window.scrollTo(0, 0); return; }
     if (t.closest('#zdir')) { S.zRev = !S.zRev; return drawZ(); }
@@ -1136,41 +1199,12 @@ function drawZ(){
   if (S.zCh) drawChapter(); else drawToc();
   hydrate($('#view'));
 }
-function drawToc(){
-  const idx = buildIndex(), sps = live(S.species), nz = nazoList();
-  const enc = n => n.reduce((a, s) => a + (idx.get(s.id)?.count || 0), 0);
-  $('#zBand').className = 'vh'; $('#zBand').removeAttribute('style');
-  $('#zBand').innerHTML = `<h1>図鑑</h1><span class="sub">${sps.length}種・出会い ${enc(sps)}回${nz.length ? `・なぞ ${nz.length}件` : ''}</span>`;
-  $('#zSort').innerHTML = '';
-  const keys = ['all', ...genresSorted().map(g => g.id)];
-  if (sps.some(s => spInCh(s, '_none')) || nz.some(e => nzInCh(e, '_none'))) keys.push('_none');
-  $('#zBody').innerHTML = `<div class="toc">` + keys.map(key => {
-    const m = chMeta(key), ss = sps.filter(s => spInCh(s, key)), nn = nz.filter(e => nzInCh(e, key));
-    // 表紙：その章でいちばん最近会った種の表紙
-    let cv = null, lastAt = '';
-    for (const s of ss) { const st = idx.get(s.id); if (st && st.last > lastAt) { lastAt = st.last; cv = coverPhotoOf(s, st); } }
-    return `<button class="ch ${key === 'all' ? 'wide' : ''} ${ss.length || nn.length ? '' : 'empty'}" data-ch="${key}" style="--gc:${h(m.color || 'var(--ink2)')}">
-      <div class="cv">${cv ? `<img data-photo="${cv}" alt="">` : `<span>${h(m.emoji)}</span>`}</div>
-      <div class="ct"><div class="cn">${h(m.emoji)} ${h(m.name)}</div><div class="cs">${ss.length}種・出会い ${enc(ss)}回</div>${nn.length ? `<div class="cz">❓ なぞ ${nn.length}</div>` : ''}</div></button>`;
-  }).join('') + `</div>`
-  + (!sps.length && !nz.length ? `<div class="empty" style="margin-top:12px">まだ種のページがありません。<br>名前を付けて登録するか、「なぞ」で名前がわかると、ここにページが増えていきます。</div>` : '');
-}
-function drawChapter(){
-  const key = S.zCh, m = chMeta(key), idx = buildIndex(), q = normName(S.zQuery);
+/** 章の中身（並べ替え・区切り・検索を反映）。目次で開いたリストと章の一覧の両方で使う */
+function chapterData(key, qRaw){
+  const idx = buildIndex(), q = normName(qRaw || '');
   let sps = live(S.species).filter(s => spInCh(s, key));
   let nz = nazoList().filter(e => nzInCh(e, key));
-  const enc = sps.reduce((a, s) => a + (idx.get(s.id)?.count || 0), 0);
-  // 帯（スクロールしても上に残る）
-  const band = $('#zBand');
-  band.className = 'zband'; band.style.setProperty('--gc', m.color || 'var(--paper3)');
-  band.innerHTML = `<button id="zback">‹ 目次</button><span class="bn">${h(m.emoji)} ${h(m.name)}</span>
-    <span class="bs">${sps.length}種・出会い${enc}回${nz.length ? `・なぞ${nz.length}` : ''}</span>`;
-  // 並べ替え
-  const so = ZSORT[S.zSort] || ZSORT.no;
-  $('#zSort').innerHTML = `<div class="zsort"><select id="zsort">${Object.entries(ZSORT).map(([k, o]) => `<option value="${k}" ${k === S.zSort ? 'selected' : ''}>${o.label}</option>`).join('')}</select>
-    <button class="btn small" id="zdir">${so.dir[S.zRev ? 1 : 0]} ⇅</button>
-    ${key === 'all' && !q ? `<button class="chip toggle2 ${S.zSplit ? 'on' : ''}" id="zsplit">ジャンルで区切る</button>` : ''}</div>`;
-  // 検索
+  const total = {sps:sps.length, nz:nz.length, enc:sps.reduce((a, s) => a + (idx.get(s.id)?.count || 0), 0)};
   const hit = new Map();
   if (q) {
     sps = sps.filter(s => {
@@ -1186,13 +1220,54 @@ function drawChapter(){
   }
   const cmp = speciesCmp(S.zSort, S.zRev, idx);
   const sortSp = list => list.sort((a, b) => q ? ((hit.get(b.id).name ? 1 : 0) - (hit.get(a.id).name ? 1 : 0)) || cmp(a, b) : cmp(a, b));
-  // 区切り
   let secs;
   if (key === 'all' && S.zSplit && !q) {
     secs = [...genresSorted().map(g => g.id), '_none'].map(k => ({head:chMeta(k), sps:sortSp(sps.filter(s => spInCh(s, k))), nz:nz.filter(e => nzInCh(e, k))}))
       .filter(x => x.sps.length || x.nz.length);
   } else secs = [{head:null, sps:sortSp(sps), nz}];
-  S.zKeys = secs.flatMap(x => [...x.sps.map(s => s.id), ...x.nz.map(e => 'n:' + e.id)]);
+  const keys = secs.flatMap(x => [...x.sps.map(s => s.id), ...x.nz.map(e => 'n:' + e.id)]);
+  return {idx, q, hit, secs, keys, total};
+}
+const chWhere = key => { const m = chMeta(key); return {label:`${m.emoji} ${m.name}`, color:m.color}; };
+function chKeys(){
+  const keys = ['all', ...genresSorted().map(g => g.id)];
+  if (live(S.species).some(s => spInCh(s, '_none')) || nazoList().some(e => nzInCh(e, '_none'))) keys.push('_none');
+  return keys;
+}
+/** 目次：＞ で開くと種の名前（小さな写真つき）となぞの件数。ジャンル名をタップするとその図鑑（章）へ */
+function drawToc(){
+  const idx = buildIndex(), sps = live(S.species), nz = nazoList();
+  const enc = n => n.reduce((a, s) => a + (idx.get(s.id)?.count || 0), 0);
+  $('#zBand').className = 'vh'; $('#zBand').removeAttribute('style');
+  $('#zBand').innerHTML = `<h1>図鑑</h1><span class="sub">${sps.length}種・出会い ${enc(sps)}回${nz.length ? `・なぞ ${nz.length}件` : ''}</span>`;
+  $('#zSort').innerHTML = '';
+  if (!sps.length && !nz.length) { $('#zBody').innerHTML = `<div class="empty">まだ種のページがありません。<br>名前を付けて登録するか、「なぞ」で名前がわかると、ここにページが増えていきます。</div>`; return; }
+  $('#zBody').innerHTML = `<div class="toc2">` + chKeys().map(key => {
+    const m = chMeta(key), d = chapterData(key, ''), empty = !d.total.sps && !d.total.nz, open = S.zOpen.has(key) && !empty;
+    const list = open ? `<div class="tl2">` + d.secs.flatMap(x => x.sps).map(sp => {
+        const st = d.idx.get(sp.id), cv = coverPhotoOf(sp, st);
+        return `<button class="ts ${st ? '' : 'zero'}" data-tsp="${sp.id}" data-tch="${key}">${cv ? `<img data-photo="${cv}" alt="">` : `<span class="ni"></span>`}<span class="tsn">${h(sp.name)}</span><span class="tno">${noStr(sp.no)}</span></button>`;
+      }).join('') + (d.total.nz ? `<button class="tz" data-tnz="${key}">❓ なぞ ${d.total.nz}件</button>` : '') + `</div>` : '';
+    return `<div class="trow ${empty ? 'dim' : ''} ${open ? 'open' : ''}" style="--gc:${h(m.color || 'var(--ink2)')}">
+      <button class="tg" data-tg="${key}" aria-label="${open ? '閉じる' : '開く'}" ${empty ? 'disabled' : ''}>${open ? '∨' : '＞'}</button>
+      <button class="tn" data-ch="${key}">${h(m.emoji)} ${h(m.name)}</button>
+      <span class="tc">${d.total.sps}種${d.total.nz ? `・<span class="tcz">❓${d.total.nz}</span>` : ''}</span></div>${list}`;
+  }).join('') + `</div>`;
+}
+function drawChapter(){
+  const key = S.zCh, m = chMeta(key);
+  const d = chapterData(key, S.zQuery), {idx, q, hit, secs, total} = d;
+  // 帯（スクロールしても上に残る）。ジャンル名を押すとジャンルの一覧が開く
+  const band = $('#zBand');
+  band.className = 'zband'; band.style.setProperty('--gc', m.color || 'var(--paper3)');
+  band.innerHTML = `<button id="zback">‹ 目次</button><button class="bn" id="zpick" aria-haspopup="listbox">${h(m.emoji)} ${h(m.name)} <span class="cv">▾</span></button>
+    <span class="bs">${total.sps}種・出会い${total.enc}回${total.nz ? `・なぞ${total.nz}` : ''}</span>`;
+  // 並べ替え
+  const so = ZSORT[S.zSort] || ZSORT.no;
+  $('#zSort').innerHTML = `<div class="zsort"><select id="zsort">${Object.entries(ZSORT).map(([k, o]) => `<option value="${k}" ${k === S.zSort ? 'selected' : ''}>${o.label}</option>`).join('')}</select>
+    <button class="btn small" id="zdir">${so.dir[S.zRev ? 1 : 0]} ⇅</button>
+    ${key === 'all' && !q ? `<button class="chip toggle2 ${S.zSplit ? 'on' : ''}" id="zsplit">ジャンルで区切る</button>` : ''}</div>`;
+  S.zKeys = d.keys;
   const box = $('#zBody');
   if (!live(S.species).length && !nazoList().length) { box.innerHTML = `<div class="empty">まだ種のページがありません。<br>名前を付けて登録するか、「なぞ」で名前がわかると、ここにページが増えていきます。</div>`; return; }
   if (!S.zKeys.length) { box.innerHTML = `<div class="empty">${q ? '見つかりませんでした。' : 'この章はまだ空です。'}</div>`; return; }
@@ -1207,7 +1282,19 @@ function drawChapter(){
     + (x.nz.length ? `<h4 class="nzh">❓ なぞ（${x.nz.length}件）</h4><div class="ngrid">${x.nz.map(e => nazoCard(e, `data-nz="${e.id}"`)).join('')}</div>` : '')
   ).join('');
 }
-
+/** 帯の下に開くジャンルの一覧（今の章に印） */
+function toggleZMenu(){
+  const band = $('#zBand'), cur = $('.zmenu', band);
+  if (cur) { cur.remove(); return; }
+  const idx = buildIndex();
+  const menu = document.createElement('div'); menu.className = 'zmenu'; menu.setAttribute('role', 'listbox');
+  menu.innerHTML = chKeys().map(key => {
+    const m = chMeta(key), ss = live(S.species).filter(s => spInCh(s, key)), nn = nazoList().filter(e => nzInCh(e, key));
+    return `<button data-ch="${key}" class="${key === S.zCh ? 'on' : ''} ${ss.length || nn.length ? '' : 'dim'}" style="--gc:${h(m.color || 'var(--ink2)')}" role="option">
+      <span class="mn">${h(m.emoji)} ${h(m.name)}</span><span class="mc">${ss.length}種${nn.length ? `・❓${nn.length}` : ''}</span>${key === S.zCh ? '<span class="ck">✓</span>' : ''}</button>`;
+  }).join('');
+  band.appendChild(menu);
+}
 /* ---------- なぞ ---------- */
 /** 虫眼鏡のカード：丸の中だけはっきり、外側は薄い膜 */
 function nazoCard(e, attr){
@@ -1242,8 +1329,15 @@ function renderSettings(v){
     </div>
     <div class="card"><h2>🏷 ジャンル</h2><div id="genreList"></div>
       <div class="row-btns"><button class="btn small" id="addGenre">＋ ジャンルを追加</button></div></div>
+    <div class="card"><h2>📍 場所の名前</h2>
+      <label class="sw"><input type="checkbox" id="autoPlace" ${Place.auto() ? 'checked' : ''}>場所の名前を自動で調べる</label>
+      <p class="hint" style="margin:0 0 6px">写真の位置（緯度・経度）を OpenStreetMap に送って、場所の名前を調べます。近く（150m以内）に自分で付けた場所名があれば、そちらを先に使います（このときは通信しません）。</p>
+      <div id="placeBulk"></div>
+      <p class="hint" style="margin:8px 0 0">場所の名前：<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a></p></div>
     <div class="card"><h2>📦 保存の状態</h2><div id="storageInfo" class="hint">確認中…</div></div>
-    <p class="hint" style="text-align:center">なんでも図鑑 v${APP_VERSION}・データはこの端末の中だけに保存されます</p>`;
+    <p class="hint" style="text-align:center">なんでも図鑑 v${APP_VERSION}・データはこの端末の中だけに保存されます。<br>通信するのは、Wikipediaで調べるときと、場所の名前を調べるときだけです</p>`;
+  $('#autoPlace', v).onchange = async ev => { S.meta = await Store.setMeta({autoPlace:ev.target.checked}); drawPlaceBulk(); };
+  drawPlaceBulk();
   $('#expStd', v).onclick = () => startExport(false);
   $('#expFull', v).onclick = () => startExport(true);
   $('#impBtn', v).onclick = () => $('#importIn').click();
@@ -1254,6 +1348,24 @@ function renderSettings(v){
   };
   renderGenreList();
   storageInfo();
+}
+/** 場所が空で位置がある記録を、まとめて調べる（1回30件まで。規約で大量の問い合わせは禁止のため） */
+function drawPlaceBulk(msg){
+  const box = $('#placeBulk'); if (!box) return;
+  if (Place.running) return;
+  const n = Place.emptyWithGeo().length;
+  box.innerHTML = `<div>場所が空で、位置がある記録：<b>${n}件</b></div>
+    <div class="row-btns" style="margin:6px 0 0"><button class="btn small" id="placeRun" ${n ? '' : 'disabled'}>まとめて調べる${n > 30 ? '（30件まで）' : ''}</button></div>
+    ${msg ? `<p class="hint" style="margin:4px 0 0">${h(msg)}</p>` : ''}`;
+  $('#placeRun', box).onclick = async () => {
+    const ids = Place.emptyWithGeo().sort((a, b) => a.takenAt < b.takenAt ? 1 : -1).slice(0, 30).map(e => e.id);
+    Place.running = true;
+    box.innerHTML = `<div id="placeProg">調べています… 0 / ${ids.length}</div>`;
+    let got = 0;
+    try { got = await Place.autoFill(ids, k => { const pg = $('#placeProg'); if (pg) pg.textContent = `調べています… ${k} / ${ids.length}`; }); }
+    finally { Place.running = false; }
+    drawPlaceBulk(`${got}件に場所を入れました${got < ids.length ? `（${ids.length - got}件は見つからないか、調べられませんでした）` : ''}`);
+  };
 }
 function renderGenreList(){
   const box = $('#genreList'); if (!box) return;
@@ -1305,7 +1417,7 @@ function startRegister(files){
       for (const p of c.photos) {
         try { Object.assign(p, await processFile(p.file)); }
         catch(e) { p.err = true; }
-        p.loading = false; delete p.file;
+        p.loading = false;   // 原本（p.file）はアップを切り出すために保存まで持っておく
         if (!R) return;
         c.takenAt = cardTime(c);
         updateCard(c);
@@ -1317,13 +1429,15 @@ function startRegister(files){
 function cardTime(c){ const ts = c.photos.filter(p => p.takenAt).map(p => p.takenAt).sort(); return ts[0] || c.takenAt; }
 function cardHTML(c){
   const g = genreOf(c.genreId) || NOGENRE;
-  const ph = c.photos.map(p => p.loading ? `<div class="ld">読み込み中…</div>` : p.err ? `<div class="ld">読み込めない写真です<br>${h(p.name)}</div>` : `<img src="${p.thumbUrl}" alt="">`).join('');
-  const ok = c.photos.some(p => p.blob);
+  const ph = c.photos.map((p, i) => p.loading ? `<div class="ld">読み込み中…</div>` : p.err ? `<div class="ld">読み込めない写真です<br>${h(p.name)}</div>`
+    : `<span class="pw"><img src="${p.thumbUrl}" alt="" data-pi="${i}">${p.crop ? '<b class="zb">🔍</b>' : ''}</span>`).join('');
+  const ok = c.photos.some(p => p.blob), geo = c.photos.some(p => p.lat != null);
   return `<div class="rcard ${c.sel?'sel':''}" data-key="${c.key}" style="--gc:${h(g.color)}">
     <div class="ph">${ph}</div>
     ${R.merge ? `<button class="ck" data-act="sel">${c.sel ? '✓' : ''}</button>` : `<button class="rm" data-act="rm" aria-label="外す">✕</button>`}
     ${ok || c.photos.some(p => p.loading) ? `
-    <div class="when">📅 <input type="datetime-local" class="tk" value="${c.takenAt ? toLocalInput(c.takenAt) : ''}">${c.photos.some(p => p.fromExif) ? '' : '<span title="撮影日時が読めなかったのでファイルの日時">※</span>'}</div>
+    <div class="when">📅 <input type="datetime-local" class="tk" value="${c.takenAt ? toLocalInput(c.takenAt) : ''}">${c.photos.some(p => p.fromExif) ? '' : '<span title="撮影日時が読めなかったのでファイルの日時">※</span>'}
+      <span class="geo ${geo ? '' : 'no'}" title="${geo ? '写真に位置情報があります' : '写真に位置情報がありません'}">${geo ? '📍' : '📍なし'}</span></div>
     <div class="chips gc">${genreChips(c.genreId)}</div>
     <div class="sg-wrap"><input class="nm" placeholder="名前（わからなければ空欄 → なぞ）" value="${h(c.name)}" autocomplete="off"></div>
     <input class="nt" placeholder="ひとこと（どこが気になった？）" value="${h(c.note)}">
@@ -1354,7 +1468,15 @@ function buildRegister(sh){
   R.cards.forEach(c => { const el = $(`.rcard[data-key="${c.key}"]`, sh.body); bindCard(el, c); });
   sh.body.onclick = ev => {
     const b = ev.target.closest('[data-act]'); if (!b) {
-      if (R.merge) { const card = ev.target.closest('.rcard'); if (card) toggleSel(card.dataset.key); }
+      const card = ev.target.closest('.rcard');
+      if (R.merge) { if (card) toggleSel(card.dataset.key); return; }
+      const im = ev.target.closest('img[data-pi]');
+      if (im && card) {   // 写真をタップ → アップを切り出す
+        const c = R.cards.find(x => x.key === card.dataset.key), p = c && c.photos[+im.dataset.pi];
+        if (!p || !p.blob) return;
+        const url = URL.createObjectURL(p.blob);
+        openCrop(url, p.crop || null, crop => { URL.revokeObjectURL(url); if (crop) p.crop = crop; else delete p.crop; updateCard(c); });
+      }
       return;
     }
     const card = b.closest('.rcard'), c = card && R.cards.find(x => x.key === card.dataset.key);
@@ -1407,7 +1529,7 @@ async function saveRegister(){
   if (!R || R.saving) return;
   R.saving = true; $('#doSave').disabled = true;
   const ops = [], newEntries = [];
-  let count = 0;
+  let count = 0, failedDetails = 0;
   try {
     for (const c of R.cards) {
       const pics = c.photos.filter(p => p.blob); if (!pics.length) continue;
@@ -1419,6 +1541,15 @@ async function saveRegister(){
       if (geo) { e.lat = geo.lat; e.lng = geo.lng; }
       for (const p of pics) {
         const pr = {id:uuid(), entryId:e.id, blob: await p.blob.arrayBuffer(), thumb: await p.thumb.arrayBuffer(), originalName:p.name};
+        if (p.crop && p.file) {
+          try {
+            const d = await makeDetail(p.file, p.crop);
+            pr.focusX = p.crop.fx; pr.focusY = p.crop.fy;   // 表紙の切り抜きにも効く
+            const dr = {id:uuid(), entryId:e.id, blob: await d.blob.arrayBuffer(), thumb: await d.thumb.arrayBuffer(), originalName:p.name, kind:'detail', parentId:pr.id};
+            e.photoIds.push(pr.id, dr.id); ops.push({store:'photos', rec:Store.stamp(pr)}, {store:'photos', rec:Store.stamp(dr)});
+            continue;
+          } catch(err) { console.warn(err); failedDetails++; }
+        }
         e.photoIds.push(pr.id); ops.push({store:'photos', rec:Store.stamp(pr)});
       }
       ops.push({store:'entries', rec:Store.stamp(e)}); newEntries.push(e); count++;
@@ -1435,7 +1566,173 @@ async function saveRegister(){
   closeSheet(R.sheet, true);
   S.tab = S.tab === 'settings' ? 'log' : S.tab; render();
   pinToast(`${count}件 留めました`);
+  if (failedDetails) setTimeout(() => alert(`アップを${failedDetails}枚作れませんでした（元の写真は保存しました）。\n出会いの記録の「🔍 アップを足す」から、あとで足せます。`), 400);
+  Place.autoFill(newEntries.map(e => e.id));
 }
+
+/* ================= アップ（主役の切り出し） ================= */
+/**
+ * 「アップを切り出す」画面。url：表示用の写真、init：{fx, fy, sz} か null、onDone(crop)：決定で crop、「アップをやめる」で null
+ * fx, fy：枠の中心（0〜1）、sz：枠の一辺（写真の短い辺に対する割合 0.15〜0.9）
+ */
+function openCrop(url, init, onDone){
+  const c = init ? {...init} : {fx:0.5, fy:0.5, sz:0.45, shown:false};
+  if (init) c.shown = true;
+  openSheet({title:'アップを切り出す', form:true, build(sh){
+    sh.body.innerHTML = `<p class="hint" style="margin-top:0">主役をタップすると、そこを中心に枠が出ます。枠は指で動かせます。</p>
+      <div class="fpick"><div class="fpi crop" id="u-box"><img src="${url}" alt="" draggable="false"><span class="frame" hidden></span></div></div>
+      <label class="fl">枠の大きさ</label><input type="range" id="u-size" min="15" max="90" step="1" value="${Math.round(c.sz * 100)}">`;
+    sh.foot.innerHTML = `${init ? '<button class="btn danger" id="u-del">アップをやめる</button>' : ''}<button class="btn primary" id="u-ok" ${c.shown ? '' : 'disabled'}>決定</button>`;
+    const box = $('#u-box', sh.body), img = $('img', box), fr = $('.frame', box);
+    /** 枠が写真からはみ出さないように中心を寄せて描く */
+    const paint = () => {
+      const W = img.clientWidth, H = img.clientHeight; if (!W || !H) return;
+      const side = c.sz * Math.min(W, H), hx = side / 2 / W, hy = side / 2 / H;
+      c.fx = Math.max(hx, Math.min(1 - hx, c.fx)); c.fy = Math.max(hy, Math.min(1 - hy, c.fy));
+      fr.hidden = !c.shown;
+      Object.assign(fr.style, {width:side + 'px', height:side + 'px', left:(c.fx * W - side / 2) + 'px', top:(c.fy * H - side / 2) + 'px'});
+      $('#u-ok', sh.foot).disabled = !c.shown;
+    };
+    if (img.complete) paint(); else img.onload = paint;
+    let drag = null;
+    box.addEventListener('pointerdown', ev => {
+      const r = img.getBoundingClientRect(); if (!r.width) return;
+      const px = (ev.clientX - r.left) / r.width, py = (ev.clientY - r.top) / r.height;
+      box.setPointerCapture(ev.pointerId);
+      if (c.shown && !fr.hidden) {   // 枠の中からなら、つかんで動かす
+        const fb = fr.getBoundingClientRect();
+        if (ev.clientX >= fb.left && ev.clientX <= fb.right && ev.clientY >= fb.top && ev.clientY <= fb.bottom) { drag = {dx:c.fx - px, dy:c.fy - py}; return; }
+      }
+      c.fx = px; c.fy = py; c.shown = true; drag = {dx:0, dy:0}; paint();
+    });
+    box.addEventListener('pointermove', ev => {
+      if (!drag) return;
+      const r = img.getBoundingClientRect();
+      c.fx = (ev.clientX - r.left) / r.width + drag.dx; c.fy = (ev.clientY - r.top) / r.height + drag.dy; paint();
+    });
+    const up = () => { drag = null; };
+    box.addEventListener('pointerup', up); box.addEventListener('pointercancel', up);
+    $('#u-size', sh.body).oninput = ev => { c.sz = ev.target.value / 100; paint(); };
+    $('#u-ok', sh.foot).onclick = () => { if (!c.shown) return; closeSheet(sh, true); onDone({fx:+c.fx.toFixed(4), fy:+c.fy.toFixed(4), sz:+c.sz.toFixed(3)}); };
+    const del = $('#u-del', sh.foot); if (del) del.onclick = () => { closeSheet(sh, true); onDone(null); };
+  }});
+}
+/** 原本から枠の部分を切り出す。長辺1024px・品質0.8（小さければ拡大しない）＋サムネイル320px */
+async function makeDetail(file, crop){
+  const {img, url} = await decodeImage(file);
+  try {
+    const w = img.naturalWidth, hh = img.naturalHeight;
+    const side = Math.max(1, Math.round(crop.sz * Math.min(w, hh)));
+    const sx = Math.max(0, Math.min(w - side, Math.round(crop.fx * w - side / 2)));
+    const sy = Math.max(0, Math.min(hh - side, Math.round(crop.fy * hh - side / 2)));
+    const enc = async (n, q) => {
+      const cv = document.createElement('canvas'); cv.width = cv.height = n;
+      cv.getContext('2d').drawImage(img, sx, sy, side, side, 0, 0, n, n);
+      const b = await new Promise(r => cv.toBlob(r, 'image/jpeg', q)); cv.width = cv.height = 0;
+      if (!b) throw new Error('encode'); return b;
+    };
+    const out = Math.min(1024, side);
+    return {blob: await enc(out, 0.8), thumb: await enc(Math.min(320, out), 0.7), size:out};
+  } finally { URL.revokeObjectURL(url); }
+}
+/** 写真1枚を選ぶ（出会いの記録の「アップを足す」用） */
+function pickOnePhoto(){
+  return new Promise(res => {
+    const inp = $('#upIn');
+    inp.onchange = () => { const f = inp.files[0]; inp.value = ''; res(f || null); };
+    inp.click();
+  });
+}
+
+/* ================= 場所の名前（写真の位置 → 名前） ================= */
+/**
+ * 決め方の順番：① 自分で付けた場所名（150m以内でいちばん近いもの）② 前に調べた名前（50m以内）③ OpenStreetMap の Nominatim
+ * Nominatim の利用規約：同時に1件・1.1秒以上あける・独自のヘッダーは付けない・403/429 が来たら開き直すまでやめる
+ */
+const Place = {
+  URL: 'https://nominatim.openstreetmap.org/reverse',
+  last: 0, chain: Promise.resolve(), blocked: false,
+  auto: () => !S.meta || S.meta.autoPlace !== false,
+  /** 2点の距離（m）。球面の公式（ハバーサイン） */
+  dist(a, b){
+    const R = 6371000, rad = x => x * Math.PI / 180;
+    const dLat = rad(b.lat - a.lat), dLng = rad(b.lng - a.lng);
+    const t = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng / 2) ** 2;
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(t)));
+  },
+  srcOf: e => e.placeSrc || (e.place ? 'hand' : null),
+  nearest(pt, src, maxM, exceptId){
+    let best = null, bd = Infinity;
+    for (const e of entriesLive()) {
+      if (e.id === exceptId || e.lat == null || !e.place || this.srcOf(e) !== src) continue;
+      const d = this.dist(pt, e); if (d <= maxM && d < bd) { bd = d; best = e; }
+    }
+    return best;
+  },
+  mine(pt, exceptId){ const e = this.nearest(pt, 'hand', 150, exceptId); return e && e.place; },
+  cached(pt, exceptId){ const e = this.nearest(pt, 'osm', 50, exceptId); return e && e.place; },
+  /** Nominatim の答えから候補を最大3つ（施設の名前 → 町の名前 → 市区町村＋町の名前）。実機で見てから直す前提 */
+  candidatesFrom(j){
+    const out = [], add = x => { x = String(x || '').trim(); if (x && !out.includes(x)) out.push(x); };
+    const a = (j && j.address) || {};
+    if (['leisure','natural','tourism','historic','waterway','landuse','boundary'].includes(j && j.category) && j.name) add(j.name);
+    for (const k of ['park','leisure','tourism','natural','historic']) if (a[k]) add(a[k]);
+    const town = a.neighbourhood || a.quarter || a.suburb;
+    const city = a.city || a.town || a.village || a.municipality || a.county;
+    if (town) add(town);
+    if (city) add(town ? city + town : city);
+    return out.slice(0, 3);
+  },
+  /** Nominatim に問い合わせる（順番待ちで1件ずつ）。候補の配列、だめなら null */
+  ask(pt){
+    const run = async () => {
+      if (this.blocked || !this.auto()) return null;
+      const wait = this.last + 1100 - Date.now(); if (wait > 0) await new Promise(r => setTimeout(r, wait));
+      const ac = new AbortController(), to = setTimeout(() => ac.abort(), 8000);
+      try {
+        const url = `${this.URL}?format=jsonv2&lat=${pt.lat}&lon=${pt.lng}&zoom=18&addressdetails=1&accept-language=ja`;
+        const r = await fetch(url, {signal:ac.signal});
+        if (r.status === 403 || r.status === 429) { this.blocked = true; return null; }
+        if (!r.ok) return null;
+        return this.candidatesFrom(await r.json());
+      } catch(e) { return null; }
+      finally { clearTimeout(to); this.last = Date.now(); }
+    };
+    const p = this.chain.then(run, run); this.chain = p.catch(() => null); return p;
+  },
+  /** 1件の名前を決める。{place, src} か null。net=false なら通信しない */
+  async resolve(e, net = true){
+    const pt = {lat:e.lat, lng:e.lng};
+    const m = this.mine(pt, e.id); if (m) return {place:m, src:'mine'};
+    const c = this.cached(pt, e.id); if (c) return {place:c, src:'osm'};
+    if (!net || !this.auto()) return null;
+    const cs = await this.ask(pt);
+    return cs && cs.length ? {place:cs[0], src:'osm'} : null;
+  },
+  /** 位置があって場所が空の出会いに、裏で順番に名前を入れる。入れた件数を返す */
+  async autoFill(ids, onStep){
+    let n = 0, k = 0;
+    for (const id of ids) {
+      const e = S.entries.get(id);
+      if (e && !e.deleted && e.lat != null && !e.place) {
+        const r = await this.resolve(e);
+        const e2 = S.entries.get(id);   // その間に手で入れていたら上書きしない
+        if (r && e2 && !e2.deleted && !e2.place) {
+          e2.place = r.place; e2.placeSrc = r.src;
+          try { await Store.put('entries', e2); n++; } catch(err) { console.warn(err); }
+        }
+      }
+      onStep && onStep(++k);
+    }
+    if (n) {
+      const top = sheets[sheets.length - 1]; if (top && !top.opts.form) top.refresh();
+      const a = document.activeElement;   // 入力中（検索など）は描き直さない
+      if (!(a && a.matches && a.matches('input,textarea'))) render();
+    }
+    return n;
+  },
+  emptyWithGeo: () => entriesLive().filter(e => e.lat != null && !e.place),
+};
 
 /* ================= 出会いの詳細 ================= */
 /** 写真は1枚ずつ表示。2枚以上なら端の ‹ › で切り替え */
@@ -1443,7 +1740,7 @@ async function saveRegister(){
 function galleryHTML(ids, opt = {}){
   const many = ids.length > 1, eids = opt.eids;
   const ind = !many ? '' : ids.length <= 8 ? `<div class="dots">${ids.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>` : `<div class="cnt">1 / ${ids.length}</div>`;
-  return `<div class="gal ${eids ? 'cover' : ''}" data-ids="${ids.join(',')}" ${eids ? `data-eids="${eids.join(',')}"` : ''} data-i="0"><div class="gi"><img data-full="${ids[0]}" alt="">`
+  return `<div class="gal ${eids ? 'cover' : ''}" data-ids="${ids.join(',')}" ${eids ? `data-eids="${eids.join(',')}"` : ''} data-i="0"><div class="gi"><img data-full="${ids[0]}" alt=""><span class="upb">🔍 アップ</span>`
     + (many ? `<button class="ga prev" data-ga="-1" aria-label="前の写真" hidden>‹</button><button class="ga next" data-ga="1" aria-label="次の写真">›</button>` : '')
     + ind + `</div>` + (eids ? `<button class="cap" data-entry="${eids[0]}">${capText(eids[0])}</button>` : '') + `</div>`;
 }
@@ -1461,7 +1758,7 @@ function openViewer(ids, i0, onIndex){
   if (document.querySelector('.viewer')) return;
   let i = Math.max(0, Math.min(ids.length - 1, i0 || 0));
   const v = document.createElement('div'); v.className = 'viewer';
-  v.innerHTML = `<img alt=""><div class="vc"></div><button class="vx" aria-label="閉じる">✕</button>`;
+  v.innerHTML = `<img alt=""><div class="vc"></div><span class="vb">🔍 アップ</span><button class="vx" aria-label="閉じる">✕</button>`;
   document.body.appendChild(v);
   const img = $('img', v), vc = $('.vc', v);
   let s = 1, tx = 0, ty = 0;   // 拡大率と、ずらす量（px）
@@ -1491,7 +1788,7 @@ function openViewer(ids, i0, onIndex){
     vc.textContent = ids.length > 1 ? `${i + 1} / ${ids.length}` : '';
     s = 1; tx = 0; ty = 0; draw(false);
     const want = i, u = await fullURL(ids[i]);
-    if (!closed && want === i && u) img.src = u;
+    if (!closed && want === i && u) { img.src = u; v.classList.toggle('isdetail', detailSet.has(ids[i])); }
     for (const d of [-1, 1]) if (ids[i + d]) fullURL(ids[i + d]);   // 前後を先に読む
   };
   const go = async d => {
@@ -1620,7 +1917,7 @@ document.addEventListener('click', ev => {
 function entryState(id){
   const e = S.entries.get(id), sp = e.speciesId && S.species.get(e.speciesId);
   return {name: sp ? sp.name : '', confidence:e.confidence || 'unknown', genreId:e.genreId, takenAt:e.takenAt,
-    place:e.place || '', candidates:(e.candidates || []).join('\n'), note:e.note || ''};
+    place:e.place || '', place0:e.place || '', pick:null, pickSrc:null, candidates:(e.candidates || []).join('\n'), note:e.note || ''};
 }
 async function saveEntryState(id, st){
   const ops = [];
@@ -1630,7 +1927,13 @@ async function saveEntryState(id, st){
       const {sp} = resolveSpecies(st.name, st.genreId, ops);
       e2.speciesId = sp.id; e2.confidence = st.confidence === 'unknown' ? 'sure' : st.confidence;
     } else { e2.speciesId = null; e2.confidence = 'unknown'; }
-    Object.assign(e2, {genreId:st.genreId, takenAt:st.takenAt, place:st.place.trim(),
+    // 場所：書き換えたときだけ。候補から選んだまま → 'osm'（自分の場所名なら 'mine'）、自分で書いた → 'hand'、空 → 出どころも消す
+    if (st.place !== st.place0) {
+      const t = st.place.trim();
+      if (!t) { e2.place = ''; delete e2.placeSrc; }
+      else { e2.place = t; e2.placeSrc = st.pick && t === st.pick.trim() ? (st.pickSrc || 'osm') : 'hand'; }
+    }
+    Object.assign(e2, {genreId:st.genreId, takenAt:st.takenAt,
       candidates:st.candidates.split('\n').map(s => s.trim()).filter(Boolean), note:st.note.trim()});
     ops.push({store:'entries', rec:e2});
     await Store.putMany(ops);
@@ -1669,12 +1972,13 @@ function openEntry(id0, list, where){
     const body = sh.body;
     sh.titleEl.textContent = '出会いの記録';
     sh.body.innerHTML = `${galleryHTML(e.photoIds)}
+      <div class="uprow"><button class="btn small" id="f-up">🔍 アップを足す</button><button class="btn small danger" id="f-updel" hidden>このアップを消す</button></div>
       <label class="fl">名前</label><div class="sg-wrap"><input id="f-name" value="${h(st.name)}" placeholder="わからなければ空欄（なぞ）" autocomplete="off"></div>
       <div class="seg" id="f-conf">${confSeg(st.confidence)}</div>
       <label class="fl">ジャンル</label><div class="chips wrap" id="f-genre">${genreChips(st.genreId, true)}</div>
       <label class="fl">出会った日時</label><input type="datetime-local" id="f-when" value="${toLocalInput(st.takenAt)}">
       <label class="fl">場所</label><input id="f-place" value="${h(st.place)}" placeholder="例：近所の公園の池">
-      ${e.lat != null ? `<div class="hint">写真の位置情報：${e.lat}, ${e.lng}</div>` : ''}
+      ${e.lat != null ? `<div class="placebox"><button class="btn small" id="f-geo">📍 場所を調べる</button><span class="hint">写真の位置情報：${e.lat}, ${e.lng}</span></div><div class="chips wrap" id="f-pc"></div>` : ''}
       <label class="fl">名前の候補メモ（1行に1つ）</label><textarea id="f-cand" rows="3" placeholder="例：シジュウカラかヤマガラ&#10;決め手：お腹の色">${h(st.candidates)}</textarea>
       <label class="fl">ひとこと</label><textarea id="f-note" rows="3">${h(st.note)}</textarea>
       <p class="hint">元の写真：${e.photoIds.length}枚 <span id="f-orig"></span></p>
@@ -1691,9 +1995,63 @@ function openEntry(id0, list, where){
     bindChips($('#f-genre', sh.body), g => st.genreId = g);
     $('#f-when', sh.body).onchange = ev => st.takenAt = fromLocalInput(ev.target.value, st.takenAt);
     $('#f-place', sh.body).oninput = ev => st.place = ev.target.value;
+    const geo = $('#f-geo', body);
+    if (geo) geo.onclick = async () => {
+      const box = $('#f-pc', body), pt = {lat:e.lat, lng:e.lng}, cands = [];
+      const add = (place, src) => { if (place && !cands.some(c => c.place === place)) cands.push({place, src}); };
+      add(Place.mine(pt, id), 'mine'); add(Place.cached(pt, id), 'osm');
+      if (Place.auto()) {
+        geo.disabled = true; box.innerHTML = '<span class="hint">調べています…</span>';
+        const cs = await Place.ask(pt); (cs || []).forEach(x => add(x, 'osm'));
+        geo.disabled = false;
+      }
+      const list = cands.slice(0, 3);
+      box.innerHTML = list.length ? list.map((c, i) => `<button class="chip" data-pc="${i}">${c.src === 'mine' ? '⭐ ' : ''}${h(c.place)}</button>`).join('')
+        : `<span class="hint">${Place.auto() ? (Place.blocked ? '今は調べられません（アプリを開き直すと調べられます）' : '見つかりませんでした') : '「場所の名前を自動で調べる」がオフです（設定）'}</span>`;
+      box.onclick = ev => {
+        const b = ev.target.closest('[data-pc]'); if (!b) return;
+        const c = list[+b.dataset.pc]; st.place = c.place; st.pick = c.place; st.pickSrc = c.src;
+        $('#f-place', body).value = c.place;
+      };
+    };
     $('#f-cand', sh.body).oninput = ev => st.candidates = ev.target.value;
     $('#f-note', sh.body).oninput = ev => st.note = ev.target.value;
     const spb = $('#f-sp', sh.body); if (spb) spb.onclick = () => openSpecies(e.speciesId);
+    // アップ：表示中の写真がアップのときだけ「消す」を出す
+    const gal = $('.gal', body), upd = $('#f-updel', body);
+    const curPid = () => gal.dataset.ids.split(',')[+gal.dataset.i];
+    gal.addEventListener('galshow', ev => { upd.hidden = !detailSet.has(ev.detail); });
+    $('#f-up', body).onclick = async () => {
+      const file = await pickOnePhoto(); if (!file) return;
+      const parent = curPid(), url = URL.createObjectURL(file);
+      const probe = new Image();
+      const okImg = await new Promise(r => { probe.onload = () => r(true); probe.onerror = () => r(false); probe.src = url; });
+      if (!okImg) { URL.revokeObjectURL(url); return alert('この写真は読み込めませんでした。'); }
+      openCrop(url, null, async crop => {
+        URL.revokeObjectURL(url); if (!crop) return;
+        let d;
+        try { d = await makeDetail(file, crop); } catch(err) { return alert('アップを作れませんでした。'); }
+        const e2 = S.entries.get(id);
+        const dr = {id:uuid(), entryId:id, blob: await d.blob.arrayBuffer(), thumb: await d.thumb.arrayBuffer(), originalName:file.name, kind:'detail', parentId:parent};
+        const at = e2.photoIds.indexOf(parent);
+        e2.photoIds.splice(at < 0 ? e2.photoIds.length : at + 1, 0, dr.id);
+        if (await safeWrite(() => Store.putMany([{store:'photos', rec:dr}, {store:'entries', rec:e2}]))) {
+          detailSet.add(dr.id);
+          if (sh.pager.cur === id) { sh.refresh(); const g2 = $('.gal', sh.body); if (g2) setGal(g2, e2.photoIds.indexOf(dr.id)); }
+          pinToast('アップを足しました');
+        } else await loadAll();
+      });
+    };
+    upd.onclick = async () => {
+      const pid = curPid(); if (!detailSet.has(pid)) return;
+      if (!confirm('このアップを消しますか？\n（元の写真はそのままです）')) return;
+      const e2 = S.entries.get(id), p = await Store.get('photos', pid); if (!p) return;
+      p.deleted = true; const i0 = e2.photoIds.indexOf(pid);
+      e2.photoIds = e2.photoIds.filter(x => x !== pid);
+      if (await safeWrite(() => Store.putMany([{store:'photos', rec:p}, {store:'entries', rec:e2}]))) {
+        detailSet.delete(pid); sh.refresh(); const g2 = $('.gal', sh.body); if (g2) setGal(g2, Math.max(0, i0 - 1)); pinToast('アップを消しました');
+      } else await loadAll();
+    };
     $('#f-del', sh.body).onclick = async () => {
       if (!confirm('この出会いを削除しますか？\n（この記録の写真もアプリから消えます。カメラロールの元の写真はそのままです）')) return;
       if (await deleteEntry(id)) { closeSheet(sh, true); pinToast('削除しました'); }
@@ -2325,7 +2683,7 @@ function addToRegister(files){
   R.cards.push(...add); R.sheet.refresh();
   (async () => { for (const c of add) for (const p of c.photos) {
     try { Object.assign(p, await processFile(p.file)); } catch(e) { p.err = true; }
-    p.loading = false; delete p.file; if (!R) return; c.takenAt = cardTime(c); updateCard(c);
+    p.loading = false; if (!R) return; c.takenAt = cardTime(c); updateCard(c);
   } if (R) buildFoot(R.sheet); })();
 }
 init();
