@@ -36,6 +36,7 @@ button{font:inherit;color:inherit;background:transparent;border:0;cursor:pointer
 #panel .sub{color:#b9c4a8}
 #panel .ttl{color:#f2d470}
 #panel .care{color:#ffb38a}
+.viewing{font-size:11px;color:#22301d;background:#dfe8c8;border-radius:8px;padding:1px 6px;vertical-align:2px}
 .foot{position:sticky;bottom:0;background:#1f2a1c;padding:3px 0 2px;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}
 .back{display:inline-block;padding:2px 10px;border:1px solid #6f7d5e;border-radius:10px;color:#e9f1d4;cursor:pointer}
 .go{text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px;color:#e9f1d4;cursor:pointer}
@@ -522,7 +523,8 @@ hooks.tick=function(){
 };
 
 function nowT(){return performance.now()/1000}
-function bellTarget(){var c=insId!=null&&nowT()-insT<10?byId(insId):null;return c||byId(selId)}
+function viewC(){var c=insId!=null&&insId!==selId?byId(insId):null;return c}
+function bellTarget(){return viewC()||byId(selId)}
 function dayOf(t){return Math.floor(t/DAY)+1}
 function ageDays(c){return Math.floor(c.age/DAY)+1}
 function fmtDur(s){
@@ -538,7 +540,7 @@ function toast(msg,evt){
 function select(id){
   var c=byId(id);if(!c)return;
   if(selId!==id)trail=[[c.x,c.y]];
-  selId=id;memorial='';follow=true;updateUI();
+  selId=id;insId=null;memorial='';follow=true;updateUI();
 }
 hooks.event=function(type,d){
   var c=d.c,msg='',evt=null;
@@ -1082,7 +1084,7 @@ function drawScope(T){
       if(o[7])drawBell(g,px+6*dep,py-2.5*dep,Math.max(1.2,2.6*dep));
       if(py<h+10)fhits.push({f:o,x:px,y:py-fh*0.6,r:Math.max(16,fh*0.9)});
     }else{
-      var u=Z*4.6*s*o.size*ageScale(o),isSel=o.id===selId||(o.id===insId&&T-insT<10);
+      var u=Z*4.6*s*o.size*ageScale(o),isSel=o.id===selId||(o.id===insId&&!!viewC());
       if(py-u*2.6>h)continue;
       if(u<4){
         var dr=Math.cos(o.h)>=0?1:-1;
@@ -1220,7 +1222,7 @@ function careOf(c){
 }
 function stageOf(c){return c.age<MATURE?'こども':c.age>c.life*0.8?'お年より':'おとな'}
 function updateUI(){
-  var c=byId(selId),f,tt,cr,h,kids,extra;
+  var vw=viewC(),c=vw||byId(selId),f,tt,cr,h,kids,extra;
   h='<b>'+dayOf(S.t)+'日め</b> '+hm(S.t)+(S.dr.until>0?'　日照り':'')+(speed>1?' <span class="spd">×'+speed+'</span>':'')+'<span class="c2">'+S.cr.length+'匹<span class="lg">が暮らしています</span></span>';
   if(h!==clockHtml){clockHtml=h;elClock.innerHTML=h}
   var bc=bellTarget();elBell.textContent=bc&&bc.bell?'鈴をはずす':'鈴をつける';elBell.className=bc?'':'off';
@@ -1228,13 +1230,13 @@ function updateUI(){
     f=byId(c.bf);tt=titlesOf(c);cr=careOf(c);
     kids=c.kl.map(function(k){return nm(k[0],k[1])}).join('、');extra=c.kids-c.kl.length;
     if(extra>0)kids+=(kids?'、ほか':'')+extra+'匹';
-    h='<span class="nm">'+c.name+(c.bell?' 🔔':'')+'</span> <span class="sub">'+ageDays(c)+'日め・'+stageOf(c)+'・'+personality(c)+'</span><br>'+
+    h=(vw?'<span class="viewing">👀 見ている子</span> ':'')+'<span class="nm">'+c.name+(c.bell?' 🔔':'')+'</span> <span class="sub">'+ageDays(c)+'日め・'+stageOf(c)+'・'+personality(c)+'</span><br>'+
       'おなか<span class="bar"><i style="width:'+Math.round(c.e)+'%"></i></span>'+Math.round(c.e)+'%・'+['はらぺこ','ふつう','まんぷく'][tummy(c)]+'<br>'+
       '<span class="sub">'+statusText(c)+(f?'　なかよし：'+nm(f.id,f.name):'')+
       (cr||tt?'<br>'+(cr?'<span class="care">'+cr+'</span>　':'')+(tt?'<span class="ttl">'+tt+'</span>':''):'')+
       (c.pa||kids?'<br>'+(c.pa?'親：'+nm(c.ma,c.pa)+'・'+nm(c.mb,c.pb)+'　':'')+(kids?'子ども：'+kids:''):'')+
       '</span>';
-    if(!follow)h+='<div class="foot"><span class="back">↩ 見守り中の子へ戻る</span></div>';
+    if(!follow||vw)h+='<div class="foot"><span class="back">↩ 見守り中の子へ戻る</span></div>';
   }else if(memorial){h=memorial}
   else h='<span class="sub">放っておいても草は育ち、ひつじたちは食べ、出会い、子が生まれ、やがて旅立ちます。</span>';
   if(h!==panelHtml){panelHtml=h;elPanel.innerHTML=h}
@@ -1344,7 +1346,7 @@ function tapScope(x,y){
     if(x>=e.x0-2&&x<=e.x1+2&&y>=e.y0-2&&y<=e.y1+2){
       c=byId(e.id);if(!c)return;
       if(e.id===selId){follow=true;return}
-      follow=false;vx=vy=0;scx=c.x;scy=c.y;insId=c.id;insT=T;fx.push({k:'ping',x:c.x,y:c.y,t:T});
+      follow=false;vx=vy=0;scx=c.x;scy=c.y;insId=c.id;insT=T;updateUI();fx.push({k:'ping',x:c.x,y:c.y,t:T});
       peekSheep(c);sheepTap={id:null,t:0};lastTap=0;return;
     }
   }
@@ -1359,7 +1361,7 @@ function tapScope(x,y){
       select(best.id);insId=null;sheepTap={id:null,t:0};lastTap=0;
       peek('<b>'+c.name+'</b> を見守ります',2500);return;
     }else{
-      insId=best.id;insT=T;
+      insId=best.id;insT=T;updateUI();
       peekSheep(c);
     }
   }else{
@@ -1443,7 +1445,7 @@ sc.addEventListener('contextmenu',function(ev){ev.preventDefault()});
 elPanel.onclick=function(ev){
   var el=document.elementFromPoint(ev.clientX,ev.clientY);
   if(el&&el.classList&&el.classList.contains('go')){if(!busy)goName(+el.getAttribute('data-id'),el.getAttribute('data-n'));return}
-  if(byId(selId))follow=true;
+  if(byId(selId)){follow=true;insId=null;updateUI()}
 };
 
 var elSow=document.getElementById('sow'),elBell=document.getElementById('bell');
