@@ -22,8 +22,9 @@
 html,body{margin:0;background:var(--paper);color:var(--ink);
   font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic UI","Meiryo",sans-serif;
   font-size:16px;line-height:1.55;-webkit-text-size-adjust:100%}
+html{touch-action:manipulation}
 body{background-image:repeating-linear-gradient(to bottom,transparent 0 31px,rgba(140,120,90,.09) 31px 32px)}
-body.noscroll{overflow:hidden}
+body.noscroll{position:fixed;left:0;right:0;overflow:hidden}
 .serif{font-family:var(--serif)}
 button{font:inherit;color:inherit;cursor:pointer}
 input,textarea,select{font:inherit;color:var(--ink);font-size:16px}
@@ -77,6 +78,9 @@ nav.tabs button.plus .circle{width:62px;height:62px;border-radius:50%;background
 label.fl{display:block;font-size:13px;color:var(--ink2);margin:14px 0 4px;letter-spacing:.05em}
 input[type=text],input[type=search],input[type=url],input[type=datetime-local],input:not([type]),textarea,select{
   width:100%;min-height:44px;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:#fffdf8}
+/* 日時の欄が横にはみ出さないように（iPhone は datetime-local に固有の最小幅がある） */
+input[type=datetime-local]{display:block;min-width:0;max-width:100%;-webkit-appearance:none;appearance:none;text-align:left}
+input[type=datetime-local]::-webkit-date-and-time-value{text-align:left}
 textarea{resize:vertical;line-height:1.5}
 input:focus,textarea:focus,select:focus{outline:2px solid rgba(138,90,43,.35);border-color:var(--accent)}
 .sg-wrap{position:relative}
@@ -135,16 +139,38 @@ h3.month{font-family:var(--serif);font-size:15px;color:var(--ink2);margin:16px 2
 .ncard .d{position:absolute;bottom:0;left:0;right:0;font-size:11px;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.55));padding:8px 5px 2px;text-align:left}
 .ncard .c{position:absolute;top:4px;right:5px;font-size:11px;background:rgba(255,255,255,.85);border-radius:4px;padding:0 4px}
 
-/* sheet */
-.sheet-wrap{position:fixed;inset:0;z-index:50;background:rgba(40,30,20,.35);display:flex;align-items:flex-end;justify-content:center}
-.sheet{background:var(--paper);width:100%;max-width:760px;height:calc(100% - var(--st) - 10px);border-radius:14px 14px 0 0;
-  display:flex;flex-direction:column;overflow:hidden;animation:up .18s ease-out;box-shadow:0 -4px 20px rgba(0,0,0,.2)}
-@keyframes up{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
-.sheet-head{display:flex;align-items:center;gap:6px;padding:6px 8px;border-bottom:1px solid var(--line);background:var(--paper2);min-height:52px}
+/* sheet（全画面。右から入って右へ抜ける） */
+.sheet-wrap{position:fixed;inset:0;z-index:50;display:flex;align-items:stretch;justify-content:center;touch-action:pan-y;
+  animation:sin .22s cubic-bezier(.2,.8,.3,1)}
+.sheet-wrap.out{animation:sout .18s ease-in forwards;pointer-events:none}
+@keyframes sin{from{transform:translateX(100%)}to{transform:none}}
+@keyframes sout{from{transform:none}to{transform:translateX(100%)}}
+@media (min-width:761px){.sheet-wrap{background:rgba(40,30,20,.22)}}
+.sheet{background:var(--paper);width:100%;max-width:760px;height:100%;display:flex;flex-direction:column;overflow:hidden}
+@media (min-width:761px){.sheet{box-shadow:0 0 24px rgba(0,0,0,.2)}}
+.sheet-head{display:flex;align-items:center;gap:6px;padding:calc(6px + var(--st)) 8px 6px;border-bottom:1px solid var(--line);background:var(--paper2);min-height:52px}
 .sheet-head .back{background:none;border:0;min-width:64px;min-height:44px;font-size:16px;color:var(--accent);text-align:left;padding:0 8px}
 .sheet-title{font-family:var(--serif);font-weight:700;font-size:17px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sheet-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 14px 30px;touch-action:pan-y;
+.sheet-stage{flex:1;position:relative;overflow:hidden;min-height:0}
+.sheet-body{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+  padding:12px 14px 30px;touch-action:pan-y;background-color:var(--paper);
   background-image:repeating-linear-gradient(to bottom,transparent 0 31px,rgba(140,120,90,.07) 31px 32px)}
+.sheet-body.moving{will-change:transform}
+.sheet-shade{position:absolute;inset:0;background:#000;pointer-events:none;z-index:1}
+/* 3択の確認 */
+.ask{position:fixed;inset:0;z-index:110;background:rgba(40,30,20,.45);display:flex;align-items:center;justify-content:center;padding:20px;animation:rf .15s}
+.ask .box{background:var(--paper2);border-radius:12px;padding:18px 16px 14px;width:100%;max-width:340px;box-shadow:0 8px 30px rgba(0,0,0,.3)}
+.ask .msg{font-family:var(--serif);font-weight:700;font-size:17px;margin:0 4px 6px}
+.ask .sub{font-size:13px;color:var(--ink2);margin:0 4px 12px}
+.ask .btn{display:block;width:100%;margin-top:8px}
+/* 写真の拡大ビューア */
+.viewer{position:fixed;inset:0;z-index:105;background:#000;touch-action:none;overflow:hidden;animation:rf .15s;
+  display:flex;align-items:center;justify-content:center}
+.viewer img{max-width:100%;max-height:100%;display:block;transform-origin:50% 50%;will-change:transform}
+.viewer .vx{position:absolute;top:calc(8px + var(--st));right:8px;width:48px;height:48px;border-radius:24px;border:0;
+  background:rgba(255,255,255,.18);color:#fff;font-size:24px;line-height:48px;padding:0;z-index:2}
+.viewer .vc{position:absolute;top:calc(18px + var(--st));left:0;right:0;text-align:center;color:#fff;font-family:var(--serif);
+  font-size:15px;text-shadow:0 1px 3px #000;pointer-events:none;z-index:2}
 .sheet-foot{padding:10px 12px calc(10px + var(--sb));border-top:1px solid var(--line);background:var(--paper2);display:flex;gap:8px}
 .sheet-foot .btn{flex:1}
 .sheet-foot .btn.pg{flex:0 0 auto;min-width:84px;padding:8px 10px}
@@ -171,7 +197,7 @@ h3.month{font-family:var(--serif);font-size:15px;color:var(--ink2);margin:16px 2
 .rcard .rm{position:absolute;top:6px;right:6px;width:40px;height:40px;border-radius:20px;border:1px solid var(--line);background:var(--paper);font-size:18px}
 .rcard .ck{position:absolute;top:6px;right:6px;width:40px;height:40px;border-radius:20px;border:2px solid var(--accent);background:#fff;font-size:22px;color:var(--accent);font-weight:700}
 .rcard .when{display:flex;align-items:center;gap:6px;margin:8px 0 4px;font-size:13px;color:var(--ink2)}
-.rcard .when input{flex:1;min-height:38px;padding:4px 8px;font-size:15px}
+.rcard .when input{flex:1;min-width:0;min-height:38px;padding:4px 8px;font-size:16px}
 .rcard .chips{padding-bottom:4px}
 .rcard input.nm{margin-top:4px}
 .rcard input.nt{margin-top:6px}
@@ -259,9 +285,9 @@ h3.month{font-family:var(--serif);font-size:15px;color:var(--ink2);margin:16px 2
 <script>
 'use strict';
 /* ============================================================
-   なんでも図鑑 (my-field-guide) v1
+   なんでも図鑑 (my-field-guide) v1.2
    ============================================================ */
-const APP_VERSION = '1.1';
+const APP_VERSION = '1.2-1';
 const SCHEMA_VERSION = 1;
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -452,7 +478,13 @@ const io = new IntersectionObserver(list => {
     (full ? fullURL(full) : thumbURL(img.dataset.photo)).then(u => { if (u) img.src = u; });
   }
 }, {rootMargin:'400px 0px'});
-function hydrate(root){ $$('img[data-photo]:not([src]),img[data-full]:not([src])', root).forEach(i => io.observe(i)); }
+/** 読み込みずみの写真はその場で表示（めくったあとの描き直しでちらつかないように） */
+function hydrate(root){
+  $$('img[data-photo]:not([src]),img[data-full]:not([src])', root).forEach(i => {
+    const u = i.dataset.full ? fullCache.get(i.dataset.full) : thumbCache.get(i.dataset.photo);
+    if (u) i.src = u; else io.observe(i);
+  });
+}
 
 /* EXIF：撮影日時と位置だけを読む小さな処理 */
 async function readExif(file){
@@ -588,58 +620,227 @@ async function safeWrite(fn){
 
 /* ---------------- シート（重ねて開く画面） ---------------- */
 const sheets = [];
+const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* 後ろのページが動かないように、body を固定してスクロール位置を覚えておく */
+let lockedY = 0;
+function lockScroll(){
+  if (document.body.classList.contains('noscroll')) return;
+  lockedY = window.scrollY || 0;
+  document.body.style.top = `-${lockedY}px`;
+  document.body.classList.add('noscroll');
+}
+function unlockScroll(){
+  if (!document.body.classList.contains('noscroll')) return;
+  document.body.classList.remove('noscroll'); document.body.style.top = '';
+  window.scrollTo(0, lockedY);
+}
+/* 保険：画面が拡大されたままなら元に戻す（iPhone で効くかは実機で要確認。効かなくても害はない） */
+function resetZoom(){
+  const vv = window.visualViewport; if (!vv || vv.scale <= 1.01) return;
+  const a = document.activeElement; if (a && a.closest && a.closest('input,textarea,select')) return;
+  const m = document.querySelector('meta[name=viewport]'); if (!m) return;
+  const c = m.getAttribute('content');
+  m.setAttribute('content', c + ',maximum-scale=1');
+  requestAnimationFrame(() => setTimeout(() => m.setAttribute('content', c), 60));
+}
+
+/** 3つのボタンの確認。戻り値は 0／1／2（押したボタンの番号）。背景をタップすると 2（いちばん下＝続ける） */
+function ask3(msg, labels, sub){
+  return new Promise(res => {
+    const d = document.createElement('div'); d.className = 'ask';
+    d.innerHTML = `<div class="box" role="alertdialog"><div class="msg">${h(msg)}</div>${sub ? `<div class="sub">${h(sub)}</div>` : ''}
+      ${labels.map((l, i) => `<button class="btn ${i === 0 ? 'primary' : ''}" data-k="${i}">${h(l)}</button>`).join('')}</div>`;
+    document.body.appendChild(d);
+    d.addEventListener('click', ev => {
+      const b = ev.target.closest('[data-k]');
+      if (!b && ev.target !== d) return;
+      d.remove(); res(b ? +b.dataset.k : labels.length - 1);
+    });
+  });
+}
+
 function openSheet(opts){
+  resetZoom();
   const wrap = document.createElement('div'); wrap.className = 'sheet-wrap';
-  wrap.innerHTML = `<div class="sheet" role="dialog"><div class="sheet-head"><button class="back">‹ 戻る</button><div class="sheet-title"></div></div><div class="sheet-body"></div><div class="sheet-foot"></div></div>`;
+  wrap.innerHTML = `<div class="sheet" role="dialog"><div class="sheet-head"><button class="back">‹ 戻る</button><div class="sheet-title"></div></div><div class="sheet-stage"><div class="sheet-body"></div></div><div class="sheet-foot"></div></div>`;
+  if (reduceMotion()) wrap.style.animation = 'none';
   document.body.appendChild(wrap);
-  const sh = {wrap, opts, body:$('.sheet-body', wrap), foot:$('.sheet-foot', wrap), titleEl:$('.sheet-title', wrap)};
+  const sh = {wrap, opts, stage:$('.sheet-stage', wrap), body:$('.sheet-body', wrap), foot:$('.sheet-foot', wrap), titleEl:$('.sheet-title', wrap), preview:false};
   sh.titleEl.textContent = opts.title || '';
   sh.pager = opts.pager || null;
-  if (sh.pager) setupPager(sh);
   sh.refresh = toTop => {
     const st = toTop ? 0 : sh.body.scrollTop; sh.foot.innerHTML = '';
     opts.build(sh); hydrate(sh.body);
     sh.foot.style.display = sh.foot.childElementCount ? '' : 'none';
     sh.body.scrollTop = st;
   };
+  if (sh.pager) setupPager(sh);
   $('.back', wrap).onclick = () => closeSheet(sh);
-  wrap.addEventListener('click', e => { if (e.target === wrap) closeSheet(sh); });
-  sheets.push(sh); document.body.classList.add('noscroll');
-  sh.refresh(); return sh;
+  sheets.push(sh); lockScroll();
+  sh.refresh();
+  if (sh.pager) sh.pager.prefetch();
+  return sh;
 }
-/* ---------- ページめくり ---------- */
+
+/* ---------- ページめくり（指についてくる） ---------- */
+/**
+ * pager = {ids, cur, alive(id), photoOf(id)?, dirty()?, resolve(kind)?}
+ *  dirty()：編集途中で変更があるか。resolve('page')：3択を出して、めくってよければ true
+ */
 function setupPager(sh){
-  const p = sh.pager;
+  const p = sh.pager, stage = sh.stage;
   p.list = () => p.ids.filter(id => id === p.cur || p.alive(id));
+  p.neighbor = dir => { const L = p.list(), i = L.indexOf(p.cur), j = i + dir; return i >= 0 && j >= 0 && j < L.length ? L[j] : null; };
+  p.busy = false;
+
+  /** 隣のページを、見出しと下の帯には触らずに組み立てる（めくりの途中で下に敷くため） */
+  const buildPreview = id => {
+    const el = document.createElement('div'); el.className = 'sheet-body';
+    const keep = {body:sh.body, foot:sh.foot, titleEl:sh.titleEl, cur:p.cur};
+    sh.body = el; sh.foot = document.createElement('div'); sh.titleEl = document.createElement('div'); p.cur = id; sh.preview = true;
+    try { sh.opts.build(sh); }
+    finally { Object.assign(sh, {body:keep.body, foot:keep.foot, titleEl:keep.titleEl, preview:false}); p.cur = keep.cur; }
+    hydrate(el);
+    return el;
+  };
+  p.prefetch = () => {
+    if (!p.photoOf) return;
+    for (const d of [-1, 1]) { const n = p.neighbor(d); const pid = n && p.photoOf(n); if (pid) fullURL(pid); }
+  };
+
+  /* 1回のめくりの状態 */
+  let g = null;   // {dir, other, top, under, shade, W}
+  const W = () => stage.clientWidth || 360;
+  const clearStyles = el => { if (!el) return; el.style.transform = ''; el.style.boxShadow = ''; el.style.zIndex = ''; el.classList.remove('moving'); };
+  const begin = dir => {
+    const id = p.neighbor(dir); if (!id) return null;
+    const other = buildPreview(id);
+    const shade = document.createElement('div'); shade.className = 'sheet-shade';
+    // 次へ：今のページが上で左へ抜ける／前へ：前のページが左から上にかぶさる
+    const top = dir > 0 ? sh.body : other, under = dir > 0 ? other : sh.body;
+    top.style.zIndex = 2; under.style.zIndex = 0; top.classList.add('moving'); under.classList.add('moving');
+    if (dir > 0) stage.appendChild(other); else stage.appendChild(other);
+    stage.appendChild(shade);
+    g = {dir, id, other, top, under, shade, W:W()};
+    apply(0);
+    return g;
+  };
+  /** t：めくれた割合 0〜1 */
+  const apply = t => {
+    const {dir, top, under, shade, W:w} = g;
+    const tilt = 2;
+    if (dir > 0) {
+      top.style.transform = `translateX(${-t * w}px) rotate(${-tilt * t}deg)`;
+      under.style.transform = `translateX(${(1 - t) * 0.2 * w}px)`;
+    } else {
+      top.style.transform = `translateX(${-(1 - t) * w}px) rotate(${-tilt * (1 - t)}deg)`;
+      under.style.transform = `translateX(${t * 0.2 * w}px)`;
+    }
+    top.style.boxShadow = `14px 0 26px -8px rgba(40,25,10,${0.38 * (dir > 0 ? Math.min(1, t * 4) : Math.min(1, (1 - t) * 4) )})`;
+    shade.style.opacity = String(0.15 * (dir > 0 ? 1 - t : t));
+  };
+  const finish = () => {
+    const {other, shade, id} = g;
+    const old = sh.body;
+    clearStyles(other); shade.remove(); old.remove();
+    sh.body = other; p.cur = id; g = null;
+    sh.refresh(true);
+    p.prefetch();
+  };
+  const cancel = () => { const {other, shade} = g; other.remove(); shade.remove(); clearStyles(sh.body); g = null; };
+  const tween = (from, to, ms, step) => new Promise(res => {
+    if (reduceMotion() || ms <= 0) { step(to); return res(); }
+    const t0 = performance.now();
+    const f = now => {
+      const k = Math.min(1, (now - t0) / ms), e = 1 - Math.pow(1 - k, 3);
+      step(from + (to - from) * e);
+      if (k < 1) requestAnimationFrame(f); else res();
+    };
+    requestAnimationFrame(f);
+  });
+  /** 端や編集途中で、指の動きの3割だけ付いてきて戻る */
+  const resist = dx => { sh.body.style.transform = `translateX(${dx * 0.3}px)`; };
+  const resistBack = async dx => { await tween(dx, 0, 160, v => resist(v)); sh.body.style.transform = ''; };
+
+  /** ボタン・キー・3択のあとのめくり */
   p.move = async dir => {
-    if (p.busy) return;
-    const L = p.list(), i = L.indexOf(p.cur), j = i + dir;
-    if (i < 0 || j < 0 || j >= L.length) return;
+    if (p.busy || g) return;
+    if (!p.neighbor(dir)) return;
     p.busy = true;
     try {
-      if (p.before && !(await p.before())) return;
-      p.cur = L[j];
-      sh.refresh(true);
-      if (sh.body.animate) sh.body.animate([{transform:`translateX(${dir * 28}px)`, opacity:.35}, {transform:'none', opacity:1}], {duration:160, easing:'ease-out'});
+      if (p.dirty && p.dirty()) { if (!(await p.resolve('page'))) return; }
+      if (!p.neighbor(dir)) return;
+      begin(dir);
+      await tween(0, 1, 220, apply);
+      finish();
     } finally { p.busy = false; }
   };
+
   sh.foot.addEventListener('click', ev => { const b = ev.target.closest('[data-pg]'); if (b && !b.disabled) p.move(+b.dataset.pg); });
-  const body = sh.body; let t0 = null;
-  body.addEventListener('touchstart', ev => {
-    if (ev.touches.length !== 1 || swipeBlocked(ev.target, body)) { t0 = null; return; }
-    t0 = {x:ev.touches[0].clientX, y:ev.touches[0].clientY};
+
+  /* ---- 指の操作 ---- */
+  let t0 = null;   // {x, y, axis, dx, samples, mode}
+  stage.addEventListener('touchstart', ev => {
+    if (p.busy || g || ev.touches.length !== 1 || swipeBlocked(ev.target, sh.body)) { t0 = null; return; }
+    const t = ev.touches[0];
+    t0 = {x:t.clientX, y:t.clientY, axis:null, dx:0, samples:[{t:ev.timeStamp, x:t.clientX}], mode:null};
   }, {passive:true});
-  body.addEventListener('touchmove', ev => { if (ev.touches.length > 1) t0 = null; }, {passive:true});
-  body.addEventListener('touchcancel', () => { t0 = null; }, {passive:true});
-  body.addEventListener('touchend', ev => {
+  stage.addEventListener('touchmove', ev => {
     if (!t0) return;
-    const t = ev.changedTouches[0], dx = t.clientX - t0.x, dy = t.clientY - t0.y; t0 = null;
-    if (Math.abs(dx) >= 60 && Math.abs(dx) >= 2 * Math.abs(dy)) p.move(dx < 0 ? 1 : -1);
+    if (ev.touches.length > 1) { abortDrag(); return; }
+    const t = ev.touches[0], dx = t.clientX - t0.x, dy = t.clientY - t0.y;
+    if (!t0.axis) {
+      if (Math.hypot(dx, dy) < 10) return;
+      t0.axis = Math.abs(dx) > Math.abs(dy) * 1.3 ? 'x' : 'y';
+      if (t0.axis === 'y') { t0 = null; return; }   // 縦スクロールに任せる
+    }
+    if (ev.cancelable) ev.preventDefault();
+    t0.dx = dx;
+    t0.samples.push({t:ev.timeStamp, x:t.clientX}); if (t0.samples.length > 6) t0.samples.shift();
+    const dir = dx < 0 ? 1 : -1;
+    if (!t0.mode || (t0.mode === 'turn' && g && g.dir !== dir) || (t0.mode === 'resist' && t0.rdir !== dir)) {
+      if (g) cancel();
+      sh.body.style.transform = '';
+      const can = p.neighbor(dir) && !(p.dirty && p.dirty());
+      if (can) { begin(dir); t0.mode = 'turn'; }
+      else { t0.mode = 'resist'; t0.rdir = dir; }
+    }
+    if (t0.mode === 'turn') apply(Math.min(1, Math.abs(dx) / g.W));
+    else resist(dx);
+  }, {passive:false});
+  const abortDrag = () => {
+    if (!t0) return;
+    const was = t0; t0 = null;
+    if (was.mode === 'turn' && g) { const from = Math.abs(was.dx) / g.W; p.busy = true; tween(from, 0, 160, apply).then(() => { cancel(); p.busy = false; }); }
+    else if (was.mode === 'resist') resistBack(was.dx);
+  };
+  stage.addEventListener('touchcancel', abortDrag, {passive:true});
+  stage.addEventListener('touchend', async ev => {
+    if (!t0 || !t0.axis) { t0 = null; return; }
+    const was = t0; t0 = null;
+    const s = was.samples, a = s[0], b = s[s.length - 1];
+    const v = (b.x - a.x) / Math.max(1, b.t - a.t);   // px/ms（左がマイナス）
+    const dir = was.dx < 0 ? 1 : -1;
+    const fling = Math.abs(v) >= 0.5 && Math.sign(v) === -dir;
+    if (was.mode === 'resist') {
+      await resistBack(was.dx);
+      // 編集途中で引いたときは、離したあとに3択
+      if (p.neighbor(dir) && p.dirty && p.dirty() && (Math.abs(was.dx) >= 40 || fling)) p.move(dir);
+      return;
+    }
+    if (!g) return;
+    const w = g.W, from = Math.min(1, Math.abs(was.dx) / w);
+    p.busy = true;
+    try {
+      if (from >= 0.25 || fling) { await tween(from, 1, Math.max(80, 200 * (1 - from)), apply); finish(); }
+      else { await tween(from, 0, Math.max(80, 200 * from), apply); cancel(); }
+    } finally { p.busy = false; }
   });
 }
 /** 入力欄・横スクロールする部品・候補リストの上から始めたスワイプはめくりにしない */
 function swipeBlocked(el, root){
-  if (el.closest && el.closest('input,textarea,select,.suggest,.chips')) return true;
+  if (el.closest && el.closest('input,textarea,select,.suggest,.chips,.noswipe')) return true;
   for (let n = el; n && n !== root; n = n.parentElement) {
     if (n.scrollWidth > n.clientWidth + 2) { const ox = getComputedStyle(n).overflowX; if (ox === 'auto' || ox === 'scroll') return true; }
   }
@@ -660,8 +861,9 @@ function pagerPos(sh){
 }
 document.addEventListener('keydown', ev => {
   if (ev.key !== 'ArrowLeft' && ev.key !== 'ArrowRight') return;
+  if (document.querySelector('.reveal,.ask,.viewer')) return;
   const top = sheets[sheets.length - 1];
-  if (!top || !top.pager || document.querySelector('.reveal')) return;
+  if (!top || !top.pager) return;
   const a = document.activeElement;
   if (a && a.closest && a.closest('input,textarea,select,[contenteditable]')) return;
   ev.preventDefault(); top.pager.move(ev.key === 'ArrowRight' ? 1 : -1);
@@ -670,14 +872,26 @@ const entryAlive = id => { const e = S.entries.get(id); return !!(e && !e.delete
 const speciesAlive = id => { const s = S.species.get(id); return !!(s && !s.deleted); };
 const allSpeciesByNo = () => live(S.species).sort((a, b) => a.no - b.no).map(s => s.id);
 
-function closeSheet(sh, force){
-  if (!force && sh.opts.beforeClose && sh.opts.beforeClose() === false) return;
+/** beforeClose は true/false か、その Promise を返す */
+async function closeSheet(sh, force){
+  if (sh.closing) return;
+  if (!force && sh.opts.beforeClose) {
+    sh.closing = true;
+    let ok;
+    try { ok = await sh.opts.beforeClose(); } finally { sh.closing = false; }
+    if (ok === false) return;
+  }
   const i = sheets.indexOf(sh); if (i < 0) return;
-  sheets.splice(i, 1); sh.wrap.remove(); sh.opts.onClose && sh.opts.onClose();
-  if (!sheets.length) document.body.classList.remove('noscroll');
+  sh.closing = true;
+  sheets.splice(i, 1);
+  if (reduceMotion()) sh.wrap.remove();
+  else { sh.wrap.classList.add('out'); setTimeout(() => sh.wrap.remove(), 200); }
+  sh.opts.onClose && sh.opts.onClose();
   const top = sheets[sheets.length - 1];
   if (top && !top.opts.form) top.refresh();
   render();
+  if (!sheets.length) unlockScroll();
+  resetZoom();
 }
 
 /* ================= 画面：メイン ================= */
@@ -1040,15 +1254,167 @@ function galleryHTML(ids){
     + (many ? `<button class="ga prev" data-ga="-1" aria-label="前の写真" hidden>‹</button><button class="ga next" data-ga="1" aria-label="次の写真">›</button>
       <div class="dots">${ids.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>` : '') + `</div>`;
 }
-document.addEventListener('click', async ev => {
-  const b = ev.target.closest('.gal [data-ga]'); if (!b) return;
-  ev.stopPropagation();
-  const g = b.closest('.gal'), ids = g.dataset.ids.split(','), i = Math.max(0, Math.min(ids.length - 1, +g.dataset.i + (+b.dataset.ga)));
+/* ---------------- 写真の拡大ビューア ---------------- */
+/**
+ * ids：写真の並び、i0：最初に見せる番号、onIndex(i)：閉じたときに最後に見ていた番号を返す
+ * 写真は <img> のまま transform で動かす（長押しの「調べる」「コピー」を残すため）
+ */
+function openViewer(ids, i0, onIndex){
+  if (document.querySelector('.viewer')) return;
+  let i = Math.max(0, Math.min(ids.length - 1, i0 || 0));
+  const v = document.createElement('div'); v.className = 'viewer';
+  v.innerHTML = `<img alt=""><div class="vc"></div><button class="vx" aria-label="閉じる">✕</button>`;
+  document.body.appendChild(v);
+  const img = $('img', v), vc = $('.vc', v);
+  let s = 1, tx = 0, ty = 0;   // 拡大率と、ずらす量（px）
+  let closed = false;
+
+  const draw = (anim) => {
+    img.style.transition = anim ? 'transform .2s ease-out' : 'none';
+    img.style.transform = `translate(${tx}px,${ty}px) scale(${s})`;
+  };
+  /** 写真の端より外へは行かない */
+  const clamp = () => {
+    const w = img.offsetWidth * s, hh = img.offsetHeight * s, W = v.clientWidth, H = v.clientHeight;
+    const mx = Math.max(0, (w - W) / 2), my = Math.max(0, (hh - H) / 2);
+    tx = Math.max(-mx, Math.min(mx, tx)); ty = Math.max(-my, Math.min(my, ty));
+  };
+  /** 画面の点 (px,py) を動かさずに拡大率を ns にする */
+  const zoomAt = (ns, px, py, base) => {
+    const b = base || {s, tx, ty};
+    const cx = v.clientWidth / 2, cy = v.clientHeight / 2;
+    const qx = (px - cx - b.tx) / b.s, qy = (py - cy - b.ty) / b.s;
+    s = Math.max(1, Math.min(4, ns));
+    tx = px - cx - s * qx; ty = py - cy - s * qy;
+    if (s <= 1.001) { s = 1; tx = 0; ty = 0; }
+    clamp();
+  };
+  const show = async () => {
+    vc.textContent = ids.length > 1 ? `${i + 1} / ${ids.length}` : '';
+    s = 1; tx = 0; ty = 0; draw(false);
+    const want = i, u = await fullURL(ids[i]);
+    if (!closed && want === i && u) img.src = u;
+    for (const d of [-1, 1]) if (ids[i + d]) fullURL(ids[i + d]);   // 前後を先に読む
+  };
+  const go = async d => {
+    const j = i + d; if (j < 0 || j >= ids.length) { tx = 0; draw(true); return; }
+    const W = v.clientWidth;
+    tx = -d * W; draw(true);
+    await new Promise(r => setTimeout(r, reduceMotion() ? 0 : 170));
+    i = j; img.removeAttribute('src');
+    await show();
+    tx = d * W * 0.4; draw(false);
+    requestAnimationFrame(() => { tx = 0; draw(true); });
+  };
+  const close = () => {
+    if (closed) return; closed = true;
+    v.remove(); document.removeEventListener('keydown', onKey, true);
+    window.removeEventListener('mousemove', mm); window.removeEventListener('mouseup', mu);
+    onIndex && onIndex(i);
+  };
+  const onKey = ev => {
+    if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); close(); }
+    else if (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight') { ev.preventDefault(); ev.stopPropagation(); if (s === 1) go(ev.key === 'ArrowRight' ? 1 : -1); }
+  };
+  document.addEventListener('keydown', onKey, true);
+  $('.vx', v).addEventListener('click', ev => { ev.stopPropagation(); close(); });
+  v.addEventListener('click', ev => ev.stopPropagation());
+  v.addEventListener('wheel', ev => {
+    ev.preventDefault();
+    zoomAt(s * Math.exp(-ev.deltaY * 0.0025), ev.clientX, ev.clientY); draw(false);
+  }, {passive:false});
+  v.addEventListener('dblclick', ev => {   // PC 用（タッチは下で自前に判定）
+    if (performance.now() - lastTouch < 800) return;   // タッチから来た dblclick は無視
+    if (s > 1) { s = 1; tx = 0; ty = 0; } else zoomAt(2.5, ev.clientX, ev.clientY);
+    draw(true);
+  });
+  /* PC：拡大中はマウスでドラッグして動かす */
+  let md = null;
+  v.addEventListener('mousedown', ev => { if (s > 1 && ev.target === img) { md = {x:ev.clientX, y:ev.clientY, tx, ty}; ev.preventDefault(); } });
+  const mm = ev => { if (!md || closed) return; tx = md.tx + ev.clientX - md.x; ty = md.ty + ev.clientY - md.y; clamp(); draw(false); };
+  const mu = () => { md = null; };
+  window.addEventListener('mousemove', mm); window.addEventListener('mouseup', mu);
+
+  /* タッチ。touch-action:none なので preventDefault はしない（長押しメニューを残すため） */
+  let t = null, lastTap = null, lastTouch = -1e9;
+  const mid = ts => ({x:(ts[0].clientX + ts[1].clientX) / 2, y:(ts[0].clientY + ts[1].clientY) / 2});
+  const dist = ts => Math.hypot(ts[0].clientX - ts[1].clientX, ts[0].clientY - ts[1].clientY);
+  v.addEventListener('touchstart', ev => {
+    lastTouch = performance.now();
+    if (ev.target.closest('.vx')) return;
+    const ts = ev.touches;
+    if (ts.length >= 2) {
+      const m = mid(ts);
+      t = {pinch:true, d0:dist(ts), m0:m, base:{s, tx, ty}, moved:true};
+    } else {
+      t = {pinch:false, x0:ts[0].clientX, y0:ts[0].clientY, base:{s, tx, ty}, moved:false, t0:ev.timeStamp, axis:null};
+    }
+  }, {passive:true});
+  v.addEventListener('touchmove', ev => {
+    if (!t) return;
+    const ts = ev.touches;
+    if (t.pinch && ts.length >= 2) {
+      const m = mid(ts), r = dist(ts) / t.d0;
+      // 指の間の点を固定したまま拡大し、指の中点の移動ぶんずらす
+      zoomAt(t.base.s * r, t.m0.x, t.m0.y, t.base);
+      tx += m.x - t.m0.x; ty += m.y - t.m0.y;
+      if (s === 1) { tx = 0; ty = 0; } else clamp();
+      draw(false); return;
+    }
+    if (t.pinch) return;
+    const dx = ts[0].clientX - t.x0, dy = ts[0].clientY - t.y0;
+    if (!t.moved && Math.hypot(dx, dy) > 8) t.moved = true;
+    if (!t.moved) return;
+    if (t.base.s > 1) { tx = t.base.tx + dx; ty = t.base.ty + dy; clamp(); draw(false); return; }
+    // 元の大きさ：横＝前後の写真、下＝閉じる
+    if (!t.axis) t.axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+    if (t.axis === 'x') { const edge = (dx > 0 && i === 0) || (dx < 0 && i === ids.length - 1); tx = edge ? dx * 0.3 : dx; ty = 0; draw(false); }
+    else { ty = Math.max(0, dy); tx = 0; v.style.background = `rgba(0,0,0,${Math.max(0.3, 1 - ty / 400)})`; draw(false); }
+  }, {passive:true});
+  v.addEventListener('touchend', ev => {
+    if (!t) return;
+    if (ev.touches.length) {   // 2本指の片方が離れた：残った指で動かし続ける
+      if (t.pinch) { const ts = ev.touches; t = {pinch:false, x0:ts[0].clientX, y0:ts[0].clientY, base:{s, tx, ty}, moved:true, t0:ev.timeStamp, axis:null}; }
+      return;
+    }
+    const was = t; t = null;
+    if (was.pinch) return;
+    if (!was.moved) {
+      // 2回タップ：タップした位置を中心に 2.5 倍 ⇄ 元の大きさ
+      const c = ev.changedTouches[0], now = ev.timeStamp;
+      if (lastTap && now - lastTap.t < 320 && Math.hypot(c.clientX - lastTap.x, c.clientY - lastTap.y) < 30) {
+        lastTap = null;
+        if (s > 1) { s = 1; tx = 0; ty = 0; } else zoomAt(2.5, c.clientX, c.clientY);
+        draw(true);
+      } else lastTap = {t:now, x:c.clientX, y:c.clientY};
+      return;
+    }
+    if (was.base.s > 1) return;
+    if (was.axis === 'x') {
+      if (Math.abs(tx) > 60) go(tx < 0 ? 1 : -1); else { tx = 0; draw(true); }
+    } else if (was.axis === 'y') {
+      if (ty > 100) close(); else { ty = 0; v.style.background = ''; draw(true); }
+    }
+  });
+  v.addEventListener('touchcancel', () => { t = null; if (s === 1) { tx = 0; ty = 0; v.style.background = ''; draw(true); } });
+  show();
+}
+/** 写真の切り替え部品を i 枚目にする */
+async function setGal(g, i){
+  const ids = g.dataset.ids.split(',');
+  i = Math.max(0, Math.min(ids.length - 1, i));
   g.dataset.i = i;
-  $('.prev', g).hidden = i === 0; $('.next', g).hidden = i === ids.length - 1;
+  const pv = $('.prev', g), nx = $('.next', g);
+  if (pv) pv.hidden = i === 0; if (nx) nx.hidden = i === ids.length - 1;
   $$('.dots i', g).forEach((d, k) => d.classList.toggle('on', k === i));
   const img = $('img', g); img.dataset.full = ids[i];
   const u = await fullURL(ids[i]); if (u && g.dataset.i == i) img.src = u;
+}
+document.addEventListener('click', ev => {
+  const b = ev.target.closest('.gal [data-ga]');
+  if (b) { ev.stopPropagation(); const g = b.closest('.gal'); setGal(g, +g.dataset.i + (+b.dataset.ga)); return; }
+  const im = ev.target.closest('.gal img');
+  if (im) { const g = im.closest('.gal'); openViewer(g.dataset.ids.split(','), +g.dataset.i, i => { if (g.isConnected) setGal(g, i); }); }
 }, true);
 function entryState(id){
   const e = S.entries.get(id), sp = e.speciesId && S.species.get(e.speciesId);
@@ -1075,16 +1441,30 @@ async function saveEntryState(id, st){
 function openEntry(id0, list){
   const e0 = S.entries.get(id0); if (!e0 || e0.deleted) return;
   const ed = {id:null, st:null, orig:''};
+  const dirty = () => !!(ed.st && JSON.stringify(ed.st) !== ed.orig);
+  /** 変更があるときの3択。kind：'page'（めくる）／'back'（戻る）。進んでよければ true */
+  const resolve = async kind => {
+    const verb = kind === 'page' ? 'めくる' : '戻る';
+    const k = await ask3('変更があります', [`保存して${verb}`, `保存しないで${verb}`, '編集を続ける']);
+    if (k === 2) return false;
+    if (k === 1) { ed.st = null; return true; }
+    const ok = await saveEntryState(ed.id, ed.st);
+    if (ok) { ed.st = null; pinToast('保存しました'); }
+    return ok;
+  };
   const pager = {ids: list && list.includes(id0) ? list : [id0], cur:id0, alive:entryAlive,
-    async before(){
-      if (!ed.st || JSON.stringify(ed.st) === ed.orig) return true;
-      if (!confirm('変更を保存してめくりますか？')) return false;
-      return saveEntryState(ed.id, ed.st);
-    }};
-  openSheet({title:'出会いの記録', form:true, pager, build(sh){
+    photoOf: id => { const e = S.entries.get(id); return e && e.photoIds[0]; }, dirty, resolve};
+  openSheet({title:'出会いの記録', form:true, pager,
+    beforeClose: () => dirty() ? resolve('back') : true,
+    build(sh){
     const id = sh.pager.cur, e = S.entries.get(id);
-    if (ed.id !== id) { ed.id = id; ed.st = entryState(id); ed.orig = JSON.stringify(ed.st); }
-    const st = ed.st;
+    let st;
+    if (sh.preview) st = entryState(id);   // めくりの途中で下に敷くページ（編集の状態には触らない）
+    else {
+      if (ed.id !== id || !ed.st) { ed.id = id; ed.st = entryState(id); ed.orig = JSON.stringify(ed.st); }
+      st = ed.st;
+    }
+    const body = sh.body;
     sh.titleEl.innerHTML = '出会いの記録' + pagerPos(sh);
     sh.body.innerHTML = `${galleryHTML(e.photoIds)}
       <label class="fl">名前</label><div class="sg-wrap"><input id="f-name" value="${h(st.name)}" placeholder="わからなければ空欄（なぞ）" autocomplete="off"></div>
@@ -1098,7 +1478,7 @@ function openEntry(id0, list){
       <p class="hint">元の写真：${e.photoIds.length}枚 <span id="f-orig"></span></p>
       ${e.speciesId ? `<button class="btn block" id="f-sp" style="margin:8px 0">📖 種のページを見る</button>` : ''}
       <button class="btn danger block" id="f-del" style="margin-top:18px">この出会いを削除</button>`;
-    Promise.all(e.photoIds.map(p => Store.get('photos', p))).then(ps => { const o = $('#f-orig', sh.body); if (o && sh.pager.cur === id) o.textContent = ps.filter(Boolean).map(p => p.originalName).join('、'); });
+    Promise.all(e.photoIds.map(p => Store.get('photos', p))).then(ps => { const o = $('#f-orig', body); if (o) o.textContent = ps.filter(Boolean).map(p => p.originalName).join('、'); });
     const nm = $('#f-name', sh.body);
     nm.addEventListener('input', () => {
       st.name = nm.value;
@@ -1136,7 +1516,22 @@ async function deleteEntry(id){
 function openInvestigate(id){
   const e0 = S.entries.get(id);
   const st = {name:'', confidence:'sure', candidates:(e0.candidates || []).join('\n'), note:e0.note || '', genreId:e0.genreId};
-  openSheet({title:'調べる', form:true, build(sh){
+  const memoOf = () => JSON.stringify([st.candidates, st.note, st.genreId]);
+  const orig = memoOf();
+  let saveMemoNow = null;   // build の中で用意する
+  openSheet({title:'調べる', form:true,
+    beforeClose: async () => {
+      const named = !!st.name.trim();
+      if (memoOf() === orig && !named) return true;
+      const k = await ask3('変更があります', ['保存して戻る', '保存しないで戻る', '編集を続ける'],
+        named ? '「保存」はメモだけです（名前はまだ判明にしません）' : '');
+      if (k === 2) return false;
+      if (k === 1) return true;
+      const ok = await saveMemoNow();
+      if (ok) pinToast('メモを保存しました');
+      return ok;
+    },
+    build(sh){
     const e = S.entries.get(id);
     sh.body.innerHTML = `${galleryHTML(e.photoIds)}
       <div class="hint">${fmtDT(e.takenAt)}${e.place ? '・' + h(e.place) : ''}</div>
@@ -1161,7 +1556,8 @@ function openInvestigate(id){
     };
     $('#i-more', sh.body).onclick = async () => { const e2 = await saveMemo(); await safeWrite(() => Store.put('entries', e2)); closeSheet(sh, true); openEntry(id); };
     sh.foot.innerHTML = `<button class="btn" id="i-keep">メモだけ保存</button><button class="btn primary" id="i-go" disabled>判明！</button>`;
-    $('#i-keep', sh.foot).onclick = async () => { const e2 = await saveMemo(); if (await safeWrite(() => Store.put('entries', e2))) { closeSheet(sh, true); pinToast('メモを保存しました'); } };
+    saveMemoNow = async () => { const e2 = await saveMemo(); return safeWrite(() => Store.put('entries', e2)); };
+    $('#i-keep', sh.foot).onclick = async () => { if (await saveMemoNow()) { closeSheet(sh, true); pinToast('メモを保存しました'); } };
     $('#i-go', sh.foot).onclick = async () => {
       if (!st.name.trim()) return;
       const before = buildIndex();
@@ -1197,7 +1593,8 @@ function reveal(sp, first){
 /** list：めくる順番。なければ全種の図鑑番号順 */
 function openSpecies(id0, list){
   const ids = list && list.includes(id0) ? list : allSpeciesByNo();
-  openSheet({title:'種のページ', pager:{ids: ids.includes(id0) ? ids : [id0], cur:id0, alive:speciesAlive}, build(sh){
+  openSheet({title:'種のページ', pager:{ids: ids.includes(id0) ? ids : [id0], cur:id0, alive:speciesAlive,
+    photoOf: id => { const sp = S.species.get(id); return sp && coverPhotoOf(sp, buildIndex().get(id)); }}, build(sh){
     const id = sh.pager.cur;
     const sp = S.species.get(id);
     if (!sp || sp.deleted) { sh.body.innerHTML = `<div class="empty">このページはほかの種に統合されたか、削除されました。</div>`; return; }
@@ -1252,7 +1649,17 @@ function openSpecies(id0, list){
 function openSpeciesEdit(id){
   const sp = S.species.get(id);
   const st = {name:sp.name, genreId:sp.genreId, group:sp.group || '', summary:sp.summary || '', sourceTitle:sp.sourceTitle || '', sourceUrl:sp.sourceUrl || '', myMemo:sp.myMemo || ''};
-  openSheet({title:'種のページを編集', form:true, build(sh){
+  const orig = JSON.stringify(st);
+  let save = null;
+  openSheet({title:'種のページを編集', form:true,
+    beforeClose: async () => {
+      if (JSON.stringify(st) === orig) return true;
+      const k = await ask3('変更があります', ['保存して戻る', '保存しないで戻る', '編集を続ける']);
+      if (k === 2) return false;
+      if (k === 1) return true;
+      return save();
+    },
+    build(sh){
     sh.body.innerHTML = `<label class="fl">名前</label><input id="e-name" value="${h(st.name)}">
       <label class="fl">ジャンル</label><div class="chips wrap" id="e-genre">${genreChips(st.genreId, true)}</div>
       <label class="fl">仲間分け（科など）</label><input id="e-group" value="${h(st.group)}" placeholder="例：シジュウカラ科">
@@ -1264,10 +1671,11 @@ function openSpeciesEdit(id){
     const map = {'e-name':'name','e-group':'group','e-summary':'summary','e-stitle':'sourceTitle','e-surl':'sourceUrl','e-memo':'myMemo'};
     for (const [k, f] of Object.entries(map)) $('#' + k, sh.body).oninput = ev => st[f] = ev.target.value;
     sh.foot.innerHTML = `<button class="btn primary">保存</button>`;
-    sh.foot.firstChild.onclick = async () => {
-      const name = st.name.trim(); if (!name) return alert('名前を入れてください');
+    /** 保存できたら true */
+    save = async () => {
+      const name = st.name.trim(); if (!name) { alert('名前を入れてください'); return false; }
       const dup = findSpeciesByName(name);
-      if (dup && dup.id !== id) return alert(`「${dup.name}」(No.${dup.no}) がすでにあります。同じものなら「別の種と統合」を使ってください。`);
+      if (dup && dup.id !== id) { alert(`「${dup.name}」(No.${dup.no}) がすでにあります。同じものなら「別の種と統合」を使ってください。`); return false; }
       const ops = [];
       const oldG = sp.genreId;
       if (st.genreId !== oldG) {
@@ -1276,8 +1684,10 @@ function openSpeciesEdit(id){
       if (st.summary.trim() !== (sp.summary || '').trim() && !st.sourceUrl) sp.fetchedAt = null;
       Object.assign(sp, {name, genreId:st.genreId, group:st.group.trim(), summary:st.summary.trim(), sourceTitle:st.sourceTitle.trim(), sourceUrl:st.sourceUrl.trim(), myMemo:st.myMemo.trim()});
       ops.push({store:'species', rec:sp});
-      if (await safeWrite(() => Store.putMany(ops))) closeSheet(sh, true); else await loadAll();
+      if (await safeWrite(() => Store.putMany(ops))) return true;
+      await loadAll(); return false;
     };
+    sh.foot.firstChild.onclick = async () => { if (await save()) closeSheet(sh, true); };
   }});
 }
 function openCoverPick(id){
@@ -1570,7 +1980,7 @@ async function init(){
   } catch(e) {}
   $$('nav.tabs [data-tab]').forEach(b => b.onclick = () => {
     if (S.tab === b.dataset.tab) window.scrollTo({top:0, behavior:'smooth'});
-    S.tab = b.dataset.tab; render(); });
+    S.tab = b.dataset.tab; render(); resetZoom(); });
   $('#plusBtn').onclick = () => { R && (R.addMode = false); $('#fileIn').click(); };
   $('#fileIn').onchange = ev => {
     const fs = [...ev.target.files]; ev.target.value = '';
