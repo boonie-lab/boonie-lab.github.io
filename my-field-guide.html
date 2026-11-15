@@ -117,10 +117,36 @@ h3.month{font-family:var(--serif);font-size:15px;color:var(--ink2);margin:16px 2
 .more-photos{font-size:11px;color:var(--ink2)}
 
 /* zukan */
-.tally{font-family:var(--serif);font-size:15px;margin:2px 2px 8px}
-.zctrl{display:flex;gap:8px;margin-bottom:10px}
+.chips.sticky{position:sticky;top:var(--st);z-index:6;background:var(--paper);margin:0 -12px;padding:6px 12px 8px}
+.lgsel{font-family:var(--serif);font-weight:700;font-size:16px;color:var(--gc)}
+.zctrl{display:flex;gap:8px;margin-bottom:8px}
 .zctrl input{flex:1}
-.zctrl select{width:auto;flex:0 0 auto}
+.zband{position:sticky;top:var(--st);z-index:6;display:flex;align-items:center;gap:8px;margin:0 -12px 10px;padding:4px 12px 4px 4px;
+  background:var(--paper2);border-bottom:3px solid var(--gc);box-shadow:0 2px 6px rgba(60,40,20,.08)}
+.zband #zback{background:none;border:0;min-height:44px;min-width:76px;color:var(--accent);font-size:15px;text-align:left;padding:0 8px;flex:0 0 auto}
+.zband .bn{font-family:var(--serif);font-weight:700;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.zband .bs{font-size:12px;color:var(--ink2);margin-left:auto;white-space:nowrap}
+.zsort{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.zsort select{width:auto;flex:0 0 auto;min-height:40px;padding:6px 10px}
+.zsort .chip{min-height:40px}
+.chip.toggle2.on{background:var(--ink);color:var(--paper2);border-color:var(--ink)}
+h3.zsec{font-family:var(--serif);font-size:16px;margin:18px 2px 8px;padding:2px 8px;border-left:6px solid var(--gc);color:var(--ink)}
+h3.zsec:first-child{margin-top:4px}
+h4.nzh{font-family:var(--serif);font-size:14px;color:var(--ink2);margin:14px 2px 6px;letter-spacing:.05em}
+.toc{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+.toc .ch{display:flex;flex-direction:column;padding:0;text-align:left;background:var(--paper2);border:1px solid var(--line);
+  border-top:7px solid var(--gc);border-radius:4px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.06);min-height:44px}
+.toc .ch.wide{grid-column:1 / -1;flex-direction:row}
+.toc .ch.empty{opacity:.45}
+.toc .cv{aspect-ratio:4/3;background:var(--paper3);display:flex;align-items:center;justify-content:center;font-size:40px;overflow:hidden}
+.toc .ch.wide .cv{width:44%;flex:0 0 44%}
+.toc .cv img{width:100%;height:100%;object-fit:cover;display:block}
+.toc .ct{padding:7px 9px 9px}
+.toc .ch.wide .ct{align-self:center;padding:10px 14px}
+.toc .cn{font-family:var(--serif);font-weight:700;font-size:16px}
+.toc .ch.wide .cn{font-size:20px}
+.toc .cs{font-size:12px;color:var(--ink2)}
+.toc .cz{font-size:12px;color:var(--red);margin-top:1px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .scard{background:var(--paper2);border:1px solid var(--line);border-top:6px solid var(--gc,#bbb);border-radius:4px;padding:0;
   text-align:left;box-shadow:0 1px 2px rgba(0,0,0,.06);content-visibility:auto;contain-intrinsic-size:auto 230px}
@@ -133,11 +159,20 @@ h3.month{font-family:var(--serif);font-size:15px;color:var(--ink2);margin:16px 2
 
 /* nazo */
 .ngrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
-.ncard{position:relative;border:0;padding:0;background:var(--paper3);border-radius:4px;overflow:hidden;border-bottom:5px solid var(--gc,#bbb)}
+.ncard{position:relative;border:0;padding:0;background:var(--paper3);border-radius:4px;overflow:hidden;border-bottom:5px solid var(--gc,#bbb);
+  container-type:inline-size;content-visibility:auto;contain-intrinsic-size:auto 120px}
 .ncard img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block}
-.ncard .q{position:absolute;top:4px;left:6px;font-family:var(--serif);font-weight:700;font-size:20px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6)}
-.ncard .d{position:absolute;bottom:0;left:0;right:0;font-size:11px;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.55));padding:8px 5px 2px;text-align:left}
-.ncard .c{position:absolute;top:4px;right:5px;font-size:11px;background:rgba(255,255,255,.85);border-radius:4px;padding:0 4px}
+/* 虫眼鏡：紙の色の膜に丸い穴（ぼかしは使わない。重くなるため） */
+.lensable .lens{position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(circle 38cqw at var(--fx,50%) var(--fy,50%),transparent 0,transparent calc(38cqw - 1px),rgba(244,238,224,.72) 38cqw)}
+.lensable .ring{position:absolute;left:var(--fx,50%);top:var(--fy,50%);width:76cqw;height:76cqw;transform:translate(-50%,-50%);pointer-events:none;
+  border:max(3px,3.5cqw) solid rgba(58,40,24,.88);border-radius:50%;box-shadow:inset 0 0 0 1px rgba(255,255,255,.55),0 1px 3px rgba(0,0,0,.3)}
+.lensable .ring::after{content:'';position:absolute;left:50%;top:50%;width:9cqw;height:30cqw;margin-left:-4.5cqw;border-radius:4.5cqw;
+  background:linear-gradient(90deg,#4a3220,#80593a);transform-origin:50% 0;transform:rotate(-45deg) translateY(40cqw)}
+.ncard .nno{position:absolute;top:3px;left:6px;font-family:var(--serif);font-weight:700;font-size:12px;color:var(--ink);letter-spacing:.04em}
+.ncard .d{position:absolute;bottom:0;left:0;right:0;font-size:11px;color:var(--ink);background:linear-gradient(transparent,rgba(244,238,224,.95) 45%);padding:10px 5px 2px;text-align:left;white-space:nowrap;overflow:hidden}
+.ncard .d b{font-family:var(--serif);font-size:13px;letter-spacing:.06em}
+.ncard .c{position:absolute;top:4px;right:5px;font-size:11px;background:rgba(255,255,255,.9);border-radius:4px;padding:0 4px}
 
 /* sheet（全画面。右から入って右へ抜ける） */
 .sheet-wrap{position:fixed;inset:0;z-index:50;display:flex;align-items:stretch;justify-content:center;touch-action:pan-y;
@@ -175,9 +210,21 @@ h3.month{font-family:var(--serif);font-size:15px;color:var(--ink2);margin:16px 2
 .sheet-foot .btn{flex:1}
 .sheet-foot .btn.pg{flex:0 0 auto;min-width:84px;padding:8px 10px}
 .sheet-foot .pos{flex:1;align-self:center;text-align:center;font-family:var(--serif);color:var(--ink2)}
-.tpos{font-family:var(--serif);font-weight:400;font-size:13px;color:var(--ink3);margin-left:6px}
+.sheet-foot .btn.pg.wide{flex:1}
+.sheet-where{display:flex;align-items:baseline;gap:10px;padding:4px 16px 5px;background:var(--paper2);border-bottom:1px solid var(--line);
+  font-family:var(--serif);font-size:14px;color:var(--wc,var(--ink2))}
+.sheet-where[hidden]{display:none}
+.sheet-where .wl{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.sheet-where .wp{color:var(--ink2);white-space:nowrap}
 .gal{position:relative;margin:-2px -14px 6px;background:var(--paper3)}
+.gal .gi{position:relative}
 .gal img{display:block;width:100%;height:min(62vh,440px);object-fit:contain}
+.gal.cover{margin:-2px 0 6px;background:none}
+.gal.cover img{height:auto;aspect-ratio:4/3;max-height:52vh;object-fit:cover;border-radius:4px;background:var(--paper3)}
+.gal .cnt{position:absolute;right:10px;bottom:8px;background:rgba(30,20,10,.55);color:#fff;font-family:var(--serif);font-size:13px;border-radius:10px;padding:1px 9px;pointer-events:none}
+.gal .cap{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px dotted var(--line);padding:6px 4px;min-height:40px;
+  font-family:var(--serif);font-size:14px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gal .cap .go{color:var(--accent)}
 .gal .ga{position:absolute;top:50%;transform:translateY(-50%);width:48px;height:48px;border-radius:24px;border:0;
   background:rgba(255,253,248,.72);color:var(--ink);font-size:30px;line-height:44px;padding:0;box-shadow:0 1px 4px rgba(0,0,0,.25)}
 .gal .ga.prev{left:8px}.gal .ga.next{right:8px}
@@ -213,7 +260,11 @@ h3.month{font-family:var(--serif);font-size:15px;color:var(--ink2);margin:16px 2
 .splabel .no{font-family:var(--serif);color:var(--ink3);font-size:13px;letter-spacing:.08em}
 .splabel h2{font-family:var(--serif);margin:0;font-size:24px;letter-spacing:.04em}
 .splabel .gr{font-size:13px;color:var(--ink2)}
-.cover{width:100%;max-height:52vh;object-fit:cover;border-radius:4px;display:block;background:var(--paper3);aspect-ratio:4/3}
+.splabel.nz{background:#f6f1e4}
+.splabel.nz h2{color:var(--ink3);letter-spacing:.2em}
+.solved{background:#fff7e0;border:1px solid #e8d49a;border-radius:6px;padding:10px 12px;margin:8px 0;font-family:var(--serif)}
+.solved .t{font-weight:700;color:var(--accent);font-size:18px}
+ul.cands{margin:4px 0;padding-left:1.3em;font-family:var(--serif)}
 .months{display:grid;grid-template-columns:repeat(12,1fr);gap:2px;margin:6px 0 2px;text-align:center}
 .months span{font-size:10px;color:var(--ink3)}
 .months i{display:block;width:16px;height:16px;border-radius:50%;margin:0 auto 2px;border:1px solid var(--line);background:#fffdf8}
@@ -232,6 +283,26 @@ h3.month{font-family:var(--serif);font-size:15px;color:var(--ink2);margin:16px 2
 .pickgrid button{border:3px solid transparent;padding:0;background:none;border-radius:4px;overflow:hidden}
 .pickgrid button.on{border-color:var(--accent)}
 .pickgrid img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;background:var(--paper3)}
+.fpick{background:var(--paper3);margin:0 -14px;text-align:center;line-height:0}
+.fpi{position:relative;display:inline-block;touch-action:none;user-select:none;-webkit-user-select:none}
+.fpi img{display:block;max-width:100%;max-height:46vh;width:auto;height:auto;pointer-events:none}
+.fpick .mk{position:absolute;width:46px;height:46px;margin:-23px 0 0 -23px;border:3px solid #fff;border-radius:50%;
+  box-shadow:0 0 0 2px var(--accent),0 2px 6px rgba(0,0,0,.4);pointer-events:none}
+.fpick .mk::after{content:'';position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px;border-radius:3px;background:var(--accent)}
+.fprev{display:flex;gap:10px;align-items:flex-end}
+.fprev div{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--ink2)}
+.fprev div:first-child{flex:0 0 32%}.fprev div:last-child{flex:1}
+.fprev img{width:100%;object-fit:cover;display:block;background:var(--paper3);border-radius:3px}
+.fprev img.sq{aspect-ratio:1/1}.fprev img.wd{aspect-ratio:4/3}
+.cmp-h{font-size:12px;color:var(--ink2);margin:2px 0 4px}
+.cmp{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin:0 -14px 4px;padding-left:14px;padding-right:14px;scrollbar-width:none}
+.cmp button{flex:0 0 72px;width:72px;background:none;border:0;padding:0;text-align:center;font-size:11px;color:var(--ink)}
+.cmp img{width:72px;height:72px;object-fit:cover;border-radius:4px;display:block;background:var(--paper3)}
+.cmp span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lensrev{position:fixed;inset:0;z-index:94;background:rgba(40,30,20,.55);display:flex;align-items:center;justify-content:center;animation:rf .15s}
+.lr-in{position:relative;display:inline-block;line-height:0}
+.lr-in img{max-width:92vw;max-height:70vh;display:block;border-radius:4px}
+.lr-lens{position:absolute;inset:0;border-radius:4px}
 .list-btn{display:flex;gap:10px;align-items:center;width:100%;text-align:left;min-height:52px;background:var(--paper2);border:1px solid var(--line);border-radius:6px;padding:8px 10px;margin:6px 0}
 .wres .list-btn small{color:var(--ink2)}
 .preview{background:var(--paper2);border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin:10px 0}
@@ -287,7 +358,7 @@ h3.month{font-family:var(--serif);font-size:15px;color:var(--ink2);margin:16px 2
 /* ============================================================
    なんでも図鑑 (my-field-guide) v1.2
    ============================================================ */
-const APP_VERSION = '1.2-1';
+const APP_VERSION = '1.2-2';
 const SCHEMA_VERSION = 1;
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -374,7 +445,7 @@ const DEFAULT_GENRES = [
 ];
 const S = {
   entries:new Map(), species:new Map(), genres:new Map(), meta:null,
-  tab:'log', logGenre:null, onlyNazo:false, zGenre:null, zSort:'no', zQuery:'',
+  tab:'log', logGenre:null, onlyNazo:false, zCh:null, zSort:'no', zRev:false, zSplit:true, zQuery:'', zKeys:[],
   persisted:null,
 };
 const live = m => [...m.values()].filter(r => !r.deleted);
@@ -453,16 +524,27 @@ const ymd = () => { const d = new Date(); return `${d.getFullYear()}${pad(d.getM
 /* ---------------- 写真の読み込み ---------------- */
 const thumbCache = new Map();
 const fullCache = new Map();
+/** 写真ごとの主役の位置（0〜1）。写真を読んだときに覚える */
+const focusCache = new Map();
+function noteFocus(p){ if (!p) return; if (p.focusX != null && p.focusY != null) focusCache.set(p.id, [p.focusX, p.focusY]); else focusCache.delete(p.id); }
+/** 切り抜いて見せる写真の中心を主役に合わせる。虫眼鏡カード（.lensable）には位置を渡す */
+function applyFocus(img, pid){
+  if (img.closest('.fpick,.fprev')) return;   // 表紙を変える画面は自前で位置を描く
+  const f = focusCache.get(pid);
+  img.style.objectPosition = f ? `${(f[0] * 100).toFixed(1)}% ${(f[1] * 100).toFixed(1)}%` : '';
+  const ln = img.closest('.lensable');
+  if (ln) { ln.style.setProperty('--fx', f ? (f[0] * 100).toFixed(1) + '%' : '50%'); ln.style.setProperty('--fy', f ? (f[1] * 100).toFixed(1) + '%' : '50%'); }
+}
 async function thumbURL(pid){
   if (thumbCache.has(pid)) return thumbCache.get(pid);
-  const p = await Store.get('photos', pid);
+  const p = await Store.get('photos', pid); noteFocus(p);
   const data = p && (p.thumb || p.blob); if (!data) return null;
   const url = URL.createObjectURL(new Blob([data], {type:'image/jpeg'}));
   thumbCache.set(pid, url); return url;
 }
 async function fullURL(pid){
   if (fullCache.has(pid)) return fullCache.get(pid);
-  const p = await Store.get('photos', pid);
+  const p = await Store.get('photos', pid); noteFocus(p);
   const data = p && (p.blob || p.thumb); if (!data) return null;
   const url = URL.createObjectURL(new Blob([data], {type:'image/jpeg'}));
   fullCache.set(pid, url);
@@ -474,15 +556,15 @@ const io = new IntersectionObserver(list => {
   for (const en of list) {
     if (!en.isIntersecting) continue;
     const img = en.target; io.unobserve(img);
-    const full = img.dataset.full;
-    (full ? fullURL(full) : thumbURL(img.dataset.photo)).then(u => { if (u) img.src = u; });
+    const full = img.dataset.full, pid = full || img.dataset.photo;
+    (full ? fullURL(full) : thumbURL(pid)).then(u => { if (u) { img.src = u; applyFocus(img, pid); } });
   }
 }, {rootMargin:'400px 0px'});
 /** 読み込みずみの写真はその場で表示（めくったあとの描き直しでちらつかないように） */
 function hydrate(root){
   $$('img[data-photo]:not([src]),img[data-full]:not([src])', root).forEach(i => {
     const u = i.dataset.full ? fullCache.get(i.dataset.full) : thumbCache.get(i.dataset.photo);
-    if (u) i.src = u; else io.observe(i);
+    if (u) { i.src = u; applyFocus(i, i.dataset.full || i.dataset.photo); } else io.observe(i);
   });
 }
 
@@ -663,15 +745,15 @@ function ask3(msg, labels, sub){
 function openSheet(opts){
   resetZoom();
   const wrap = document.createElement('div'); wrap.className = 'sheet-wrap';
-  wrap.innerHTML = `<div class="sheet" role="dialog"><div class="sheet-head"><button class="back">‹ 戻る</button><div class="sheet-title"></div></div><div class="sheet-stage"><div class="sheet-body"></div></div><div class="sheet-foot"></div></div>`;
+  wrap.innerHTML = `<div class="sheet" role="dialog"><div class="sheet-head"><button class="back">‹ 戻る</button><div class="sheet-title"></div></div><div class="sheet-where" hidden></div><div class="sheet-stage"><div class="sheet-body"></div></div><div class="sheet-foot"></div></div>`;
   if (reduceMotion()) wrap.style.animation = 'none';
   document.body.appendChild(wrap);
-  const sh = {wrap, opts, stage:$('.sheet-stage', wrap), body:$('.sheet-body', wrap), foot:$('.sheet-foot', wrap), titleEl:$('.sheet-title', wrap), preview:false};
+  const sh = {wrap, opts, stage:$('.sheet-stage', wrap), body:$('.sheet-body', wrap), foot:$('.sheet-foot', wrap), titleEl:$('.sheet-title', wrap), whereEl:$('.sheet-where', wrap), preview:false};
   sh.titleEl.textContent = opts.title || '';
   sh.pager = opts.pager || null;
   sh.refresh = toTop => {
     const st = toTop ? 0 : sh.body.scrollTop; sh.foot.innerHTML = '';
-    opts.build(sh); hydrate(sh.body);
+    opts.build(sh); hydrate(sh.body); updateWhere(sh);
     sh.foot.style.display = sh.foot.childElementCount ? '' : 'none';
     sh.body.scrollTop = st;
   };
@@ -846,18 +928,22 @@ function swipeBlocked(el, root){
   }
   return false;
 }
-/** 下の帯：‹ 前 ［真ん中］ 次 ›。1件だけなら真ん中だけ */
+/** 下の帯：‹ 前 ［真ん中］ 次 ›。真ん中がなければ2つを広く。1件だけなら真ん中だけ */
 function pagerFoot(sh, middle){
   const p = sh.pager, L = p ? p.list() : [];
   if (!p || L.length <= 1) { sh.foot.innerHTML = middle || ''; return; }
-  const i = L.indexOf(p.cur);
-  sh.foot.innerHTML = `<button class="btn pg" data-pg="-1" ${i <= 0 ? 'disabled' : ''}>‹ 前</button>`
-    + (middle || `<span class="pos">${i + 1} / ${L.length}</span>`)
-    + `<button class="btn pg" data-pg="1" ${i >= L.length - 1 ? 'disabled' : ''}>次 ›</button>`;
+  const i = L.indexOf(p.cur), wide = middle ? '' : ' wide';
+  sh.foot.innerHTML = `<button class="btn pg${wide}" data-pg="-1" ${i <= 0 ? 'disabled' : ''}>‹ 前</button>`
+    + (middle || '')
+    + `<button class="btn pg${wide}" data-pg="1" ${i >= L.length - 1 ? 'disabled' : ''}>次 ›</button>`;
 }
-function pagerPos(sh){
-  const p = sh.pager, L = p ? p.list() : [];
-  return L.length > 1 ? `<span class="tpos">${L.indexOf(p.cur) + 1} / ${L.length}</span>` : '';
+/** 見出しの下の帯：めくっている一覧の名前と位置（🌳 樹木　3 / 12）。pager.where = {label, color} */
+function updateWhere(sh){
+  const el = sh.whereEl, p = sh.pager, w = p && p.where;
+  if (!w || !w.label) { el.hidden = true; return; }
+  const L = p.list(), i = L.indexOf(p.cur);
+  el.hidden = false; el.style.setProperty('--wc', w.color || 'var(--ink2)');
+  el.innerHTML = `<span class="wl">${h(w.label)}</span>${L.length > 1 ? `<span class="wp">${i + 1} / ${L.length}</span>` : ''}`;
 }
 document.addEventListener('keydown', ev => {
   if (ev.key !== 'ArrowLeft' && ev.key !== 'ArrowRight') return;
@@ -916,7 +1002,10 @@ function backupDue(){
 }
 function renderLog(v){
   const all = entriesLive().sort((a,b) => a.takenAt < b.takenAt ? 1 : -1);
-  let html = `<div class="vh"><h1>ログ</h1><span class="sub">出会い ${all.length}件</span></div>`;
+  const lg = S.logGenre && liveGenre(S.logGenre);
+  if (S.logGenre && !lg) S.logGenre = null;
+  const cond = (lg ? ` ・ ${lg.emoji} ${lg.name}` : '') + (S.onlyNazo ? ' ・ なぞだけ' : '');
+  let html = `<div class="vh"><h1>ログ</h1>${cond ? `<span class="lgsel" style="--gc:${h(lg ? lg.color : 'var(--red)')}">${h(cond)}</span>` : ''}<span class="sub">出会い ${all.length}件</span></div>`;
   const due = backupDue();
   if (due) html += `<div class="notice"><span>💾</span><span class="grow">${due.never ? 'まだバックアップがありません' : `前回のバックアップから ${due.days}日（その後 ${due.added}件）`}。<a href="#" id="goBackup">書き出す</a></span><button class="x" id="dismissNotice" aria-label="閉じる">×</button></div>`;
   // ◯年前の今ごろ
@@ -929,11 +1018,12 @@ function renderLog(v){
       return `<button class="pi" data-entry="${e.id}" style="--gc:${h(g.color)}"><img data-photo="${e.photoIds[0]}" alt=""><div>${yrs}年前・${h(sp ? sp.name : '？')}</div></button>`;
     }).join('') + `</div></div>`;
   }
-  html += `<div class="chips" id="logChips"><button class="chip ${!S.logGenre?'on':''}" data-lg="">すべて</button>`
+  html += `<div class="chips sticky" id="logChips"><button class="chip ${!S.logGenre?'on':''}" data-lg="">すべて</button>`
     + genresSorted().map(g => `<button class="chip g ${S.logGenre===g.id?'on':''}" data-lg="${g.id}" style="--gc:${h(g.color)}">${h(g.emoji)} ${h(g.name)}</button>`).join('')
     + `<button class="chip toggle ${S.onlyNazo?'on':''}" id="onlyNazo">？ なぞだけ</button></div>`;
   const list = all.filter(e => (!S.logGenre || entryGenre(e).id === S.logGenre) && (!S.onlyNazo || !e.speciesId));
   S.logList = list.map(e => e.id); S.logAll = all.map(e => e.id);
+  S.logWhere = {label:'ログ' + (lg ? `・${lg.emoji} ${lg.name}` : '') + (S.onlyNazo ? '・なぞだけ' : ''), color:lg ? lg.color : null};
   if (!all.length) html += `<div class="empty">まだ記録がありません。<br>下の <b>＋</b> からカメラロールの写真を選んで登録しましょう。<br>名前がわからなくても大丈夫です。</div>`;
   else if (!list.length) html += `<div class="empty">この条件の記録はありません。</div>`;
   let cur = '';
@@ -943,10 +1033,13 @@ function renderLog(v){
     html += logRow(e);
   }
   v.innerHTML = html;
+  // 選んだジャンルのチップを見える位置（真ん中寄り）へ
+  const cb = $('#logChips', v), on = cb && $('.chip.g.on', cb);
+  if (on) cb.scrollLeft = Math.max(0, on.offsetLeft - (cb.clientWidth - on.offsetWidth) / 2);
   v.onclick = ev => {
     const t = ev.target;
     const en = t.closest('[data-entry]');
-    if (en) { const id = en.dataset.entry; return openEntry(id, S.logList.includes(id) ? S.logList.slice() : S.logAll.slice()); }
+    if (en) { const id = en.dataset.entry; return S.logList.includes(id) ? openEntry(id, S.logList.slice(), S.logWhere) : openEntry(id, S.logAll.slice(), {label:'ログ'}); }
     const lg = t.closest('[data-lg]'); if (lg) { S.logGenre = lg.dataset.lg || null; return render(); }
     if (t.closest('#onlyNazo')) { S.onlyNazo = !S.onlyNazo; return render(); }
     if (t.closest('#goBackup')) { ev.preventDefault(); S.tab = 'settings'; render(); window.scrollTo(0,0); return; }
@@ -962,73 +1055,171 @@ function logRow(e){
     ${e.note ? `<div class="note">${h(e.note)}</div>` : ''}</div></button>`;
 }
 
-/* ---------- 図鑑 ---------- */
-function renderZukan(v){
-  v.innerHTML = `<div class="vh"><h1>図鑑</h1></div>
-    <div class="chips" id="zChips"><button class="chip ${!S.zGenre?'on':''}" data-zg="">すべて</button>${genresSorted().map(g =>
-      `<button class="chip g ${S.zGenre===g.id?'on':''}" data-zg="${g.id}" style="--gc:${h(g.color)}">${h(g.emoji)} ${h(g.name)}</button>`).join('')}</div>
-    <div class="tally" id="zTally"></div>
-    <div class="zctrl"><input type="search" id="zq" placeholder="🔍 名前・ひとこと・メモで検索" value="${h(S.zQuery)}">
-      <select id="zsort"><option value="no">番号順</option><option value="name">名前順</option><option value="recent">最近会った順</option></select></div>
-    <div id="zGrid"></div>`;
-  $('#zsort', v).value = S.zSort;
-  $('#zq', v).addEventListener('input', e => { S.zQuery = e.target.value; renderGrid(); });
-  $('#zsort', v).addEventListener('change', e => { S.zSort = e.target.value; renderGrid(); });
-  v.onclick = ev => {
-    const zg = ev.target.closest('[data-zg]'); if (zg) { S.zGenre = zg.dataset.zg || null; return render(); }
-    const c = ev.target.closest('[data-sp]'); if (c) openSpecies(c.dataset.sp, (S.zList || []).slice());
-  };
-  renderGrid();
+/* ---------- 図鑑（目次 → 章 → ページ） ---------- */
+const nazoList = () => entriesLive().filter(e => !e.speciesId).sort((a, b) => a.takenAt < b.takenAt ? 1 : -1);
+const liveGenre = id => { const g = genreOf(id); return g && !g.deleted ? g : null; };
+/** 章の中身の判定。key：'all'／ジャンルのid／'_none'（未定） */
+function spInCh(s, key){
+  if (key === 'all') return true;
+  if (key === '_none') return !liveGenre(s.genreId);
+  return s.genreId === key && !!liveGenre(key);
 }
-function renderGrid(){
-  const idx = buildIndex();
-  let list = live(S.species).filter(s => !S.zGenre || s.genreId === S.zGenre);
-  const g = S.zGenre && genreOf(S.zGenre);
-  const encounters = list.reduce((a,s) => a + (idx.get(s.id)?.count || 0), 0);
-  $('#zTally').textContent = `${g ? g.emoji + ' ' + g.name : 'ぜんぶ'}　${list.length}種・出会い ${encounters}回`;
-  const q = normName(S.zQuery);
-  const hit = new Map();   // id → {name, sumOnly}
+function nzInCh(e, key){
+  if (key === 'all') return true;
+  const g = entryGenre(e);
+  return key === '_none' ? g === NOGENRE : g.id === key;
+}
+function chMeta(key){
+  if (key === 'all') return {emoji:'📚', name:'ぜんぶ', color:null};
+  if (key === '_none') return {emoji:NOGENRE.emoji, name:NOGENRE.name, color:NOGENRE.color};
+  const g = genreOf(key) || NOGENRE; return {emoji:g.emoji, name:g.name, color:g.color};
+}
+/** 章の一覧に出す番号つきのラベル */
+const noStr = n => 'No.' + String(n).padStart(3, '0');
+
+/* 並べ替え。向きの文字は「いまの向き」 */
+const ZSORT = {
+  no:    {label:'番号順',       dir:['小さい順', '大きい順']},
+  name:  {label:'名前順',       dir:['あ→ん', 'ん→あ']},
+  recent:{label:'最近会った順', dir:['新しい順', '古い順']},
+  first: {label:'初めて会った順', dir:['古い順', '新しい順']},
+};
+function speciesCmp(kind, rev, idx){
+  const cs = (x, y) => x < y ? -1 : x > y ? 1 : 0;
+  const base = {
+    no:(a, b) => a.no - b.no,
+    name:(a, b) => a.name.localeCompare(b.name, 'ja'),
+    recent:(a, b) => cs(idx.get(b.id).last, idx.get(a.id).last),
+    first:(a, b) => cs(idx.get(a.id).first, idx.get(b.id).first),
+  }[kind] || ((a, b) => a.no - b.no);
+  const dated = kind === 'recent' || kind === 'first';
+  return (a, b) => {
+    if (dated) {   // 出会いが0回の種は、日付の並べ替えではいつも最後
+      const za = !idx.get(a.id), zb = !idx.get(b.id);
+      if (za || zb) return za === zb ? a.no - b.no : za ? 1 : -1;
+    }
+    const r = base(a, b);
+    return (rev ? -r : r) || a.no - b.no;
+  };
+}
+
+function renderZukan(v){
+  // 検索欄は描き直さない（入力中にキーボードが閉じないように）。帯・並べ替え・中身だけを drawZ で描き直す
+  v.innerHTML = `<div id="zBand"></div>
+    <div class="zctrl"><input type="search" id="zq" placeholder="🔍 名前・説明・メモで検索" value="${h(S.zQuery)}"></div>
+    <div id="zSort"></div><div id="zBody"></div>`;
+  $('#zq', v).addEventListener('input', e => {
+    S.zQuery = e.target.value;
+    if (!S.zCh && S.zQuery.trim()) { S.zCh = 'all'; window.scrollTo(0, 0); }
+    drawZ();
+  });
+  v.onclick = ev => {
+    const t = ev.target;
+    const ch = t.closest('[data-ch]'); if (ch) { S.zCh = ch.dataset.ch; drawZ(); window.scrollTo(0, 0); return; }
+    if (t.closest('#zback')) { S.zCh = null; S.zQuery = ''; $('#zq').value = ''; drawZ(); window.scrollTo(0, 0); return; }
+    if (t.closest('#zdir')) { S.zRev = !S.zRev; return drawZ(); }
+    if (t.closest('#zsplit')) { S.zSplit = !S.zSplit; return drawZ(); }
+    const c = t.closest('[data-sp]'); if (c) return openSpecies(c.dataset.sp, S.zKeys.slice(), zWhere());
+    const n = t.closest('[data-nz]'); if (n) return openSpecies('n:' + n.dataset.nz, S.zKeys.slice(), zWhere());
+  };
+  v.addEventListener('change', ev => { if (ev.target.id === 'zsort') { S.zSort = ev.target.value; S.zRev = false; drawZ(); } });
+  drawZ();
+}
+/** 図鑑から開いたページの「いまどこ」 */
+function zWhere(){
+  const q = S.zQuery.trim(), m = chMeta(S.zCh || 'all');
+  return q ? {label:`🔍 ${q}`, color:m.color} : {label:`${m.emoji} ${m.name}`, color:m.color};
+}
+function drawZ(){
+  if (!$('#zBody')) return;
+  if (S.zCh && S.zCh !== 'all' && S.zCh !== '_none' && !liveGenre(S.zCh)) S.zCh = null;   // 消したジャンルの章
+  if (S.zCh) drawChapter(); else drawToc();
+  hydrate($('#view'));
+}
+function drawToc(){
+  const idx = buildIndex(), sps = live(S.species), nz = nazoList();
+  const enc = n => n.reduce((a, s) => a + (idx.get(s.id)?.count || 0), 0);
+  $('#zBand').className = 'vh'; $('#zBand').removeAttribute('style');
+  $('#zBand').innerHTML = `<h1>図鑑</h1><span class="sub">${sps.length}種・出会い ${enc(sps)}回${nz.length ? `・なぞ ${nz.length}件` : ''}</span>`;
+  $('#zSort').innerHTML = '';
+  const keys = ['all', ...genresSorted().map(g => g.id)];
+  if (sps.some(s => spInCh(s, '_none')) || nz.some(e => nzInCh(e, '_none'))) keys.push('_none');
+  $('#zBody').innerHTML = `<div class="toc">` + keys.map(key => {
+    const m = chMeta(key), ss = sps.filter(s => spInCh(s, key)), nn = nz.filter(e => nzInCh(e, key));
+    // 表紙：その章でいちばん最近会った種の表紙
+    let cv = null, lastAt = '';
+    for (const s of ss) { const st = idx.get(s.id); if (st && st.last > lastAt) { lastAt = st.last; cv = coverPhotoOf(s, st); } }
+    return `<button class="ch ${key === 'all' ? 'wide' : ''} ${ss.length || nn.length ? '' : 'empty'}" data-ch="${key}" style="--gc:${h(m.color || 'var(--ink2)')}">
+      <div class="cv">${cv ? `<img data-photo="${cv}" alt="">` : `<span>${h(m.emoji)}</span>`}</div>
+      <div class="ct"><div class="cn">${h(m.emoji)} ${h(m.name)}</div><div class="cs">${ss.length}種・出会い ${enc(ss)}回</div>${nn.length ? `<div class="cz">❓ なぞ ${nn.length}</div>` : ''}</div></button>`;
+  }).join('') + `</div>`
+  + (!sps.length && !nz.length ? `<div class="empty" style="margin-top:12px">まだ種のページがありません。<br>名前を付けて登録するか、「なぞ」で名前がわかると、ここにページが増えていきます。</div>` : '');
+}
+function drawChapter(){
+  const key = S.zCh, m = chMeta(key), idx = buildIndex(), q = normName(S.zQuery);
+  let sps = live(S.species).filter(s => spInCh(s, key));
+  let nz = nazoList().filter(e => nzInCh(e, key));
+  const enc = sps.reduce((a, s) => a + (idx.get(s.id)?.count || 0), 0);
+  // 帯（スクロールしても上に残る）
+  const band = $('#zBand');
+  band.className = 'zband'; band.style.setProperty('--gc', m.color || 'var(--paper3)');
+  band.innerHTML = `<button id="zback">‹ 目次</button><span class="bn">${h(m.emoji)} ${h(m.name)}</span>
+    <span class="bs">${sps.length}種・出会い${enc}回${nz.length ? `・なぞ${nz.length}` : ''}</span>`;
+  // 並べ替え
+  const so = ZSORT[S.zSort] || ZSORT.no;
+  $('#zSort').innerHTML = `<div class="zsort"><select id="zsort">${Object.entries(ZSORT).map(([k, o]) => `<option value="${k}" ${k === S.zSort ? 'selected' : ''}>${o.label}</option>`).join('')}</select>
+    <button class="btn small" id="zdir">${so.dir[S.zRev ? 1 : 0]} ⇅</button>
+    ${key === 'all' && !q ? `<button class="chip toggle2 ${S.zSplit ? 'on' : ''}" id="zsplit">ジャンルで区切る</button>` : ''}</div>`;
+  // 検索
+  const hit = new Map();
   if (q) {
-    list = list.filter(s => {
+    sps = sps.filter(s => {
       const name = normName(s.name).includes(q);
       const other = normName(s.myMemo).includes(q) || normName(s.group).includes(q)
         || (idx.get(s.id)?.entries || []).some(e => normName(e.note).includes(q));
       const sum = normName(s.summary).includes(q);
       if (!name && !other && !sum) return false;
-      hit.set(s.id, {name, sumOnly: !name && !other && sum});
+      hit.set(s.id, {name, sumOnly:!name && !other && sum});
       return true;
     });
+    nz = nz.filter(e => [(e.candidates || []).join(' '), e.note, e.place].some(x => normName(x).includes(q)));
   }
-  const cmp = {
-    no: (a,b) => a.no - b.no,
-    name: (a,b) => a.name.localeCompare(b.name, 'ja'),
-    recent: (a,b) => ((idx.get(b.id)?.last || '') > (idx.get(a.id)?.last || '') ? 1 : -1),
-  }[S.zSort];
-  list.sort((a, b) => q ? ((hit.get(b.id).name ? 1 : 0) - (hit.get(a.id).name ? 1 : 0)) || cmp(a, b) : cmp(a, b));
-  S.zList = list.map(s => s.id);
-  const box = $('#zGrid');
-  if (!live(S.species).length) { box.innerHTML = `<div class="empty">まだ種のページがありません。<br>名前を付けて登録するか、「なぞ」で名前がわかると、ここにページが増えていきます。</div>`; return; }
-  if (!list.length) { box.innerHTML = `<div class="empty">見つかりませんでした。</div>`; return; }
-  box.innerHTML = `<div class="grid">` + list.map(s => {
-    const st = idx.get(s.id), gg = genreOf(s.genreId) || NOGENRE, cv = coverPhotoOf(s, st);
-    return `<button class="scard ${st ? '' : 'zero'}" data-sp="${s.id}" style="--gc:${h(gg.color)}">
-      ${cv ? `<img data-photo="${cv}" alt="">` : `<img alt="" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=">`}
-      <div class="lb"><div class="no">No.${String(s.no).padStart(3,'0')}</div><div class="nm">${h(s.name)}</div>
-      <div class="st">${st ? `${st.count}回・初 ${fmtDate(st.first)}` : '出会い 0回'}</div>${hit.get(s.id)?.sumOnly ? '<span class="hitlabel">説明文に一致</span>' : ''}</div></button>`;
-  }).join('') + `</div>`;
-  hydrate(box);
+  const cmp = speciesCmp(S.zSort, S.zRev, idx);
+  const sortSp = list => list.sort((a, b) => q ? ((hit.get(b.id).name ? 1 : 0) - (hit.get(a.id).name ? 1 : 0)) || cmp(a, b) : cmp(a, b));
+  // 区切り
+  let secs;
+  if (key === 'all' && S.zSplit && !q) {
+    secs = [...genresSorted().map(g => g.id), '_none'].map(k => ({head:chMeta(k), sps:sortSp(sps.filter(s => spInCh(s, k))), nz:nz.filter(e => nzInCh(e, k))}))
+      .filter(x => x.sps.length || x.nz.length);
+  } else secs = [{head:null, sps:sortSp(sps), nz}];
+  S.zKeys = secs.flatMap(x => [...x.sps.map(s => s.id), ...x.nz.map(e => 'n:' + e.id)]);
+  const box = $('#zBody');
+  if (!live(S.species).length && !nazoList().length) { box.innerHTML = `<div class="empty">まだ種のページがありません。<br>名前を付けて登録するか、「なぞ」で名前がわかると、ここにページが増えていきます。</div>`; return; }
+  if (!S.zKeys.length) { box.innerHTML = `<div class="empty">${q ? '見つかりませんでした。' : 'この章はまだ空です。'}</div>`; return; }
+  box.innerHTML = secs.map(x => (x.head ? `<h3 class="zsec" style="--gc:${h(x.head.color || 'var(--ink2)')}">${h(x.head.emoji)} ${h(x.head.name)}</h3>` : '')
+    + (x.sps.length ? `<div class="grid">` + x.sps.map(s => {
+      const st = idx.get(s.id), gg = liveGenre(s.genreId) || NOGENRE, cv = coverPhotoOf(s, st);
+      return `<button class="scard ${st ? '' : 'zero'}" data-sp="${s.id}" style="--gc:${h(gg.color)}">
+        ${cv ? `<img data-photo="${cv}" alt="">` : `<img alt="" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=">`}
+        <div class="lb"><div class="no">${noStr(s.no)}</div><div class="nm">${h(s.name)}</div>
+        <div class="st">${st ? `${st.count}回・初 ${fmtDate(st.first)}` : '出会い 0回'}</div>${hit.get(s.id)?.sumOnly ? '<span class="hitlabel">説明文に一致</span>' : ''}</div></button>`;
+    }).join('') + `</div>` : '')
+    + (x.nz.length ? `<h4 class="nzh">❓ なぞ（${x.nz.length}件）</h4><div class="ngrid">${x.nz.map(e => nazoCard(e, `data-nz="${e.id}"`)).join('')}</div>` : '')
+  ).join('');
 }
 
 /* ---------- なぞ ---------- */
+/** 虫眼鏡のカード：丸の中だけはっきり、外側は薄い膜 */
+function nazoCard(e, attr){
+  const g = entryGenre(e), n = (e.candidates || []).length;
+  return `<button class="ncard lensable" ${attr} style="--gc:${h(g.color)}"><img data-photo="${e.photoIds[0]}" alt=""><span class="lens"></span><span class="ring"></span>
+    <span class="nno">No.???</span>${n ? `<span class="c">候補${n}</span>` : ''}<span class="d"><b>？？？</b><br>${h(g.emoji)} ${fmtDate(e.takenAt)}</span></button>`;
+}
 function renderNazo(v){
-  const list = entriesLive().filter(e => !e.speciesId).sort((a,b) => a.takenAt < b.takenAt ? 1 : -1);
+  const list = nazoList();
   v.innerHTML = `<div class="vh"><h1>なぞ</h1><span class="sub">${list.length}件</span></div>
     <p class="hint" style="margin:0 2px 10px">名前がまだの出会いです。タップして調べ、わかったら「判明！」。</p>`
-    + (list.length ? `<div class="ngrid">` + list.map(e => {
-      const g = entryGenre(e);
-      return `<button class="ncard" data-entry="${e.id}" style="--gc:${h(g.color)}"><img data-photo="${e.photoIds[0]}" alt=""><span class="q">？</span>
-        ${(e.candidates || []).length ? `<span class="c">候補${e.candidates.length}</span>` : ''}<span class="d">${h(g.emoji)} ${fmtDate(e.takenAt)}</span></button>`;
-    }).join('') + `</div>` : `<div class="empty">なぞはありません。すっきり！</div>`);
+    + (list.length ? `<div class="ngrid">` + list.map(e => nazoCard(e, `data-entry="${e.id}"`)).join('') + `</div>` : `<div class="empty">なぞはありません。すっきり！</div>`);
   v.onclick = ev => { const c = ev.target.closest('[data-entry]'); if (c) openInvestigate(c.dataset.entry); };
 }
 
@@ -1248,11 +1439,18 @@ async function saveRegister(){
 
 /* ================= 出会いの詳細 ================= */
 /** 写真は1枚ずつ表示。2枚以上なら端の ‹ › で切り替え */
-function galleryHTML(ids){
-  const many = ids.length > 1;
-  return `<div class="gal" data-ids="${ids.join(',')}" data-i="0"><img data-full="${ids[0]}" alt="">`
-    + (many ? `<button class="ga prev" data-ga="-1" aria-label="前の写真" hidden>‹</button><button class="ga next" data-ga="1" aria-label="次の写真">›</button>
-      <div class="dots">${ids.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>` : '') + `</div>`;
+/** opt.eids：写真ごとの出会いのid（表紙スライド用。下に「日付・ひとこと」の1行を出す） */
+function galleryHTML(ids, opt = {}){
+  const many = ids.length > 1, eids = opt.eids;
+  const ind = !many ? '' : ids.length <= 8 ? `<div class="dots">${ids.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>` : `<div class="cnt">1 / ${ids.length}</div>`;
+  return `<div class="gal ${eids ? 'cover' : ''}" data-ids="${ids.join(',')}" ${eids ? `data-eids="${eids.join(',')}"` : ''} data-i="0"><div class="gi"><img data-full="${ids[0]}" alt="">`
+    + (many ? `<button class="ga prev" data-ga="-1" aria-label="前の写真" hidden>‹</button><button class="ga next" data-ga="1" aria-label="次の写真">›</button>` : '')
+    + ind + `</div>` + (eids ? `<button class="cap" data-entry="${eids[0]}">${capText(eids[0])}</button>` : '') + `</div>`;
+}
+function capText(eid){
+  const e = S.entries.get(eid); if (!e) return '';
+  const n = (e.note || '').replace(/\s+/g, ' ').trim();
+  return h(fmtDate(e.takenAt)) + (n ? '・' + h(n.length > 26 ? n.slice(0, 26) + '…' : n) : '') + ' <span class="go">›</span>';
 }
 /* ---------------- 写真の拡大ビューア ---------------- */
 /**
@@ -1407,8 +1605,11 @@ async function setGal(g, i){
   const pv = $('.prev', g), nx = $('.next', g);
   if (pv) pv.hidden = i === 0; if (nx) nx.hidden = i === ids.length - 1;
   $$('.dots i', g).forEach((d, k) => d.classList.toggle('on', k === i));
+  const cnt = $('.cnt', g); if (cnt) cnt.textContent = `${i + 1} / ${ids.length}`;
+  if (g.dataset.eids) { const eid = g.dataset.eids.split(',')[i], cap = $('.cap', g); if (cap) { cap.dataset.entry = eid; cap.innerHTML = capText(eid); } }
   const img = $('img', g); img.dataset.full = ids[i];
-  const u = await fullURL(ids[i]); if (u && g.dataset.i == i) img.src = u;
+  const u = await fullURL(ids[i]); if (u && g.dataset.i == i) { img.src = u; applyFocus(img, ids[i]); }
+  for (const d of [-1, 1]) if (ids[i + d]) fullURL(ids[i + d]);   // 前後を先に読む
 }
 document.addEventListener('click', ev => {
   const b = ev.target.closest('.gal [data-ga]');
@@ -1438,7 +1639,8 @@ async function saveEntryState(id, st){
   return ok;
 }
 /** list：めくる順番（開いたときの一覧の id の並び） */
-function openEntry(id0, list){
+/** list：めくる順番。where：{label, color}（見出しの下の帯） */
+function openEntry(id0, list, where){
   const e0 = S.entries.get(id0); if (!e0 || e0.deleted) return;
   const ed = {id:null, st:null, orig:''};
   const dirty = () => !!(ed.st && JSON.stringify(ed.st) !== ed.orig);
@@ -1452,7 +1654,7 @@ function openEntry(id0, list){
     if (ok) { ed.st = null; pinToast('保存しました'); }
     return ok;
   };
-  const pager = {ids: list && list.includes(id0) ? list : [id0], cur:id0, alive:entryAlive,
+  const pager = {ids: list && list.includes(id0) ? list : [id0], cur:id0, alive:entryAlive, where,
     photoOf: id => { const e = S.entries.get(id); return e && e.photoIds[0]; }, dirty, resolve};
   openSheet({title:'出会いの記録', form:true, pager,
     beforeClose: () => dirty() ? resolve('back') : true,
@@ -1465,7 +1667,7 @@ function openEntry(id0, list){
       st = ed.st;
     }
     const body = sh.body;
-    sh.titleEl.innerHTML = '出会いの記録' + pagerPos(sh);
+    sh.titleEl.textContent = '出会いの記録';
     sh.body.innerHTML = `${galleryHTML(e.photoIds)}
       <label class="fl">名前</label><div class="sg-wrap"><input id="f-name" value="${h(st.name)}" placeholder="わからなければ空欄（なぞ）" autocomplete="off"></div>
       <div class="seg" id="f-conf">${confSeg(st.confidence)}</div>
@@ -1534,6 +1736,7 @@ function openInvestigate(id){
     build(sh){
     const e = S.entries.get(id);
     sh.body.innerHTML = `${galleryHTML(e.photoIds)}
+      <div id="i-cmp"></div>
       <div class="hint">${fmtDT(e.takenAt)}${e.place ? '・' + h(e.place) : ''}</div>
       <label class="fl">ジャンル</label><div class="chips wrap" id="i-genre">${genreChips(st.genreId, true)}</div>
       <label class="fl">名前の候補メモ（1行に1つ）</label><textarea id="i-cand" rows="3" placeholder="例：シジュウカラかヤマガラ&#10;決め手：お腹の色">${h(st.candidates)}</textarea>
@@ -1542,7 +1745,23 @@ function openInvestigate(id){
       <div class="seg" id="i-conf">${confSeg(st.confidence, ['maybe','sure'])}</div>
       <p class="hint">自信がなければ「たぶん」で登録して、あとで出会いの記録から「確定」にできます。</p>
       <button class="btn block" id="i-more" style="margin-top:10px">ほかの項目も編集する</button>`;
-    bindChips($('#i-genre', sh.body), g => st.genreId = g);
+    /** 同じジャンルの種の表紙を小さく並べる（新しく会った順・最大20）。タップで名前欄へ */
+    const drawCmp = () => {
+      const box = $('#i-cmp', sh.body), idx = buildIndex();
+      const list = st.genreId ? live(S.species).filter(x => x.genreId === st.genreId && idx.get(x.id))
+        .sort((a, b) => idx.get(a.id).last < idx.get(b.id).last ? 1 : -1).slice(0, 20) : [];
+      box.innerHTML = list.length ? `<div class="cmp-h">見比べ：${h((genreOf(st.genreId) || NOGENRE).emoji)} ${h((genreOf(st.genreId) || NOGENRE).name)}の種</div>
+        <div class="cmp noswipe">${list.map(x => `<button data-nm="${h(x.name)}"><img data-photo="${coverPhotoOf(x, idx.get(x.id))}" alt=""><span>${h(x.name)}</span></button>`).join('')}</div>` : '';
+      hydrate(box);
+    };
+    drawCmp();
+    $('#i-cmp', sh.body).onclick = ev => {
+      const b = ev.target.closest('[data-nm]'); if (!b) return;
+      const nm2 = $('#i-name', sh.body); nm2.value = b.dataset.nm; st.name = b.dataset.nm;
+      $('#i-go', sh.foot).disabled = false;
+      nm2.scrollIntoView({block:'center', behavior:'smooth'});
+    };
+    bindChips($('#i-genre', sh.body), g => { st.genreId = g; drawCmp(); });
     $('#i-cand', sh.body).oninput = ev => st.candidates = ev.target.value;
     $('#i-note', sh.body).oninput = ev => st.note = ev.target.value;
     const nm = $('#i-name', sh.body);
@@ -1573,9 +1792,41 @@ function openInvestigate(id){
       if (!ok) { await loadAll(); return; }
       const first = res.isNew || !before.get(res.sp.id);
       closeSheet(sh, true);
+      await lensReveal(S.entries.get(id).photoIds[0]);
       reveal(res.sp, first);
     };
   }});
+}
+/** 判明の演出の前に、虫眼鏡の穴が広がって写真全体がはっきりする（0.6秒・タップで飛ばせる） */
+async function lensReveal(pid){
+  if (reduceMotion() || !pid) return;
+  const u = await fullURL(pid); if (!u) return;
+  const f = focusCache.get(pid) || [0.5, 0.5];
+  const d = document.createElement('div'); d.className = 'lensrev';
+  d.innerHTML = `<div class="lr-in"><img alt=""><span class="lr-lens"></span></div>`;
+  document.body.appendChild(d);
+  const img = $('img', d), lens = $('.lr-lens', d);
+  await new Promise(r => { img.onload = img.onerror = r; img.src = u; setTimeout(r, 800); });
+  const w = img.clientWidth || 300, hh = img.clientHeight || 300;
+  const cx = f[0] * w, cy = f[1] * hh;
+  const r0 = 0.38 * Math.min(w, hh), r1 = Math.hypot(Math.max(cx, w - cx), Math.max(cy, hh - cy)) + 2;
+  const paint = r => { lens.style.background = `radial-gradient(circle ${r}px at ${cx}px ${cy}px,transparent 0,transparent ${Math.max(0, r - 1)}px,rgba(244,238,224,.78) ${r}px)`; };
+  paint(r0);
+  await new Promise(res => {
+    let done = false;
+    const end = () => { if (done) return; done = true; d.remove(); res(); };
+    d.addEventListener('click', end);
+    setTimeout(() => {
+      const t0 = performance.now();
+      const step = now => {
+        if (done) return;
+        const k = Math.min(1, (now - t0) / 600), e = 1 - Math.pow(1 - k, 3);
+        paint(r0 + (r1 - r0) * e);
+        if (k < 1) requestAnimationFrame(step); else setTimeout(end, 120);
+      };
+      requestAnimationFrame(step);
+    }, 150);
+  });
 }
 function reveal(sp, first){
   const d = document.createElement('div'); d.className = 'reveal';
@@ -1590,19 +1841,32 @@ function reveal(sp, first){
 }
 
 /* ================= 種のページ ================= */
-/** list：めくる順番。なければ全種の図鑑番号順 */
-function openSpecies(id0, list){
+/**
+ * 図鑑のページ。list：めくる順番（種のid と 'n:出会いのid'＝なぞのページ が混ざる）。なければ全種の図鑑番号順
+ * where：{label, color}（見出しの下の帯）
+ */
+function openSpecies(id0, list, where){
   const ids = list && list.includes(id0) ? list : allSpeciesByNo();
-  openSheet({title:'種のページ', pager:{ids: ids.includes(id0) ? ids : [id0], cur:id0, alive:speciesAlive,
-    photoOf: id => { const sp = S.species.get(id); return sp && coverPhotoOf(sp, buildIndex().get(id)); }}, build(sh){
+  const bookAlive = key => key.startsWith('n:') ? (() => { const e = S.entries.get(key.slice(2)); return !!(e && !e.deleted && !e.speciesId); })() : speciesAlive(key);
+  openSheet({title:'種のページ', pager:{ids: ids.includes(id0) ? ids : [id0], cur:id0, alive:bookAlive,
+    where: where || {label:'📚 ぜんぶ'},
+    photoOf: key => {
+      if (key.startsWith('n:')) { const e = S.entries.get(key.slice(2)); return e && e.photoIds[0]; }
+      const sp = S.species.get(key); return sp && coverPhotoOf(sp, buildIndex().get(key));
+    }}, build(sh){
     const id = sh.pager.cur;
+    if (id.startsWith('n:')) return buildNazoPage(sh, id.slice(2));
     const sp = S.species.get(id);
-    if (!sp || sp.deleted) { sh.body.innerHTML = `<div class="empty">このページはほかの種に統合されたか、削除されました。</div>`; return; }
+    if (!sp || sp.deleted) { sh.titleEl.textContent = '種のページ'; sh.body.innerHTML = `<div class="empty">このページはほかの種に統合されたか、削除されました。</div>`; pagerFoot(sh); return; }
     const st = buildIndex().get(id), g = genreOf(sp.genreId) || NOGENRE, cv = coverPhotoOf(sp, st);
+    // 表紙スライド：1枚目は表紙、つづいて出会いの古い順に残りの写真
+    const pairs = st ? st.entries.flatMap(e => e.photoIds.map(p => [p, e.id])) : [];
+    const slides = cv ? [pairs.find(x => x[0] === cv), ...pairs.filter(x => x[0] !== cv)].filter(Boolean) : pairs;
+    const recWhere = {label:`${sp.name}の記録`, color:g.color};
     sh.titleEl.textContent = `No.${String(sp.no).padStart(3,'0')} ${sp.name}`;
     const months = Array.from({length:12}, (_, i) => `<div><i class="${st && st.months.has(i) ? 'on' : ''}"></i><span>${i+1}</span></div>`).join('');
     sh.body.style.setProperty('--gc', g.color);
-    sh.body.innerHTML = `${cv ? `<img class="cover" data-full="${cv}" alt="">` : ''}
+    sh.body.innerHTML = `${slides.length ? galleryHTML(slides.map(x => x[0]), {eids:slides.map(x => x[1])}) : ''}
       <div class="splabel"><div class="no">No.${String(sp.no).padStart(3,'0')}</div><h2>${h(sp.name)}</h2>
         <div class="gr">${h(g.emoji)} ${h(g.name)}${sp.group ? '・' + h(sp.group) : ''}</div>
         <div class="gr">出会い ${st ? st.count : 0}回${st ? `・初めて会った日 ${fmtDate(st.first)}` : ''}</div></div>
@@ -1625,7 +1889,7 @@ function openSpecies(id0, list){
     pagerFoot(sh);
     sh.body.onclick = async ev => {
       const t = ev.target;
-      const en = t.closest('[data-entry]'); if (en) return openEntry(en.dataset.entry, st ? st.entries.map(e => e.id) : null);
+      const en = t.closest('[data-entry]'); if (en) return openEntry(en.dataset.entry, st ? st.entries.map(e => e.id) : null, recWhere);
       const dl = t.closest('[data-dl]');
       if (dl) { if (!confirm('このリンクを消しますか？')) return; sp.links.splice(+dl.dataset.dl, 1); if (await safeWrite(() => Store.put('species', sp))) sh.refresh(); return; }
       if (t.closest('#s-ladd')) {
@@ -1645,6 +1909,31 @@ function openSpecies(id0, list){
       }
     };
   }});
+}
+/** 図鑑の中の「なぞのページ」（読むだけ。調べるボタンで openInvestigate） */
+function buildNazoPage(sh, eid){
+  const e = S.entries.get(eid);
+  sh.titleEl.textContent = 'なぞ';
+  sh.body.style.removeProperty('--gc');
+  if (!e || e.deleted) { sh.body.innerHTML = `<div class="empty">この出会いは削除されました。</div>`; pagerFoot(sh); return; }
+  const g = entryGenre(e), sp = e.speciesId && S.species.get(e.speciesId);
+  sh.body.style.setProperty('--gc', g.color);
+  const cands = e.candidates || [];
+  sh.body.innerHTML = `${galleryHTML(e.photoIds)}
+    ${sp ? `<div class="solved"><div class="t">判明しました</div><div>${noStr(sp.no)} ${h(sp.name)}</div>
+      <button class="btn primary block" id="n-sp" style="margin-top:8px">📖 種のページを見る</button></div>` : ''}
+    <div class="splabel nz"><div class="no">No.???</div><h2>？？？</h2>
+      <div class="gr">${h(g.emoji)} ${h(g.name)}</div><div class="gr">${fmtDT(e.takenAt)}${e.place ? '・' + h(e.place) : ''}</div></div>
+    <div class="sec">名前の候補メモ</div>
+    ${cands.length ? `<ul class="cands">${cands.map(c => `<li>${h(c)}</li>`).join('')}</ul>` : '<p class="hint">（なし）</p>'}
+    <div class="sec">ひとこと</div>
+    ${e.note ? `<div class="summary">${h(e.note)}</div>` : '<p class="hint">（なし）</p>'}
+    ${sp ? '' : `<button class="btn primary block" id="n-inv" style="margin-top:18px">🔍 調べる</button>`}`;
+  pagerFoot(sh);
+  sh.body.onclick = ev => {
+    if (ev.target.closest('#n-inv')) return openInvestigate(eid);
+    if (ev.target.closest('#n-sp')) return openSpecies(e.speciesId);
+  };
 }
 function openSpeciesEdit(id){
   const sp = S.species.get(id);
@@ -1691,15 +1980,51 @@ function openSpeciesEdit(id){
   }});
 }
 function openCoverPick(id){
-  openSheet({title:'表紙を選ぶ', build(sh){
-    const sp = S.species.get(id), st = buildIndex().get(id), cur = coverPhotoOf(sp, st);
+  const sp0 = S.species.get(id), st0 = buildIndex().get(id);
+  const pick = {pid:coverPhotoOf(sp0, st0), fx:0.5, fy:0.5};
+  const loadFocus = async () => { const p = await Store.get('photos', pick.pid); pick.fx = p && p.focusX != null ? p.focusX : 0.5; pick.fy = p && p.focusY != null ? p.focusY : 0.5; };
+  openSheet({title:'表紙を変える', form:true, build(sh){
+    const sp = S.species.get(id), st = buildIndex().get(id);
     const pids = st ? st.entries.flatMap(e => e.photoIds) : [];
-    sh.body.innerHTML = `<div class="pickgrid">${pids.map(p => `<button data-p="${p}" class="${p === cur ? 'on' : ''}"><img data-photo="${p}" alt=""></button>`).join('')}</div>`;
+    sh.body.innerHTML = `<p class="hint" style="margin-top:0">写真の主役をタップしてください（印は指で動かせます）</p>
+      <div class="fpick"><div class="fpi" id="c-fp"><img data-full="${pick.pid}" alt="" draggable="false"><span class="mk"></span></div></div>
+      <p class="hint">できあがり</p>
+      <div class="fprev"><div><img class="sq" data-full="${pick.pid}" alt=""><span>図鑑のカード</span></div><div><img class="wd" data-full="${pick.pid}" alt=""><span>表紙</span></div></div>
+      ${pids.length > 1 ? `<p class="hint" style="margin-top:16px">ほかの写真を表紙にする</p>
+      <div class="pickgrid">${pids.map(p => `<button data-p="${p}" class="${p === pick.pid ? 'on' : ''}"><img data-photo="${p}" alt=""></button>`).join('')}</div>` : ''}`;
+    sh.foot.innerHTML = `<button class="btn primary" id="c-ok">決定</button>`;
+    const fp = $('#c-fp', sh.body), mk = $('.mk', fp);
+    const paint = () => {
+      mk.style.left = (pick.fx * 100) + '%'; mk.style.top = (pick.fy * 100) + '%';
+      const pos = `${(pick.fx * 100).toFixed(1)}% ${(pick.fy * 100).toFixed(1)}%`;
+      $$('.fprev img', sh.body).forEach(i => i.style.objectPosition = pos);
+    };
+    paint();
+    // 主役の位置：タップ、またはそのまま指で動かす
+    const setAt = (x, y) => {
+      const r = $('img', fp).getBoundingClientRect(); if (!r.width) return;
+      pick.fx = Math.max(0, Math.min(1, (x - r.left) / r.width)); pick.fy = Math.max(0, Math.min(1, (y - r.top) / r.height)); paint();
+    };
+    let dragging = false;
+    fp.addEventListener('pointerdown', ev => { dragging = true; fp.setPointerCapture(ev.pointerId); setAt(ev.clientX, ev.clientY); });
+    fp.addEventListener('pointermove', ev => { if (dragging) setAt(ev.clientX, ev.clientY); });
+    fp.addEventListener('pointerup', () => { dragging = false; });
+    fp.addEventListener('pointercancel', () => { dragging = false; });
     sh.body.onclick = async ev => {
       const b = ev.target.closest('[data-p]'); if (!b) return;
-      sp.coverPhotoId = b.dataset.p; if (await safeWrite(() => Store.put('species', sp))) closeSheet(sh, true);
+      pick.pid = b.dataset.p; await loadFocus(); sh.refresh();
+    };
+    $('#c-ok', sh.foot).onclick = async () => {
+      const p = await Store.get('photos', pick.pid);
+      if (!p) return;
+      p.focusX = Math.round(pick.fx * 1000) / 1000; p.focusY = Math.round(pick.fy * 1000) / 1000;
+      sp.coverPhotoId = pick.pid;
+      if (await safeWrite(() => Store.putMany([{store:'photos', rec:p}, {store:'species', rec:sp}]))) {
+        noteFocus(p); closeSheet(sh, true); render(); pinToast('表紙を決めました');
+      } else await loadAll();
     };
   }});
+  loadFocus().then(() => { const top = sheets[sheets.length - 1]; if (top && top.opts.title === '表紙を変える') top.refresh(); });
 }
 function openMerge(id){
   let q = '';
@@ -1979,7 +2304,10 @@ async function init(){
     if (navigator.storage && navigator.storage.persist) S.persisted = (await navigator.storage.persisted()) || (await navigator.storage.persist());
   } catch(e) {}
   $$('nav.tabs [data-tab]').forEach(b => b.onclick = () => {
-    if (S.tab === b.dataset.tab) window.scrollTo({top:0, behavior:'smooth'});
+    if (S.tab === b.dataset.tab) {
+      if (window.scrollY > 4) { window.scrollTo({top:0, behavior:'smooth'}); return; }
+      if (S.tab === 'zukan' && S.zCh) { S.zCh = null; S.zQuery = ''; }
+    }
     S.tab = b.dataset.tab; render(); resetZoom(); });
   $('#plusBtn').onclick = () => { R && (R.addMode = false); $('#fileIn').click(); };
   $('#fileIn').onchange = ev => {
