@@ -366,10 +366,10 @@ input.emo-in{width:88px;text-align:center;font-size:26px;padding:4px}
 <script>
 'use strict';
 /* ============================================================
-   コレクション図鑑 (my-collection-book) ステップ2
+   コレクション図鑑 (my-collection-book) ステップ3a
    なんでも図鑑 my-field-guide.html v1.2 の部品を流用
    ============================================================ */
-const APP_VERSION = '0.2';
+const APP_VERSION = '0.3';
 const SCHEMA_VERSION = 1;
 const SHELF_DB = 'my-collection-book';
 const bookDbName = id => `my-collection-book:${id}`;
@@ -420,6 +420,18 @@ class DB {
       const r = this.db.transaction(name).objectStore(name).openCursor();
       r.onsuccess = () => { const c = r.result; if (c) { fn(c.value); c.continue(); } else res(); };
       r.onerror = () => rej(r.error);
+    });
+  }
+  /** カーソルで1件ずつ書き換える。fn(rec) が true を返したら、その rec を書く（時刻は変えない） */
+  update(name, fn){
+    return new Promise((res, rej) => {
+      const tx = this.db.transaction(name, 'readwrite');
+      const r = tx.objectStore(name).openCursor();
+      let n = 0;
+      r.onsuccess = () => { const c = r.result; if (!c) return; const v = c.value; if (fn(v)) { c.update(v); n++; } c.continue(); };
+      tx.oncomplete = () => res(n);
+      tx.onerror = () => rej(tx.error);
+      tx.onabort = () => rej(tx.error || new Error('abort'));
     });
   }
   /** ops = [{store, rec}] をひとつのトランザクションで書く */
@@ -489,12 +501,22 @@ const GENRE_DEFS = {
   'g-other':    {name:'そのほか', emoji:'📦', color:'#68707f', logTypes:['登録','そのほか'], logPosition:'bottom', eraFieldId:null, fields:[
     F('f-memo','メモ','longtext')]},
 };
+/* 新しい図鑑の型。v0.3 で「お菓子」「手芸」は「つくったもの」に集約した。
+   すでにある図鑑の template:'sweets'・'craft' はそのまま開ける（template は記録として持つだけ）。
+   戻したくなったら、ここに次の2行を足すだけ：
+     sweets:{label:'お菓子', name:'お菓子', genres:['g-sweets'], wants:true},
+     craft: {label:'手芸', name:'手芸', genres:['g-craft'], wants:true}, */
 const TEMPLATES = {
   collection:{label:'コレクション', name:'コレクション', genres:['g-helmet','g-sneaker','g-watch','g-accessory','g-sukajan','g-bike'], wants:false},
-  sweets:    {label:'お菓子', name:'お菓子', genres:['g-sweets'], wants:true},
-  craft:     {label:'手芸', name:'手芸', genres:['g-craft'], wants:true},
+  made:      {label:'つくったもの', name:'つくったもの', genres:['g-sweets','g-craft'], wants:true},
   empty:     {label:'空っぽ', name:'新しい図鑑', genres:['g-other'], wants:false},
 };
+/** 見える項目（しまった項目を除く）。項目を使う所はこれを使う。g.fields をそのまま使うのは、項目を直す画面とジャンルを写すときだけ */
+const fieldsOf = g => ((g && g.fields) || []).filter(f => !f.hidden);
+/** 項目の種類の呼び名（項目を直す画面） */
+const FIELD_TYPES = [['text','短い文字'],['longtext','長い文字'],['number','数字'],['date','日付'],['check','チェック'],['select','選ぶ（選択肢）'],['url','URL'],['era','年代']];
+const typeName = t => t === 'days' ? 'かかった日数' : ((FIELD_TYPES.find(x => x[0] === t) || [])[1] || t);
+const SORTABLE_TYPES = ['text','number','date','era'];
 
 /* ---------------- 状態 ---------------- */
 const S = {
@@ -519,7 +541,7 @@ const prioOn = () => !(S.bmeta && S.bmeta.priorityOn === false);
 const jaCmp = (a, b) => String(a).localeCompare(String(b), 'ja');
 const nameCmp = (a, b) => jaCmp(a.name || '', b.name || '') || byCreated(a, b);
 /** その品のジャンルの年代の項目の値（年代の項目がないジャンルなら undefined） */
-const eraFieldOf = g => g && g.eraFieldId && (g.fields || []).find(f => f.id === g.eraFieldId) || null;
+const eraFieldOf = g => g && g.eraFieldId && fieldsOf(g).find(f => f.id === g.eraFieldId && f.type === 'era') || null;   // しまってあれば「年代の項目なし」
 const hasEraGenre = () => genresSorted().some(g => eraFieldOf(g));
 /** 並べるための値。grp 0＝値あり、1＝不明（年代）、2＝空欄。val は比べる値 */
 function sortVal(f, v){
@@ -553,7 +575,7 @@ function sortOptions(key){
   if (key === ALL) return hasEraGenre() ? [{key:'era', label:'年代', kind:'era'}] : [{key:'reg', label:'登録順', kind:'reg'}];
   const g = key === NONE ? NOGENRE : genreOf(key);
   return [{key:'reg', label:'登録順', kind:'reg'}, {key:'name', label:'名前順', kind:'text'},
-    ...(g.fields || []).filter(f => f.sortable).map(f => ({key:'f:' + f.id, label:f.name, kind:f.type === 'era' || f.type === 'date' ? 'era' : f.type === 'number' ? 'number' : 'text', f}))];
+    ...fieldsOf(g).filter(f => f.sortable).map(f => ({key:'f:' + f.id, label:f.name, kind:f.type === 'era' || f.type === 'date' ? 'era' : f.type === 'number' ? 'number' : 'text', f}))];
 }
 const DIR_WORDS = {reg:['古い順','新しい順'], era:['古い順','新しい順'], text:['あ → ん','ん → あ'], number:['小さい順','大きい順']};
 const dirWord = (kind, dir) => DIR_WORDS[kind][dir === 'desc' ? 1 : 0];
@@ -582,7 +604,7 @@ function chapterItems(key){
   if (s.key === 'reg') cmp = (a, b) => s.dir === 'desc' ? byCreated(b, a) : byCreated(a, b);
   else if (s.key === 'name') cmp = (a, b) => (s.dir === 'desc' ? -1 : 1) * jaCmp(a.name || '', b.name || '') || byCreated(a, b);
   else {
-    const f = g.fields.find(x => 'f:' + x.id === s.key);
+    const f = fieldsOf(g).find(x => 'f:' + x.id === s.key);
     const memo = new Map(its.map(i => [i.id, sortVal(f, (i.values || {})[f.id])]));
     cmp = fieldCmp(f, s.dir, it => memo.get(it.id));
   }
@@ -640,6 +662,15 @@ async function setBackupState(bookId, patch){
   const all = {...((S.smeta && S.smeta.backup) || {})};
   all[bookId] = {...(all[bookId] || {}), ...patch};
   await saveSmeta({backup:all});
+}
+
+/* ---------------- 写真を消す（印をつけて、中身は端末から外す） ---------------- */
+/** 写真に削除の印をつけ、大きい写真・小さい写真の中身を外す。レコード（id・itemId・deleted・updatedAt など）は合流のために残す */
+function markPhotoDeleted(p){ p.deleted = true; delete p.data; delete p.thumb; return p; }
+/** 今までにたまった分の片づけ：削除の印があるのに中身が残っている写真から中身を外す（updatedAt は変えない） */
+async function sweepDeletedPhotos(db){
+  try { return await db.update('photos', p => { if (!p.deleted || (p.data == null && p.thumb == null)) return false; delete p.data; delete p.thumb; return true; }); }
+  catch(e) { console.warn('片づけ', e); return 0; }
 }
 
 /* ---------------- 写真の読み込み ---------------- */
@@ -1208,6 +1239,7 @@ async function openBookById(id){
   try { S.B = await openBookDB(id); }
   catch(e) { alert('図鑑を開けませんでした。\n' + e.message); S.B = null; return; }
   S.book = b; await loadBook();
+  sweepDeletedPhotos(S.B);   // 画面を待たせない
   S.tab = 'toc'; S.open = new Set(); S.chapter = null; S.chPop = false; S.logFilter = null; S.logLimit = 50;
   await saveSmeta({lastBookId:id});
   window.scrollTo(0, 0);
@@ -1332,13 +1364,20 @@ async function deleteBook(id){
 /* ---------- 目次 ---------- */
 function backupDue(){
   const items = live(S.items); if (!items.length) return null;
-  const bs = backupState(S.book.id), added = bs.itemsSince || 0;
-  if (!added) return null;   // 品が増えていなければ出さない
+  const bs = backupState(S.book.id), added = (bs.itemsSince || 0) + (bs.logsSince || 0);
+  if (!added) return null;   // 品もできごとも増えていなければ出さない
   const base = bs.lastBackupAt || items.reduce((a, i) => (i.createdAt || a) < a ? i.createdAt : a, items[0].createdAt || nowISO());
   const days = daysSince(base);
   if (days < 14 && added < 20) return null;
   if (bs.dismissedAt && daysSince(bs.dismissedAt) < 3) return null;
-  return {days, added, never:!bs.lastBackupAt};
+  return {days, added, never:!bs.lastBackupAt, since:sinceText(bs)};
+}
+/** 「品 3点・できごと 5件を追加」（0のものは省く。両方0なら ''） */
+function sinceText(bs){
+  const a = [];
+  if (bs.itemsSince) a.push(`品 ${bs.itemsSince}点`);
+  if (bs.logsSince) a.push(`できごと ${bs.logsSince}件`);
+  return a.length ? a.join('・') + 'を追加' : '';
 }
 /** 目次に並ぶ章の鍵：ぜんぶ → ジャンル（→ ジャンルが見つからない品があれば「ジャンルなし」） */
 function tocKeys(){
@@ -1353,7 +1392,7 @@ function renderToc(v){
   const all = live(S.items);
   const due = backupDue();
   v.innerHTML = bookBar()
-    + (due ? `<div class="notice"><span class="grow">💾 ${due.never ? 'まだバックアップしていません' : `${due.days}日バックアップしていません`}（その後 ${due.added}点追加）</span><button class="btn small" id="bkGo">設定へ</button><button class="x" id="bkX" aria-label="閉じる">✕</button></div>` : '')
+    + (due ? `<div class="notice"><span class="grow">💾 ${due.never ? 'まだバックアップしていません' : `${due.days}日バックアップしていません`}（その後 ${h(due.since)}）</span><button class="btn small" id="bkGo">設定へ</button><button class="x" id="bkX" aria-label="閉じる">✕</button></div>` : '')
     + `<div class="vh"><h1>目次</h1></div><p class="tsum">${all.length}点・できごと ${eventCount()}件</p>`
     + (all.length ? '' : `<p class="hint">下の「＋ 登録」から、最初の品を入れましょう。</p>`)
     + `<div class="toc">${tocKeys().map(k => tocRow(k)).join('')}</div>`
@@ -1570,7 +1609,7 @@ function openItem(id0, list, where, opt = {}){
     const g = genreOf(it.genreId);
     sh.titleEl.textContent = it.name;
     sh.body.style.setProperty('--gc', g.color);
-    const rows = g.fields.map(f => { const d = fieldDisplay(f, it.values || {}); return d ? `<dt>${h(f.name)}${f.secret ? '<span class="lock" title="ひみつ">🔒</span>' : ''}</dt><dd>${d}</dd>` : ''; }).join('');
+    const rows = fieldsOf(g).map(f => { const d = fieldDisplay(f, it.values || {}); return d ? `<dt>${h(f.name)}${f.secret ? '<span class="lock" title="ひみつ">🔒</span>' : ''}</dt><dd>${d}</dd>` : ''; }).join('');
     const notes = (it.notes || []).filter(n => (n.text || '').trim());
     const ph = itemPhotos(it), pri = isPri(it);
     const logs = logSectionHTML(it, sh), top = g.logPosition === 'top';
@@ -1833,16 +1872,20 @@ function fieldInputHTML(f, v){
     case 'number': return lab + `<input type="text" inputmode="decimal" data-f="${f.id}" value="${h(val)}" autocomplete="off">`;
     case 'era': return lab + renderEraInput(f.id, v);
     case 'date': return lab + `<input type="date" data-f="${f.id}" value="${h(val)}">`;
-    case 'select': return lab + `<select data-f="${f.id}"><option value="">（空欄）</option>${(f.options || []).map(o => `<option ${o === v ? 'selected' : ''}>${h(o)}</option>`).join('')}</select>`;
+    case 'select': {
+      // 選択肢を減らしても、入っている値は選択肢に足して出す（値は消さない）
+      const opts = [...(f.options || [])]; if (typeof v === 'string' && v && !opts.includes(v)) opts.push(v);
+      return lab + `<select data-f="${f.id}"><option value="">（空欄）</option>${opts.map(o => `<option ${o === v ? 'selected' : ''}>${h(o)}</option>`).join('')}</select>`;
+    }
     case 'check': return `<label class="sw"><input type="checkbox" data-f="${f.id}" ${v === true ? 'checked' : ''}>${h(f.name)}${f.secret ? '<span class="lock">🔒</span>' : ''}</label>`;
     case 'url': return lab + `<input type="url" data-f="${f.id}" value="${h(val)}" placeholder="https://" autocomplete="off">`;
     case 'days': return lab + `<div class="days" data-days="${f.id}"></div>`;
     default: return lab + `<input type="text" data-f="${f.id}" value="${h(val)}" autocomplete="off">`;
   }
 }
-const fieldsHTML = (g, values) => g.fields.map(f => fieldInputHTML(f, values[f.id])).join('') || '<p class="hint">このジャンルには項目がありません。</p>';
+const fieldsHTML = (g, values) => fieldsOf(g).map(f => fieldInputHTML(f, values[f.id])).join('') || '<p class="hint">このジャンルには項目がありません。</p>';
 function paintDays(box, g, values){
-  for (const f of g.fields.filter(f => f.type === 'days')) {
+  for (const f of fieldsOf(g).filter(f => f.type === 'days')) {
     const el = $(`[data-days="${f.id}"]`, box); if (!el) continue;
     const d = calcDays(values[f.from], values[f.to]);
     const nf = id => (g.fields.find(x => x.id === id) || {}).name || '';
@@ -1932,7 +1975,7 @@ function openEditor(opt = {}){
         const t = ev.target, era = t.closest('[data-era]');
         if (era) { syncEraInput(era, t.classList.contains('era-y') ? 'year' : 'decade'); st.values[era.dataset.era] = readEraInput(era); return; }
         const fid = t.dataset.f; if (!fid) return;
-        const g = genreOf(st.genreId), f = g.fields.find(x => x.id === fid); if (!f) return;
+        const g = genreOf(st.genreId), f = fieldsOf(g).find(x => x.id === fid); if (!f) return;
         st.values[fid] = f.type === 'check' ? t.checked : f.type === 'number' ? parseNum(t.value) : t.value;
         if (t.tagName === 'TEXTAREA') grow(t);
         if (f.type === 'date') paintDays(fb, g, st.values);
@@ -1987,7 +2030,7 @@ async function saveItem(id, st){
   const name = st.name.trim();
   if (!name) { alert(`${genreOf(st.genreId).nameLabel || '名前'}を入れてください。`); return false; }
   const g = genreOf(st.genreId);
-  for (const f of g.fields) {
+  for (const f of fieldsOf(g)) {
     const v = st.values[f.id];
     if (f.type === 'era') { const m = eraProblem(f.name, v); if (m) { alert(m); return false; } }
     if (f.type === 'number' && typeof v === 'string') { alert(`「${f.name}」は数字で入れてください。`); return false; }
@@ -2005,7 +2048,7 @@ async function saveItem(id, st){
       width:p.width, height:p.height, takenAt:p.takenAt, originalName:p.name};
     ops.push({store:'photos', rec}); pids.push(rec.id); fresh.push([rec.id, p]);
   }
-  if (!isNew) for (const old of it.photoIds) if (!pids.includes(old)) { const p = await S.B.get('photos', old); if (p) { p.deleted = true; ops.push({store:'photos', rec:p}); } }
+  if (!isNew) for (const old of it.photoIds) if (!pids.includes(old)) { const p = await S.B.get('photos', old); if (p) ops.push({store:'photos', rec:markPhotoDeleted(p)}); }
   const values = {};
   for (const [k, v] of Object.entries(st.values)) {
     if (v == null || v === '' || v === false) continue;
@@ -2036,10 +2079,10 @@ async function saveItem(id, st){
 async function deleteItem(id){
   const it = S.items.get(id);
   const ops = [{store:'items', rec:it}];
-  for (const pid of it.photoIds) { const p = await S.B.get('photos', pid); if (p) { p.deleted = true; ops.push({store:'photos', rec:p}); } }
+  for (const pid of it.photoIds) { const p = await S.B.get('photos', pid); if (p) ops.push({store:'photos', rec:markPhotoDeleted(p)}); }
   for (const l of await S.B.getAll('logs')) if (l.itemId === id && !l.deleted) {
     l.deleted = true; ops.push({store:'logs', rec:l});
-    for (const pid of l.photoIds || []) { const p = await S.B.get('photos', pid); if (p && !p.deleted) { p.deleted = true; ops.push({store:'photos', rec:p}); } }
+    for (const pid of l.photoIds || []) { const p = await S.B.get('photos', pid); if (p && !p.deleted) ops.push({store:'photos', rec:markPhotoDeleted(p)}); }
   }
   it.deleted = true;
   if (isPri(it)) { it.priorityRank = null; for (const c of renumberPriority(it.genreId)) ops.push({store:'items', rec:c}); }
@@ -2157,12 +2200,13 @@ async function saveLog(itemId, old, st, isReg){
     ops.push({store:'photos', rec:pr}); pids.push(pr.id); fresh.push([pr.id, p]);
   }
   if (!isReg && !memo.trim() && !pids.length) { alert('写真を読み込めませんでした。メモか写真を入れてください。'); return false; }
-  if (old) for (const o of old.photoIds || []) if (!pids.includes(o)) { const p = await S.B.get('photos', o); if (p) { p.deleted = true; ops.push({store:'photos', rec:p}); } }
+  if (old) for (const o of old.photoIds || []) if (!pids.includes(o)) { const p = await S.B.get('photos', o); if (p) ops.push({store:'photos', rec:markPhotoDeleted(p)}); }
   Object.assign(rec, {date:st.date, memo, photoIds:pids});
   if (!isReg) rec.type = st.type;
   ops.push({store:'logs', rec});
   if (!(await safeWrite(() => S.B.putMany(ops)))) { await loadBook(); return false; }
   S.logs.set(rec.id, rec);
+  if (!old) { const bs = backupState(S.book.id); await setBackupState(S.book.id, {logsSince:(bs.logsSince || 0) + 1}); }   // 新しいできごとも催促に数える
   for (const [pid, p] of fresh) { thumbCache.set(pid, p.thumbUrl); takenCache.set(pid, p.takenAt || null); p.kept = true; }
   if (failed) alert(`読み込めなかった写真 ${failed}枚は保存しませんでした。`);
   return true;
@@ -2170,7 +2214,7 @@ async function saveLog(itemId, old, st, isReg){
 async function deleteLog(id){
   const l = S.logs.get(id); if (!l) return false;
   const ops = [];
-  for (const pid of l.photoIds || []) { const p = await S.B.get('photos', pid); if (p && !p.deleted) { p.deleted = true; ops.push({store:'photos', rec:p}); } }
+  for (const pid of l.photoIds || []) { const p = await S.B.get('photos', pid); if (p && !p.deleted) ops.push({store:'photos', rec:markPhotoDeleted(p)}); }
   l.deleted = true; ops.push({store:'logs', rec:l});
   const ok = await safeWrite(() => S.B.putMany(ops));
   if (!ok) await loadBook();
@@ -2224,16 +2268,28 @@ const firstGrapheme = s => {
   try { if (window.Intl && Intl.Segmenter) { const it = new Intl.Segmenter('ja', {granularity:'grapheme'}).segment(s)[Symbol.iterator]().next(); if (!it.done) return it.value.segment; } } catch(e) {}
   return Array.from(s)[0];
 };
+const TPL_BASE = 'tpl:';
+/** 「はじめから入っている型」の組に出す型（「そのほか」と、この図鑑に同じ id のジャンルが生きているものは出さない） */
+const baseTemplates = () => Object.keys(GENRE_DEFS).filter(id => id !== 'g-other' && !(S.genres.get(id) && !S.genres.get(id).deleted));
+/** もとにするジャンルの中身（写すもの） */
+function baseGenre(base){
+  if (base === EMPTY_BASE) return GENRE_DEFS['g-other'];
+  if (String(base).startsWith(TPL_BASE)) return GENRE_DEFS[base.slice(TPL_BASE.length)] || null;
+  const g = S.genres.get(base); return g && !g.deleted ? g : null;
+}
 function openGenreForm(gid){
   const old = gid ? S.genres.get(gid) : null;
   const gs = genresSorted();
   const last = S.bmeta && S.bmeta.lastGenreId;
   const used = new Set(gs.map(g => g.color));
   const st = {name: old ? old.name : '', emoji: old ? old.emoji : '', color: old ? old.color : (GENRE_COLORS.find(c => !used.has(c)) || GENRE_COLORS[0]),
+    nameLabel: old ? old.nameLabel || '' : '',
     base: old ? null : (gs.some(g => g.id === last) ? last : gs[0] ? gs[0].id : EMPTY_BASE)};
-  const key = () => JSON.stringify([st.name.trim(), firstGrapheme(st.emoji), st.color, st.base]);
+  const key = () => JSON.stringify([st.name.trim(), firstGrapheme(st.emoji), st.color, st.base, st.nameLabel.trim()]);
   let orig = key();
   const cols = GENRE_COLORS.includes(st.color) ? GENRE_COLORS : [...GENRE_COLORS, st.color];
+  const tpls = old ? [] : baseTemplates();
+  const fieldBtnText = () => { const g = old && S.genres.get(old.id); return `項目を直す（${g ? fieldsOf(g).length : 0}つ）›`; };
   openSheet({title: old ? 'ジャンルを直す' : 'ジャンルを足す', form:true,
     beforeClose: async () => {
       if (key() === orig) return true;
@@ -2243,31 +2299,41 @@ function openGenreForm(gid){
       return await saveGenre(old, st);
     },
     build(sh){
-      const baseName = () => st.base === EMPTY_BASE ? '空っぽ（メモだけ）' : genreOf(st.base).name;
+      const baseName = () => { const b = baseGenre(st.base); return st.base === EMPTY_BASE ? '空っぽ（メモだけ）' : b ? b.name : ''; };
+      const baseChip = (val, g) => `<button class="chip g ${st.base === val ? 'on' : ''}" data-b="${h(val)}" style="--gc:${h(g.color)}">${h(g.emoji)} ${h(g.name)}</button>`;
       sh.body.innerHTML = `<label class="fl" style="margin-top:2px">名前</label><input id="gf-name" value="${h(st.name)}" placeholder="例：車" autocomplete="off">
         <label class="fl">絵文字（1つ）</label><input id="gf-emoji" class="emo-in" value="${h(st.emoji)}" placeholder="📁" autocomplete="off">
         <p class="hint" style="margin:4px 2px 0">キーボードの 🙂（地球儀のとなり）から選べます。空なら 📁 になります。</p>
         <label class="fl">色</label><div class="swatches" id="gf-col">${cols.map(c => `<button class="swc ${c === st.color ? 'on' : ''}" data-c="${c}" style="background:${c}" aria-label="色"></button>`).join('')}</div>
         <label class="fl">見え方</label><div id="gf-prev"></div>
-        ${old ? '' : `<label class="fl">もとにするジャンル</label><div class="chips wrap" id="gf-base">${gs.map(g => `<button class="chip g ${st.base === g.id ? 'on' : ''}" data-b="${g.id}" style="--gc:${h(g.color)}">${h(g.emoji)} ${h(g.name)}</button>`).join('')}<button class="chip ${st.base === EMPTY_BASE ? 'on' : ''}" data-b="${EMPTY_BASE}">空っぽ（メモだけ）</button></div>
+        ${old ? `<label class="fl">名前の欄の見出し</label><input id="gf-nl" value="${h(st.nameLabel)}" placeholder="名前" autocomplete="off">
+          <p class="hint" style="margin:4px 2px 0">登録・編集で、品の名前の欄に出る見出しです。空なら「名前」。例：作品名</p>
+          <button class="btn block" id="gf-fields" style="margin-top:18px">${h(fieldBtnText())}</button><button class="btn block" id="gf-logs" style="margin-top:8px">できごとの種類を直す ›</button>` : ''}
+        ${old ? '' : `<label class="fl">もとにするジャンル</label><div id="gf-base">
+          <p class="hint" style="margin:2px 2px 4px">この図鑑のジャンル</p><div class="chips wrap">${gs.map(g => baseChip(g.id, g)).join('')}</div>
+          ${tpls.length ? `<p class="hint" style="margin:6px 2px 4px">はじめから入っている型</p><div class="chips wrap">${tpls.map(id => baseChip(TPL_BASE + id, GENRE_DEFS[id])).join('')}</div>` : ''}
+          <div class="chips wrap" style="margin-top:6px"><button class="chip ${st.base === EMPTY_BASE ? 'on' : ''}" data-b="${EMPTY_BASE}">空っぽ（メモだけ）</button></div></div>
           <p class="hint" id="gf-note"></p>`}
-        ${old ? `<p class="hint" style="margin-top:18px">項目・できごとの種類は、いまは変えられません（あとでできるようになります）。</p>
-          <button class="btn danger block" id="gf-del" style="margin-top:20px">このジャンルを消す</button>` : ''}`;
+        ${old ? `<button class="btn danger block" id="gf-del" style="margin-top:20px">このジャンルを消す</button>` : ''}`;
       const body = sh.body;
       const paint = () => {
         const e = firstGrapheme(st.emoji) || '📁';
         $('#gf-prev', body).innerHTML = `<span class="chip g on" style="--gc:${h(st.color)};display:inline-flex;align-items:center">${h(e)} ${h(st.name.trim() || '（名前）')}</span>`;
         const n = $('#gf-note', body);
-        if (n) n.textContent = st.base === EMPTY_BASE ? '項目は「メモ」だけになります。項目の足し引きは、あとでできるようになります。'
-          : `項目は「${baseName()}」と同じになります。項目の足し引きは、あとでできるようになります。`;
+        if (n) n.textContent = (st.base === EMPTY_BASE ? '項目は「メモ」だけになります。' : `項目は「${baseName()}」と同じになります。`) + 'あとから「設定 → ジャンル → 直す」で変えられます。';
       };
       paint();
       $('#gf-name', body).oninput = ev => { st.name = ev.target.value; paint(); };
       $('#gf-emoji', body).oninput = ev => { st.emoji = ev.target.value; paint(); };
       $('#gf-emoji', body).onblur = ev => { const e = firstGrapheme(ev.target.value); ev.target.value = e; st.emoji = e; paint(); };
       $('#gf-col', body).onclick = ev => { const b = ev.target.closest('[data-c]'); if (!b) return; st.color = b.dataset.c; $$('[data-c]', body).forEach(x => x.classList.toggle('on', x === b)); paint(); };
+      const nl = $('#gf-nl', body); if (nl) nl.oninput = ev => { st.nameLabel = ev.target.value; };
       const bb = $('#gf-base', body);
       if (bb) bb.onclick = ev => { const b = ev.target.closest('[data-b]'); if (!b) return; st.base = b.dataset.b; $$('[data-b]', bb).forEach(x => x.classList.toggle('on', x === b)); paint(); };
+      const fbtn = $('#gf-fields', body);
+      if (fbtn) fbtn.onclick = () => openFieldList(old.id, () => { if (fbtn.isConnected) fbtn.textContent = fieldBtnText(); });
+      const lbtn = $('#gf-logs', body);
+      if (lbtn) lbtn.onclick = () => openLogTypes(old.id);
       const del = $('#gf-del', body);
       if (del) del.onclick = async () => { if (await deleteGenre(old.id)) { orig = key(); closeSheet(sh, true); } };
       sh.foot.innerHTML = `<button class="btn primary" id="gf-ok">${old ? '保存' : '足す'}</button>`;
@@ -2284,10 +2350,14 @@ async function saveGenre(old, st){
   if (!name) { alert('ジャンルの名前を入れてください。'); return false; }
   const emoji = firstGrapheme(st.emoji) || '📁';
   let rec;
-  if (old) rec = Object.assign(old, {name, emoji, color:st.color});
-  else {
-    // もとにするジャンルから写す：項目（id も同じ）・年代の項目・できごとの種類と位置・名前の欄の見出し
-    const b = st.base === EMPTY_BASE ? GENRE_DEFS['g-other'] : S.genres.get(st.base);
+  if (old) {
+    // 項目・できごとの種類はその場で保存ずみ。最新のレコードに名前などを重ねる
+    rec = Object.assign(S.genres.get(old.id) || old, {name, emoji, color:st.color});
+    const nl = (st.nameLabel || '').trim();
+    if (nl) rec.nameLabel = nl; else delete rec.nameLabel;
+  } else {
+    // もとにするジャンルから写す：項目（id も同じ・しまった項目も）・年代の項目・できごとの種類と位置・名前の欄の見出し
+    const b = baseGenre(st.base);
     if (!b) { alert('もとにするジャンルが見つかりません。'); return false; }
     rec = {id:'g-' + uuid(), name, emoji, color:st.color, order: Math.max(0, ...live(S.genres).map(g => g.order || 0)) + 1,
       fields:clone(b.fields || []), eraFieldId:b.eraFieldId || null, logTypes:clone(b.logTypes || ['登録','そのほか']), logPosition:b.logPosition || 'bottom'};
@@ -2296,6 +2366,184 @@ async function saveGenre(old, st){
   if (!(await safeWrite(() => S.B.put('genres', rec)))) { await loadBook(); return false; }
   S.genres.set(rec.id, rec);
   return true;
+}
+/* ---------- 項目を直す・できごとの種類を直す（変えるたびにその場で保存） ---------- */
+/** ジャンルのレコードを書く。だめなら読み直す */
+async function putGenre(g, extra = []){
+  if (!(await safeWrite(() => S.B.putMany([{store:'genres', rec:g}, ...extra])))) { await loadBook(); return false; }
+  S.genres.set(g.id, g);
+  render();
+  return true;
+}
+const hasVisibleEra = g => fieldsOf(g).some(f => f.type === 'era');
+function openFieldList(gid, onDone){
+  openSheet({title:'項目を直す', onClose(){ onDone && onDone(); }, build(sh){
+    const g = S.genres.get(gid);
+    if (!g) { sh.body.innerHTML = `<div class="empty">ジャンルが見つかりません。</div>`; return; }
+    sh.titleEl.textContent = `項目を直す：${g.name}`;
+    const vis = fieldsOf(g), hid = (g.fields || []).filter(f => f.hidden);
+    sh.body.innerHTML = `<p class="hint" style="margin-top:0">項目を変えても、ほかのジャンルには影響しません。</p>`
+      + (vis.length ? vis.map((f, i) => `<div class="prow"><span class="pnm">${h(f.name)}${f.secret ? '<span class="lock" title="ひみつ">🔒</span>' : ''} <small class="hint">${h(typeName(f.type))}</small></span>
+        <button class="sq" data-fu="${h(f.id)}" ${i ? '' : 'disabled'} aria-label="上へ">↑</button><button class="sq" data-fd="${h(f.id)}" ${i < vis.length - 1 ? '' : 'disabled'} aria-label="下へ">↓</button><button class="sq txt" data-fe="${h(f.id)}">直す</button></div>`).join('')
+        : `<p class="hint">見える項目はありません。</p>`)
+      + `<button class="tadd" id="fl-add" style="margin-top:12px">＋ 項目を足す</button>`
+      + (hid.length ? `<div class="sec">しまった項目</div>` + hid.map(f => `<div class="prow"><span class="pnm">${h(f.name)} <small class="hint">${h(typeName(f.type))}</small></span><button class="sq txt" data-fr="${h(f.id)}">戻す</button></div>`).join('') : '');
+    sh.body.onclick = async ev => {
+      if (ev.target.closest('#fl-add')) return openFieldForm(gid, null);
+      const e = ev.target.closest('[data-fe]'); if (e) return openFieldForm(gid, e.dataset.fe);
+      const mv = ev.target.closest('[data-fu],[data-fd]');
+      if (mv) {
+        const g2 = S.genres.get(gid), v = fieldsOf(g2), id = mv.dataset.fu || mv.dataset.fd;
+        const i = v.findIndex(f => f.id === id), j = i + (mv.dataset.fu ? -1 : 1); if (i < 0 || j < 0 || j >= v.length) return;
+        const a = g2.fields.indexOf(v[i]), b = g2.fields.indexOf(v[j]);
+        [g2.fields[a], g2.fields[b]] = [g2.fields[b], g2.fields[a]];
+        await putGenre(g2); sh.refresh(); return;
+      }
+      const r = ev.target.closest('[data-fr]');
+      if (r) {
+        const g2 = S.genres.get(gid), f = g2.fields.find(x => x.id === r.dataset.fr); if (!f) return;
+        if (f.type === 'era' && hasVisibleEra(g2)) { alert('年代の項目は1つだけです。'); return; }
+        delete f.hidden;
+        g2.fields = [...g2.fields.filter(x => x !== f), f];   // 見える項目のいちばん下へ
+        if (f.type === 'era') g2.eraFieldId = f.id;
+        if (await putGenre(g2)) pinToast('戻しました');
+        sh.refresh();
+      }
+    };
+  }});
+}
+/** 項目を足す（fid なし）・直す。保存ボタンで保存。戻るときは確かめない */
+function openFieldForm(gid, fid){
+  const g0 = S.genres.get(gid); if (!g0) return;
+  const old = fid ? g0.fields.find(f => f.id === fid) : null;
+  const st = {name: old ? old.name : '', type: old ? old.type : 'text', options: old ? (old.options || []).join('\n') : '',
+    sortable: old ? !!old.sortable : false, secret: old ? !!old.secret : false};
+  openSheet({title: old ? '項目を直す' : '項目を足す', form:true, build(sh){
+    const g = S.genres.get(gid);
+    const types = FIELD_TYPES.filter(([t]) => t !== 'era' || !hasVisibleEra(g) || (old && old.type === 'era'));
+    const body = sh.body;
+    body.innerHTML = `<p class="hint" style="margin-top:0">${h(g.emoji)} ${h(g.name)}</p>
+      <label class="fl">項目の名前</label><input id="ff-name" value="${h(st.name)}" autocomplete="off">
+      <label class="fl">種類</label>${old ? `<div class="days">${h(typeName(st.type))}（種類はあとから変えられません）</div>`
+        : `<div class="chips wrap" id="ff-type">${types.map(([t, l]) => `<button class="chip ${st.type === t ? 'on' : ''}" data-t="${t}">${h(l)}</button>`).join('')}</div>`}
+      <div id="ff-more"></div>
+      ${old ? `<button class="btn danger block" id="ff-hide" style="margin-top:26px">この項目をしまう</button>` : ''}`;
+    const more = () => {
+      const box = $('#ff-more', body);
+      box.innerHTML = (st.type === 'select' ? `<label class="fl">選択肢（1行に1つ）</label><textarea class="grow" rows="4" id="ff-opts">${h(st.options)}</textarea>
+          ${old ? '<p class="hint" style="margin:4px 2px 0">選択肢を減らしても、品に入っている内容は消えません。</p>' : ''}` : '')
+        + (SORTABLE_TYPES.includes(st.type) ? `<label class="sw"><input type="checkbox" id="ff-sort" ${st.sortable ? 'checked' : ''}>並べ方に使う</label>` : '')
+        + (st.type === 'days' ? '' : `<label class="sw"><input type="checkbox" id="ff-secret" ${st.secret ? 'checked' : ''}>ひみつ 🔒</label>`);
+      growAll(box);
+    };
+    more();
+    $('#ff-name', body).oninput = ev => { st.name = ev.target.value; };
+    const tb = $('#ff-type', body);
+    if (tb) tb.onclick = ev => { const b = ev.target.closest('[data-t]'); if (!b) return; st.type = b.dataset.t; st.sortable = st.type === 'era';
+      $$('[data-t]', tb).forEach(x => x.classList.toggle('on', x === b)); more(); };
+    $('#ff-more', body).addEventListener('input', ev => {
+      if (ev.target.id === 'ff-opts') { st.options = ev.target.value; grow(ev.target); }
+    });
+    $('#ff-more', body).addEventListener('change', ev => {
+      if (ev.target.id === 'ff-sort') st.sortable = ev.target.checked;
+      if (ev.target.id === 'ff-secret') st.secret = ev.target.checked;
+    });
+    const hide = $('#ff-hide', body);
+    if (hide) hide.onclick = async () => {
+      const k = await ask3(`「${old.name}」をしまいますか？`, ['しまう', 'やめる'], '入れてある内容は消えません。あとで戻せます。');
+      if (k !== 0) return;
+      const g2 = S.genres.get(gid), f = g2.fields.find(x => x.id === old.id); if (!f) return;
+      f.hidden = true;   // eraFieldId は変えない（戻せば元どおり）
+      if (await putGenre(g2)) { closeSheet(sh, true); pinToast('しまいました'); }
+    };
+    sh.foot.innerHTML = `<button class="btn primary" id="ff-ok">${old ? '保存' : '足す'}</button>`;
+    $('#ff-ok', sh.foot).onclick = async () => {
+      const g2 = S.genres.get(gid);
+      const name = st.name.trim();
+      if (!name) return alert('項目の名前を入れてください。');
+      if (fieldsOf(g2).some(f => f.name === name && (!old || f.id !== old.id))) return alert(`「${name}」という項目がもうあります。`);
+      if (!old && st.type === 'era' && hasVisibleEra(g2)) return alert('年代の項目は1つだけです。');
+      const opts = [...new Set(st.options.split('\n').map(x => x.trim()).filter(Boolean))];
+      const sortable = SORTABLE_TYPES.includes(st.type) && st.sortable;
+      if (old) {
+        const f = g2.fields.find(x => x.id === old.id); if (!f) return;
+        f.name = name; f.sortable = sortable;
+        if (f.type !== 'days') f.secret = st.secret;
+        if (f.type === 'select') f.options = opts;
+      } else {
+        const f = {id:'f-' + uuid(), name, type:st.type, secret:st.secret, sortable};
+        if (st.type === 'select') f.options = opts;
+        g2.fields = [...(g2.fields || []), f];
+        if (st.type === 'era') g2.eraFieldId = f.id;   // しまった年代の項目があっても、新しい方にする
+      }
+      if (await putGenre(g2)) { closeSheet(sh, true); pinToast(old ? '保存しました' : '項目を足しました'); }
+    };
+  }});
+}
+function openLogTypes(gid){
+  openSheet({title:'できごとの種類を直す', build(sh){
+    const g = S.genres.get(gid);
+    if (!g) { sh.body.innerHTML = `<div class="empty">ジャンルが見つかりません。</div>`; return; }
+    sh.titleEl.textContent = `できごとの種類：${g.name}`;
+    const ts = (g.logTypes || []).filter(t => t !== '登録'), top = g.logPosition === 'top';
+    sh.body.innerHTML = `<label class="fl" style="margin-top:2px">品のページでの、できごとの位置</label>
+      <div class="seg" id="lt-pos"><button data-pos="top" class="${top ? 'on' : ''}">上（ひとことの下）</button><button data-pos="bottom" class="${top ? '' : 'on'}">下（能書きの下）</button></div>
+      <label class="fl">種類</label><p class="hint" style="margin:0 2px 4px">この順番で、できごとを足すときに並びます（1番目が最初に選ばれます）。「登録」は変えられません。</p>`
+      + (ts.length ? ts.map((t, i) => `<div class="prow"><span class="pnm">${h(t)}</span>
+        <button class="sq" data-tu="${i}" ${i ? '' : 'disabled'} aria-label="上へ">↑</button><button class="sq" data-td="${i}" ${i < ts.length - 1 ? '' : 'disabled'} aria-label="下へ">↓</button><button class="sq txt" data-te="${i}">直す</button><button class="sq txt" data-tx="${i}">消す</button></div>`).join('')
+        : `<p class="hint">種類はありません（できごとを足すときは「そのほか」になります）。</p>`)
+      + `<button class="tadd" id="lt-add" style="margin-top:12px">＋ 種類を足す</button>`;
+    /** 「登録」は先頭のまま、ほかを並べ直して保存 */
+    const saveTypes = async (list, extra) => {
+      const g2 = S.genres.get(gid);
+      g2.logTypes = [...((g2.logTypes || []).includes('登録') ? ['登録'] : []), ...list];
+      return putGenre(g2, extra);
+    };
+    sh.body.onclick = async ev => {
+      const pos = ev.target.closest('[data-pos]');
+      if (pos) { const g2 = S.genres.get(gid); if (g2.logPosition !== pos.dataset.pos) { g2.logPosition = pos.dataset.pos; await putGenre(g2); } sh.refresh(); return; }
+      if (ev.target.closest('#lt-add')) return openLogTypeForm(gid, null, saveTypes);
+      const e = ev.target.closest('[data-te]'); if (e) return openLogTypeForm(gid, ts[+e.dataset.te], saveTypes);
+      const mv = ev.target.closest('[data-tu],[data-td]');
+      if (mv) {
+        const i = +(mv.dataset.tu ?? mv.dataset.td), j = i + (mv.dataset.tu != null ? -1 : 1); if (j < 0 || j >= ts.length) return;
+        const L = [...ts]; [L[i], L[j]] = [L[j], L[i]];
+        await saveTypes(L); sh.refresh(); return;
+      }
+      const x = ev.target.closest('[data-tx]');
+      if (x) {
+        const t = ts[+x.dataset.tx];
+        const k = await ask3(`「${t}」を消しますか？`, ['消す', 'やめる'], 'この種類でつけたできごとは、そのまま残ります。', {danger:0});
+        if (k !== 0) return;
+        if (await saveTypes(ts.filter(y => y !== t))) pinToast('消しました');
+        sh.refresh();
+      }
+    };
+  }});
+}
+/** できごとの種類を足す・名前を直す（名前を直したら、そのジャンルの品の古い名前のできごとも書き換える） */
+function openLogTypeForm(gid, oldName, saveTypes){
+  const st = {name: oldName || ''};
+  openSheet({title: oldName ? '種類の名前を直す' : '種類を足す', form:true, build(sh){
+    sh.body.innerHTML = `<label class="fl" style="margin-top:2px">種類の名前</label><input id="tf-name" value="${h(st.name)}" placeholder="例：作った記録" autocomplete="off">
+      ${oldName ? '<p class="hint" style="margin:6px 2px 0">名前を直すと、このジャンルの品の「' + h(oldName) + '」のできごとも、新しい名前に変わります。</p>' : ''}`;
+    $('#tf-name', sh.body).oninput = ev => { st.name = ev.target.value; };
+    sh.foot.innerHTML = `<button class="btn primary" id="tf-ok">${oldName ? '保存' : '足す'}</button>`;
+    $('#tf-ok', sh.foot).onclick = async () => {
+      const g = S.genres.get(gid), name = st.name.trim();
+      const ts = (g.logTypes || []).filter(t => t !== '登録');
+      if (!name) return alert('種類の名前を入れてください。');
+      if (name === '登録') return alert('「登録」は使えません。');
+      if (name === oldName) { closeSheet(sh, true); return; }
+      if (ts.includes(name)) return alert(`「${name}」はもうあります。`);
+      if (!oldName) { if (await saveTypes([...ts, name])) { closeSheet(sh, true); pinToast('種類を足しました'); } return; }
+      const ls = live(S.logs).filter(l => l.type === oldName && S.items.get(l.itemId) && S.items.get(l.itemId).genreId === gid);
+      ls.forEach(l => { l.type = name; S.B.stamp(l); });
+      if (await saveTypes(ts.map(t => t === oldName ? name : t), ls.map(rec => ({store:'logs', rec})))) {
+        closeSheet(sh, true); pinToast(ls.length ? `${ls.length}件のできごとの種類も変えました` : '名前を変えました');
+      }
+    };
+  }});
 }
 async function deleteGenre(id){
   const g = S.genres.get(id); if (!g) return false;
@@ -2368,7 +2616,7 @@ async function buildBackup(db, book, withPhotos){
   const photos = [], fullIds = [];
   await db.each('photos', p => {
     const {data, thumb, ...rest} = p;
-    photos.push({...rest, thumb: thumb ? ab2b64(thumb) : null});
+    photos.push({...rest, thumb: thumb && !p.deleted ? ab2b64(thumb) : null});   // 消した写真の中身は入れない
     if (withPhotos && data && !p.deleted) fullIds.push(p.id);
   });
   const date = ymd();
@@ -2408,7 +2656,8 @@ async function deliverFile(file){
 }
 function lastBackupText(book){
   const bs = backupState(book.id);
-  return bs.lastBackupAt ? `前回のバックアップ：<b>${daysSince(bs.lastBackupAt) === 0 ? '今日' : daysSince(bs.lastBackupAt) + '日前'}</b>（その後 ${bs.itemsSince || 0}点追加）` : '<b>まだバックアップしていません</b>';
+  const since = sinceText(bs);
+  return bs.lastBackupAt ? `前回のバックアップ：<b>${daysSince(bs.lastBackupAt) === 0 ? '今日' : daysSince(bs.lastBackupAt) + '日前'}</b>${since ? `（その後 ${h(since)}）` : ''}` : '<b>まだバックアップしていません</b>';
 }
 /** 書き出しの部品（設定の画面と、本棚の「…」→ バックアップで使う） */
 function exportUI(box, db, book){
@@ -2440,7 +2689,7 @@ function exportUI(box, db, book){
       const i = +sv.dataset.save, f = files[i];
       if (await deliverFile(f)) {
         files[i] = 'done';
-        if (i === 1) await setBackupState(book.id, {lastBackupAt:nowISO(), itemsSince:0, dismissedAt:null});
+        if (i === 1) await setBackupState(book.id, {lastBackupAt:nowISO(), itemsSince:0, logsSince:0, dismissedAt:null});
         draw();
         const last = $('[data-last]', box); if (last) last.innerHTML = lastBackupText(book);
       }
@@ -2515,13 +2764,14 @@ async function importFiles(fileList){
           r.thumb = cur.thumb || incoming.thumb;
         }
         if (!r.data) delete r.data;
+        if (r.deleted) { delete r.data; delete r.thumb; }   // 消した写真は中身を戻さない
         ops.push({store:'photos', rec:r});
         if (ops.length >= 100) { await db.putRaw(ops); ops = []; }
       }
       await db.putRaw(ops); ops = [];
       for (const p of d.photoBlobs || []) {
         const cur = await db.get('photos', p.id);
-        if (cur && cur.data) continue;
+        if (cur && (cur.data || cur.deleted)) continue;   // 端末で消した写真には入れない
         const r = cur ? {...cur} : {id:p.id, createdAt:'', updatedAt:'', deleted:false};
         r.data = b642ab(p.data); st.photos++;
         ops.push({store:'photos', rec:r});
