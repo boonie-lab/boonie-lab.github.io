@@ -700,6 +700,8 @@ function fitScreen(app){
   fitInfo='いまの補正：上 '+Math.round(SAT)+'・高さ '+(fitExtra+UI.ah>=0?'+':'')+Math.round(fitExtra+UI.ah)+'　（窓 '+iw+'×'+ih+'／本体 '+(window.screen?screen.width+'×'+screen.height:'?')+'／安全域 上'+Math.round(INS.t)+' 下'+Math.round(INS.b)+'／ずれ '+Math.round(window.scrollY)+'・'+Math.round(root.getBoundingClientRect().top)+(vv?'・'+Math.round(vv.offsetTop)+'・'+Math.round(vv.height):'')+'／ホーム画面版 '+(st?'はい':'いいえ')+'）';
 }
 function resize(){
+  if(window.scrollX||window.scrollY)window.scrollTo(0,0);
+  if(document.scrollingElement&&document.scrollingElement.scrollTop)document.scrollingElement.scrollTop=0;
   var app=document.getElementById('app'),view=document.getElementById('view'),st=document.getElementById('stage'),side=document.getElementById('side'),hdr=document.getElementById('hdr'),main=document.getElementById('main');
   fitScreen(app);
   var iw=window.innerWidth,ih=window.innerHeight,wide=iw>=ih,inSide,mw,mh,lim;
@@ -1512,11 +1514,12 @@ function holdTick(rdt,T){
     else if(c.held===1&&!(held&&held.id===c.id)){c.held=0;c.timer=3}
   }
 }
-function canPlay(c,emin){return c.age<MATURE&&!c.held&&!c.play&&!c.lost&&c.e>=emin&&c.st!=='sleep'&&c.st!=='follow'}
+function canPlay(c,emin){return c.age<MATURE&&!c.held&&!c.play&&!c.lost&&c.e>=emin&&c.st!=='sleep'}
 function startHop(c,T,n,delay){c.play=1;c.zm=null;c.hop={t:T+(delay||0),n:n}}
 function startZoom(c,T,pts,delay){var t0=T+(delay||0);c.play=2;c.hop=null;c.zm={p:pts,i:0,t:t0,end:t0+rnd(6,10)}}
 function playTick(rdt,T){
-  var i,j,c,o,z,p,dx,dy,d,v,pts,n,a,r,qx,qy,hop,ok=speed===1&&!busy&&darkness(S.t)<0.3;
+  var i,j,c,o,z,p,dx,dy,d,v,pts,n,a,r,qx,qy,hop,ok=speed===1&&!busy&&darkness(S.t)<0.3,vis={};
+  if(!pageOpen)for(i=0;i<hits.length;i++)vis[hits[i].id]=1;
   for(i=0;i<S.cr.length;i++){
     c=S.cr[i];
     if(c.play===1){if(!c.hop||T>c.hop.t+c.hop.n*0.42){c.play=0;c.hop=null}continue}
@@ -1530,7 +1533,7 @@ function playTick(rdt,T){
       continue;
     }
     if(c.play){c.play=0;continue}
-    if(!ok||!canPlay(c,70)||Math.random()>rdt/450)continue;
+    if(!ok||!canPlay(c,70)||Math.random()>rdt/(vis[c.id]?120:450))continue;
     hop=Math.random()<0.5;pts=null;
     if(hop)startHop(c,T,3+pick(3),0);
     else{
@@ -1669,7 +1672,8 @@ function tapScope(x,y){
 }
 sc.addEventListener('pointerdown',function(ev){
   if(busy)return;
-  var p=sxy(ev);
+  var p=sxy(ev),k0;
+  if(ev.isPrimary){for(k0 in ptr)delete ptr[k0];pinch=null;gest=null}
   try{sc.setPointerCapture(ev.pointerId)}catch(e){}
   ptr[ev.pointerId]={x:p[0],y:p[1]};np=Object.keys(ptr).length;
   vx=vy=0;clearTimeout(holdTimer);clearTimeout(preTimer);preId=null;
@@ -1931,7 +1935,7 @@ function renderSum(){
   h+='<h3>音</h3><div class="fitr"><span style="min-width:3em;text-align:left">鳴き声</span>'+sg([[1,'入'],[0,'切']],UI.sv?1:0,'data-sv')+'</div>'+
     '<div class="fitr"><span style="min-width:3em;text-align:left">鈴</span>'+sg([[1,'入'],[0,'切']],UI.sb?1:0,'data-sb')+'</div>'+
     '<div class="fitr"><span style="min-width:3em;text-align:left">音量</span>'+sg([[0,'小'],[1,'中'],[2,'大']],UI.vl|0,'data-vl')+'</div>'+
-    '<div class="note">ひつじがときどき鳴き、鈴の子が歩くと鈴が鳴ります（いちばん近い1匹だけ）。iPhoneの消音モードのときは鳴りません。</div>';
+    '<div class="note">ひつじがときどき鳴き、鈴の子が歩き出すと、ときどき鈴が鳴ります。iPhoneの消音モードのときは鳴りません。</div>';
   h+='<h3>画面の合わせ</h3><div class="note" style="margin-top:0">ホーム画面版で、上が時刻の帯に隠れる・下にすきまが出るときの調整です。</div>'+
     '<div class="fitr">上の余白<button data-f="at-">−</button><span>'+UI.at+'</span><button data-f="at+">＋</button></div>'+
     '<div class="fitr">下の長さ<button data-f="ah-">−</button><span>'+UI.ah+'</span><button data-f="ah+">＋</button></div>'+
@@ -1974,8 +1978,8 @@ elPBody.addEventListener('click',function(ev){
 
 // ===== 音（ひつじの声・鈴）=====
 // 録音をそのまま鳴らす。シミュレーションには一切さわらない（乱数も別）。
-var SNDK={vol:[0.12,0.3,0.6],idleMin:20,idleMax:60,night:3,vVoice:1,vBell:0.3,bellIn:0.15,bellOut:0.3,bellMax:1,voiceMax:2,mark:1.2,far:300,bellHold:0.35};
-var AU={ac:null,out:null,buf:{},ok:false,loop:null,next:0,voices:[],bells:{},unlocked:false,err:''};
+var SNDK={vol:[0.12,0.3,0.6],idleMin:20,idleMax:60,night:3,vVoice:1,vBell:0.3,bellLen:1.5,bellRest:5,bellEach:60,bellGap:15,voiceMax:2,mark:1.2,far:300};
+var AU={ac:null,out:null,buf:{},ok:false,loop:null,next:0,voices:[],bells:{},bellT:-99,bellSrc:[],unlocked:false,err:''};
 var sndLog=[];window.__sndLog=sndLog;
 var sndSeed=(Date.now()^0x5bd1e995)>>>0,SP={x:0,y:0,s:0};
 function srnd(a,b){sndSeed=(sndSeed+0x6D2B79F5)>>>0;var t=sndSeed;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return a+((t^t>>>14)>>>0)/4294967296*(b-a)}
@@ -2064,6 +2068,7 @@ function sndVoice(c,why){
   if(live){try{q.src=sndClip(k,P,SNDK.vVoice)}catch(e){live=false}}
   AU.voices.push(q);
   if(why==='idle'&&UI.sv)c.vm=T;
+  if(why==='grab'&&c.bell)sndBellPlay(c,'grab');
   sndPush({k:k,id:c.id,n:c.name,why:why,vol:r2(P.vol*SNDK.vVoice),pan:r2(P.pan),lp:Math.round(P.lp),on:P.on,played:live});
   return true;
 }
@@ -2086,61 +2091,56 @@ function sndIdle(T){
   pick0=vis.length?vis[Math.floor(srnd(0,vis.length))]:near;
   if(pick0)sndVoice(pick0,'idle');
 }
-function bellNode(b,P){
-  var ac=AU.ac,L=AU.loop,t=ac.currentTime,len=L.e-L.s,s=ac.createBufferSource(),f=ac.createBiquadFilter(),env=ac.createGain(),g=ac.createGain(),pn=ac.createStereoPanner?ac.createStereoPanner():null,id,o,off=null;
-  s.buffer=AU.buf.bell;s.loop=true;s.loopStart=L.s;s.loopEnd=L.e;
-  f.type='lowpass';f.frequency.value=P.lp||18000;
-  env.gain.setValueAtTime(0,t);env.gain.linearRampToValueAtTime(1,t+SNDK.bellIn);
-  g.gain.value=P.vol*SNDK.vBell;
-  s.connect(f);f.connect(env);env.connect(g);
-  if(pn){pn.pan.value=P.pan;g.connect(pn);pn.connect(AU.out)}else g.connect(AU.out);
-  for(id in AU.bells){o=AU.bells[id].node;if(o&&o!==b.node){off=L.s+((((t-o.t0+o.off-L.s)%len)+len/2)%len);break}}
-  if(off==null)off=L.s+srnd(0,len*0.95);
-  s.start(t,off);
-  b.node={s:s,f:f,env:env,g:g,pn:pn,t0:t,off:off};
-}
-function bellNodeOff(b,fast){
-  var n=b.node,t,tt;b.node=null;if(!n)return;
-  try{t=AU.ac.currentTime;tt=fast?0.05:SNDK.bellOut;n.env.gain.cancelScheduledValues(t);n.env.gain.setValueAtTime(n.env.gain.value,t);n.env.gain.linearRampToValueAtTime(0,t+tt);n.s.stop(t+tt+0.05)}catch(e){}
-}
-function bellSet(b,c,on,why,P){
-  b.on=on;
-  if(!on)bellNodeOff(b,why==='hidden');
-  P=P||(c?sndPlace(c):{vol:0,pan:0,lp:0});
-  sndPush({k:on?'bell-on':'bell-off',id:b.id,n:c?c.name:'',why:why,vol:r2(P.vol*SNDK.vBell),pan:r2(P.pan),lp:Math.round(P.lp),on:!!P.on,played:on?auLive('bell'):!!b.wasLive});
-  b.wasLive=on?auLive('bell'):false;
+// 鈴：歩き出したときに1回（約1.5秒）だけ。間引きつき
+function sndBellPlay(c,why){
+  var T=nowT(),P=sndPlace(c),live=auLive('bell'),ac,L,s,f,env,g,pn,t,len=SNDK.bellLen,b=AU.bells[c.id];
+  if(b)b.last=T;AU.bellT=T;
+  if(live){
+    try{
+      ac=AU.ac;L=AU.loop;t=ac.currentTime+0.02;
+      s=ac.createBufferSource();s.buffer=AU.buf.bell;
+      f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=P.lp||18000;
+      env=ac.createGain();env.gain.setValueAtTime(0,t);env.gain.linearRampToValueAtTime(1,t+0.04);
+      env.gain.setValueAtTime(1,t+len-0.5);env.gain.linearRampToValueAtTime(0,t+len);
+      g=ac.createGain();g.gain.value=P.vol*SNDK.vBell;
+      s.connect(f);f.connect(env);env.connect(g);
+      if(ac.createStereoPanner){pn=ac.createStereoPanner();pn.pan.value=P.pan;g.connect(pn);pn.connect(AU.out)}else g.connect(AU.out);
+      s.start(t,L.s);s.stop(t+len+0.05);
+      AU.bellSrc.push({s:s,end:T+len});
+    }catch(e){live=false}
+  }
+  sndPush({k:'bell',id:c.id,n:c.name,why:why,vol:r2(P.vol*SNDK.vBell),pan:r2(P.pan),lp:Math.round(P.lp),on:P.on,played:live});
 }
 function sndBells(T){
-  var B=AU.bells,E=sndEar(),i,c,b,id,list=[],want={},live=auLive('bell'),P,t;
+  var B=AU.bells,i,c,b,w,vb,id,alive={};
+  vb=AU.voices.some(function(v){return v.end>T});
   for(i=0;i<S.cr.length;i++){
     c=S.cr[i];if(!c.bell||c.dead)continue;
+    alive[c.id]=1;
+    w=!c.held&&c.play!==1&&(c.play===2||isMoving(c.st));
     b=B[c.id];
-    if(!c.held&&c.play!==1&&(c.play===2||isMoving(c.st))){if(!b)b=B[c.id]={id:c.id,on:false,lw:T,node:null};b.lw=T}
-    if(b&&T-b.lw<SNDK.bellHold)list.push({b:b,d:Math.hypot(c.x-E[0],c.y-E[1])*(b.on?0.8:1)});
-  }
-  list.sort(function(a,b){return a.d-b.d});
-  for(i=0;i<list.length&&i<SNDK.bellMax;i++)want[list[i].b.id]=1;
-  for(id in B){
-    b=B[id];c=byId(+id);
-    if(b.on&&(!want[id]||!c)){bellSet(b,c,false,!c?'gone':T-b.lw>=SNDK.bellHold?'stop':'far')}
-    else if(!b.on&&want[id]){P=sndPlace(c);bellSet(b,c,true,'walk',P);if(live)bellNode(b,P)}
-    if(b.on&&c){
-      if(live&&!b.node){P=sndPlace(c);bellNode(b,P);b.wasLive=true}
-      else if(!live&&b.node)bellNodeOff(b,false);
-      if(b.node){
-        P=sndPlace(c);t=AU.ac.currentTime;
-        b.node.g.gain.setTargetAtTime(P.vol*SNDK.vBell,t,0.12);
-        b.node.f.frequency.setTargetAtTime(P.lp||18000,t,0.12);
-        if(b.node.pn)b.node.pn.pan.setTargetAtTime(P.pan,t,0.12);
-      }
+    if(!b){b=B[c.id]={wk:w,since:T,last:-99,pend:0};continue}
+    if(w&&!b.wk){
+      if(T-b.since>=SNDK.bellRest&&T-b.last>=SNDK.bellEach)b.pend=T+(vb?1.4:0);
     }
-    if(!b.on&&(!c||T-b.lw>3))delete B[id];
+    if(w!==b.wk){b.wk=w;b.since=T;if(!w)b.pend=0}
+    if(b.pend&&T>=b.pend){
+      b.pend=0;
+      if(b.wk&&T-AU.bellT>=SNDK.bellGap&&!AU.voices.some(function(v){return v.end>T+0.3}))sndBellPlay(c,'walk');
+    }
   }
+  for(id in B)if(!alive[id])delete B[id];
+  AU.bellSrc=AU.bellSrc.filter(function(q){return q.end>T});
 }
-function sndQuiet(why){var id,b;for(id in AU.bells){b=AU.bells[id];if(b.on)bellSet(b,byId(+id),false,why)}}
+function sndQuiet(){
+  var i,t;
+  for(i=0;i<AU.bellSrc.length;i++)try{AU.bellSrc[i].s.stop()}catch(e){}
+  AU.bellSrc=[];
+  for(i in AU.bells){AU.bells[i].pend=0;AU.bells[i].since=nowT()}
+}
 function sndTick(T){
   try{
-    if(!sndAllowed()){sndQuiet(document.hidden?'hidden':'quiet');return}
+    if(!sndAllowed()){if(AU.bellSrc.length)sndQuiet();for(var k in AU.bells){AU.bells[k].pend=0;AU.bells[k].since=T}return}
     if(AU.ac&&AU.ac.state!=='running'&&AU.ac.state!=='closed'&&T-(AU.rsT||0)>3){AU.rsT=T;try{var p=AU.ac.resume();if(p&&p.catch)p.catch(function(){})}catch(e){}}
     sndIdle(T);sndBells(T);
   }catch(e){AU.err=String(e&&e.message||e)}
@@ -2178,8 +2178,8 @@ function wake(){
   if(el>5&&!busy){last=performance.now();catchUp(el,el>180)}
 }
 document.addEventListener('visibilitychange',function(){
-  if(document.hidden){dropNow();save();hiddenAt=Date.now();sndQuiet('hidden')}
-  else{wake();if(AU.ac&&AU.ac.state!=='running'&&AU.ac.state!=='closed')try{var p=AU.ac.resume();if(p&&p.catch)p.catch(function(){})}catch(e){}}
+  if(document.hidden){dropNow();save();hiddenAt=Date.now();sndQuiet();ptr={};np=0;gest=null;pinch=null;stopHeld();clearTimeout(holdTimer);clearTimeout(preTimer)}
+  else{wake();resizeSoon();if(AU.ac&&AU.ac.state!=='running'&&AU.ac.state!=='closed')try{var p=AU.ac.resume();if(p&&p.catch)p.catch(function(){})}catch(e){}}
 });
 window.addEventListener('pageshow',wake);
 window.addEventListener('focus',wake);
