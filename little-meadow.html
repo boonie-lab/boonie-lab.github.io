@@ -1935,7 +1935,8 @@ function renderSum(){
   h+='<h3>音</h3><div class="fitr"><span style="min-width:3em;text-align:left">鳴き声</span>'+sg([[1,'入'],[0,'切']],UI.sv?1:0,'data-sv')+'</div>'+
     '<div class="fitr"><span style="min-width:3em;text-align:left">鈴</span>'+sg([[1,'入'],[0,'切']],UI.sb?1:0,'data-sb')+'</div>'+
     '<div class="fitr"><span style="min-width:3em;text-align:left">音量</span>'+sg([[0,'小'],[1,'中'],[2,'大']],UI.vl|0,'data-vl')+'</div>'+
-    '<div class="note">ひつじがときどき鳴き、鈴の子が歩き出すと、ときどき鈴が鳴ります。iPhoneの消音モードのときは鳴りません。</div>';
+    '<div class="note">ひつじがときどき鳴き、鈴の子が歩き出すと、ときどき鈴が鳴ります。iPhoneの消音モードのときは鳴りません。</div>'+
+    '<div class="fitr"><button id="sndtest">音を試す</button></div><div class="note" id="sndst">'+sndStatus()+'</div>';
   h+='<h3>画面の合わせ</h3><div class="note" style="margin-top:0">ホーム画面版で、上が時刻の帯に隠れる・下にすきまが出るときの調整です。</div>'+
     '<div class="fitr">上の余白<button data-f="at-">−</button><span>'+UI.at+'</span><button data-f="at+">＋</button></div>'+
     '<div class="fitr">下の長さ<button data-f="ah-">−</button><span>'+UI.ah+'</span><button data-f="ah+">＋</button></div>'+
@@ -1965,6 +1966,7 @@ elPBody.addEventListener('click',function(ev){
   if(t.id==='cdiff'){cmpDiff=!cmpDiff;renderPage(true);return}
   if(t.id==='csnap'){addSnap();cmpSel=SNAPS.length-1;renderPage(true);toast('いまの草原を残しました');return}
   b=t.closest('[data-s]');if(b){cmpSel=+b.getAttribute('data-s');renderPage(true);return}
+  if(t.id==='sndtest'){sndTest();setTimeout(function(){var e=document.getElementById('sndst');if(e)e.textContent=sndStatus()},900);return}
   b=t.closest('[data-sv],[data-sb],[data-vl]');if(b){f=b.getAttribute('data-sv');if(f!=null)UI.sv=+f;f=b.getAttribute('data-sb');if(f!=null)UI.sb=+f;f=b.getAttribute('data-vl');if(f!=null){UI.vl=+f;sndVolume()}saveUI();renderPage(true);return}
   b=t.closest('[data-v]');if(b){speed=+b.getAttribute('data-v');renderPage(true);updateUI();return}
   b=t.closest('[data-f]');
@@ -1993,8 +1995,17 @@ function sndTrim(b){
   for(i=n-1;i>s;i--)if(Math.abs(d[i])>pk*0.005){e=i;break}
   return{s:s/b.sampleRate,e:(e+1)/b.sampleRate};
 }
+// 音の仕組みを捨てて作り直す（iPhoneで止まったまま戻らないときの保険）
+function sndRebuild(){
+  try{if(AU.ac&&AU.ac.close)AU.ac.close()}catch(e){}
+  AU.ac=null;AU.ok=false;AU.buf={};AU.unlocked=false;AU.master=null;AU.out=null;AU.voices=[];AU.bellSrc=[];AU.bad=0;AU.rb=(AU.rb||0)+1;
+}
 function auTouch(){
   try{
+    var now=performance.now();
+    if(AU.ac&&AU.ac.state==='running')AU.bad=0;
+    else if(AU.ac&&AU.ac.state==='closed')sndRebuild();
+    else if(AU.ac){if(!AU.bad)AU.bad=now;else if(now-AU.bad>1500)sndRebuild()}
     if(!AU.ac){
       var C=window.AudioContext||window.webkitAudioContext;if(!C||!window.SND)return;
       try{if(navigator.audioSession&&navigator.audioSession.type!=='ambient')navigator.audioSession.type='ambient'}catch(e){}
@@ -2145,6 +2156,31 @@ function sndTick(T){
     sndIdle(T);sndBells(T);
   }catch(e){AU.err=String(e&&e.message||e)}
 }
+// 「音を試す」ボタン：スイッチに関係なく、こひつじの声を1回
+function sndTest(){
+  auTouch();AU.testMsg='準備中…';
+  function go(){
+    try{
+      if(!AU.ok){AU.testMsg=AU.err?'読み込めませんでした':'まだ準備できていません';return}
+      sndClip('lamb',{vol:0.8,pan:0,lp:0},1);
+      AU.testMsg='鳴らしました（'+AU.ac.state+'）';
+      sndPush({k:'lamb',id:-1,n:'',why:'test',vol:0.8,pan:0,lp:0,on:true,played:AU.ac.state==='running'});
+    }catch(e){AU.testMsg='エラー：'+(e&&e.message||e)}
+  }
+  if(AU.ok)go();else setTimeout(go,700);
+}
+function sndStatus(){
+  var a=AU.ac,st,l=sndLog[sndLog.length-1],s,K={lamb:'こひつじ',adult:'おとな',bell:'鈴'};
+  st=!a?'まだ準備前（画面をさわると準備します）':a.state==='running'?'動いている':a.state==='suspended'?'止まっている（suspended）':a.state==='interrupted'?'止まっている（interrupted）':a.state;
+  s='音の状態：'+st+(a&&!AU.ok?'・読み込み中':'')+(AU.rb?'・作り直し'+AU.rb+'回':'');
+  if(AU.err)s+='／エラー：'+AU.err;
+  if(AU.jsErr)s+='／JS：'+AU.jsErr;
+  s+=l?'／最後：'+Math.round(nowT()-l.t)+'秒前・'+(K[l.k]||l.k)+'（'+l.why+'）・'+(l.played?'鳴らした':'鳴らさず'):'／まだ鳴らそうとしていません';
+  if(AU.testMsg)s+='／試し：'+AU.testMsg;
+  try{if(navigator.audioSession)s+='／session：'+navigator.audioSession.type}catch(e){}
+  return s;
+}
+window.addEventListener('error',function(e){AU.jsErr=String(e&&e.message||e).slice(0,80)});
 window.__snd={AU:AU,K:SNDK,place:sndPlace,voice:sndVoice,ear:sndEar};
 
 var last=performance.now(),uiAcc=0;
@@ -2168,6 +2204,7 @@ function frame(now){
   if(pageOpen){
     if(pageTab==='map'&&bigCv)drawBig(T);
     else if(pageTab==='cmp'){pageAcc+=rdt;if(pageAcc>3){pageAcc=0;drawNow()}}
+    else if(pageTab==='sum'){pageAcc+=rdt;if(pageAcc>1){pageAcc=0;var se=document.getElementById('sndst');if(se)se.textContent=sndStatus()}}
   }else{drawMap(T);drawScope(T)}
   requestAnimationFrame(frame);
 }
