@@ -251,6 +251,99 @@ dl.flds dd{white-space:pre-wrap;word-break:break-word}
 .grow-row{display:flex;gap:6px;align-items:center;margin:6px 0}
 .parts .grow-row{justify-content:space-between}
 
+/* ===== ステップ2 ===== */
+/* 文字の目次 */
+.tsum{font-size:13px;color:var(--ink2);margin:-4px 2px 8px}
+.toc{border-top:1px solid var(--line);margin:4px 0 12px}
+.trow{display:flex;align-items:center;min-height:52px;border-bottom:1px solid var(--line);border-left:6px solid var(--gc);background:var(--paper2)}
+.trow .ttw{flex:0 0 48px;height:52px;border:0;background:none;font-size:17px;color:var(--ink2);padding:0;font-family:var(--serif)}
+.trow .ttw:disabled{opacity:.25}
+.trow .tname{flex:1;min-width:0;min-height:52px;border:0;background:none;text-align:left;font-family:var(--serif);font-weight:700;font-size:18px;padding:0 4px;display:flex;align-items:center;gap:8px}
+.trow .tn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.trow .tc{flex:0 0 auto;padding:0 12px;font-size:13px;color:var(--ink2)}
+.trow.dim .tname,.trow.dim .tc{opacity:.45}
+.tlist{border-bottom:1px solid var(--line);background:var(--paper);padding:2px 0 6px 54px}
+.tli{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;border:0;border-bottom:1px dotted var(--line);background:none;text-align:left;padding:4px 10px 4px 0;font-family:var(--serif);font-size:16px}
+.tli:last-child{border-bottom:0}
+.t38{flex:0 0 38px;width:38px;height:38px;border-radius:4px;background:var(--paper3);display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden}
+.t38 img{width:100%;height:100%;object-fit:cover;display:block}
+.tli .tin{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.star{color:#c8961e}
+.tadd{display:block;width:100%;min-height:48px;border:2px dashed var(--line);border-radius:8px;background:none;color:var(--accent);font-weight:700;margin:6px 0 10px}
+/* 章 */
+/* 章の帯：スクロールしても上（図鑑の紺の帯の下）に残る */
+.chbar{position:sticky;top:calc(var(--st) + 52px);z-index:6;display:flex;align-items:center;gap:6px;margin:-6px -12px 10px;padding:4px 12px 4px 4px;
+  background:var(--paper2);border-bottom:3px solid var(--gc);box-shadow:0 2px 6px rgba(20,25,40,.08)}
+.chbar .chback{flex:0 0 auto;border:0;background:none;color:var(--accent);min-height:44px;padding:0 8px 0 2px;font-size:15px}
+.chbar .chsel{flex:0 1 auto;min-width:0;background:var(--paper);border:1px solid var(--line);border-radius:18px;min-height:40px;padding:2px 12px;text-align:left;font-family:var(--serif);font-weight:700;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chbar .chsel .cv{font-size:12px;color:var(--ink2)}
+.chbar .chsort{flex:0 0 auto;margin-left:auto;min-height:40px;border:1px solid var(--line);border-radius:20px;background:var(--paper2);padding:2px 12px;font-size:14px}
+.chpop{position:absolute;left:8px;right:8px;top:100%;margin-top:4px;z-index:8;background:var(--paper2);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.18);padding:4px 0;max-height:60vh;overflow-y:auto}
+.chpop button{display:flex;align-items:center;gap:8px;width:100%;min-height:48px;border:0;border-left:6px solid var(--gc);border-bottom:1px solid var(--line);background:none;padding:4px 12px;text-align:left}
+.chpop button:last-child{border-bottom:0}
+.chpop button.on{background:#fff7e0}
+.chpop button.dim{opacity:.5}
+.chpop .mn{flex:1;font-family:var(--serif);font-weight:700;font-size:16px}
+.chpop .n{font-size:12px;color:var(--ink2)}
+.chpop .ck{color:var(--accent);font-weight:700}
+.chinfo{font-size:13px;color:var(--ink2);margin:0 2px 8px}
+.icard .ph{position:relative}
+.icard .pst{position:absolute;right:3px;top:3px;background:rgba(255,254,250,.92);border-radius:10px;font-size:13px;line-height:1.4;padding:0 5px;color:#c8961e}
+.icard .pge{position:absolute;left:3px;top:3px;font-size:14px;line-height:1.4;background:rgba(255,254,250,.88);border-radius:8px;padding:0 3px}
+/* 下から出る一覧（並べ方など） */
+.panel{position:fixed;inset:0;z-index:100;background:rgba(20,25,40,.4);display:flex;align-items:flex-end;justify-content:center;animation:rf .15s}
+.panel .pbox{background:var(--paper2);width:100%;max-width:560px;border-radius:14px 14px 0 0;padding:8px 12px calc(14px + var(--sb));max-height:85vh;overflow-y:auto}
+.panel h3{font-family:var(--serif);margin:6px 4px 6px;font-size:17px}
+.sopt{display:flex;align-items:center;gap:8px;width:100%;min-height:50px;border:0;border-bottom:1px solid var(--line);background:none;text-align:left;font-size:16px;padding:0 6px}
+.sopt .ck{flex:0 0 18px;color:var(--accent);font-weight:700}
+.sopt .dir{margin-left:auto;font-size:13px;color:var(--ink2);white-space:nowrap}
+.sopt.on{font-weight:700}
+.sopt.on .dir{color:var(--accent);font-weight:700}
+/* 優先の順番 */
+.prow{display:flex;align-items:center;gap:8px;min-height:56px;border-bottom:1px solid var(--line);padding:4px 0}
+.prow .pn{flex:0 0 26px;text-align:center;font-family:var(--serif);font-weight:700;color:#c8961e}
+.prow .pnm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sq{flex:0 0 44px;width:44px;height:44px;border:1px solid var(--line);border-radius:8px;background:#fffefa;padding:0;font-size:17px}
+.sq:disabled{opacity:.3}
+.sq.txt{flex-basis:auto;width:auto;padding:0 10px;font-size:14px}
+/* できごと（品のページ） */
+.lgadd{margin:6px 0 4px}
+.lg{border-bottom:1px solid var(--line);padding:4px 2px 6px}
+.lg .lgb{display:block;width:100%;border:0;background:none;text-align:left;padding:4px 0;min-height:44px}
+.lgd{font-family:var(--serif);font-weight:700}
+.lgt{display:inline-block;font-size:12px;border:1px solid var(--line);border-radius:10px;padding:0 8px;margin-left:6px;color:var(--ink2);background:#fffefa;vertical-align:1px}
+.lgm{white-space:pre-wrap;word-break:break-word;margin-top:2px;font-size:15px}
+.lgp{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0}
+.lgp button{border:0;padding:0;background:none}
+.lgp img{width:64px;height:64px;object-fit:cover;border-radius:4px;background:var(--paper3);display:block}
+.lg.flash{animation:flash 1.6s}
+@keyframes flash{0%,40%{background:#fff0bd}100%{background:transparent}}
+.gcap{min-height:26px;display:flex;flex-wrap:wrap;gap:0 12px;justify-content:center;align-items:center;padding:2px 8px;font-size:12px;color:var(--ink2);background:var(--paper2);border-bottom:1px solid var(--line)}
+.gcap .glog{border:0;background:none;color:var(--accent);font-size:13px;padding:2px 4px;min-height:30px}
+.viewer .vd{position:absolute;bottom:calc(16px + var(--sb));left:0;right:0;text-align:center;color:#e8e8e8;font-size:13px;text-shadow:0 1px 3px #000;pointer-events:none;z-index:2;padding:0 12px}
+.ldchip{margin:6px 0 0}
+/* 全体のログ */
+.lfil{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.lfil label.sw{margin-top:0;font-size:15px}
+.lmon{font-family:var(--serif);font-weight:700;font-size:15px;margin:16px 2px 2px;color:var(--ink2);border-bottom:1px solid var(--line);padding-bottom:2px}
+.le{display:flex;gap:10px;width:100%;border:0;border-bottom:1px dotted var(--line);background:none;text-align:left;padding:8px 2px;align-items:flex-start;content-visibility:auto;contain-intrinsic-size:auto 96px}
+.le .led{flex:0 0 46px;font-family:var(--serif);font-weight:700;font-size:15px;padding-top:9px;text-align:center}
+.le .lem{flex:1;min-width:0}
+.le .len{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.le .lemm{font-size:14px;color:var(--ink2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap;word-break:break-word}
+.le .lep{display:flex;gap:4px;margin-top:4px}
+.le .lep img,.le .lep .more{width:52px;height:52px;object-fit:cover;border-radius:3px;background:var(--paper3);display:block}
+.le .lep .more{display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--ink2)}
+/* ジャンルの設定 */
+.gline{display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--line);padding:5px 0}
+.gline .ge{flex:0 0 28px;font-size:20px;text-align:center}
+.gline .gnm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-left:5px solid var(--gc);padding-left:7px}
+.gline .gnm small{color:var(--ink2);margin-left:6px}
+.swatches{display:flex;flex-wrap:wrap;gap:10px;margin:4px 0}
+.swc{width:44px;height:44px;border-radius:22px;border:3px solid var(--paper2);box-shadow:0 0 0 1px var(--line);padding:0}
+.swc.on{box-shadow:0 0 0 3px var(--ink)}
+input.emo-in{width:88px;text-align:center;font-size:26px;padding:4px}
+
 /* effects */
 .pin-toast{position:fixed;left:50%;bottom:calc(var(--nav-h) + var(--sb) + 30px);transform:translateX(-50%);z-index:120;pointer-events:none;
   background:var(--paper2);border:1px solid var(--line);border-radius:10px;padding:8px 16px;box-shadow:0 4px 14px rgba(0,0,0,.18);
@@ -263,6 +356,7 @@ dl.flds dd{white-space:pre-wrap;word-break:break-word}
 <div id="app"><div id="view"></div></div>
 <nav class="tabs"><div class="in">
   <button data-tab="toc"><span class="ic">📖</span>目次</button>
+  <button data-tab="log"><span class="ic">🗓</span>ログ</button>
   <button class="plus" id="plusBtn" aria-label="登録"><span class="circle">＋</span>登録</button>
   <button data-tab="settings"><span class="ic">⚙️</span>設定</button>
 </div></nav>
@@ -272,10 +366,10 @@ dl.flds dd{white-space:pre-wrap;word-break:break-word}
 <script>
 'use strict';
 /* ============================================================
-   コレクション図鑑 (my-collection-book) ステップ1
+   コレクション図鑑 (my-collection-book) ステップ2
    なんでも図鑑 my-field-guide.html v1.2 の部品を流用
    ============================================================ */
-const APP_VERSION = '0.1';
+const APP_VERSION = '0.2';
 const SCHEMA_VERSION = 1;
 const SHELF_DB = 'my-collection-book';
 const bookDbName = id => `my-collection-book:${id}`;
@@ -353,7 +447,8 @@ class DB {
   /** 取り込み用：時刻を書き換えずにそのまま保存 */
   putRaw(ops){ return this.write(ops); }
   async getMeta(){ return (await this.get('meta', 'meta')) || {key:'meta'}; }
-  async setMeta(patch){ const m = await this.getMeta(); Object.assign(m, patch); await this.write([{store:'meta', rec:m}]); return m; }
+  /** updatedAt：バックアップの合流で新しい方を残すため */
+  async setMeta(patch){ const m = await this.getMeta(); Object.assign(m, patch, {updatedAt:nowISO()}); await this.write([{store:'meta', rec:m}]); return m; }
 }
 const BOOK_STORES = ['genres','items','photos','logs','wants','meta'];
 const openBookDB = id => new DB(bookDbName(id), BOOK_STORES).open();
@@ -404,19 +499,131 @@ const TEMPLATES = {
 /* ---------------- 状態 ---------------- */
 const S = {
   shelf:null, books:new Map(), smeta:null,           // 本棚
-  B:null, book:null, genres:new Map(), items:new Map(), bmeta:null,   // 開いている図鑑
-  tab:'toc', closed:new Set(), persisted:null,
+  B:null, book:null, genres:new Map(), items:new Map(), logs:new Map(), bmeta:null,   // 開いている図鑑
+  tab:'toc', open:new Set(), chapter:null, chPop:false, logFilter:null, logLimit:50, persisted:null,
 };
 const live = m => [...m.values()].filter(r => !r.deleted);
 const byCreated = (a, b) => (a.createdAt || '') < (b.createdAt || '') ? -1 : (a.createdAt || '') > (b.createdAt || '') ? 1 : 0;
 const booksSorted = () => live(S.books).sort((a, b) => (a.order || 0) - (b.order || 0) || byCreated(a, b));
 const genresSorted = () => live(S.genres).sort((a, b) => a.order - b.order);
-const NOGENRE = {id:null, name:'ジャンルなし', emoji:'・', color:'#a9a294', fields:[]};
+const NOGENRE = {id:null, name:'ジャンルなし', emoji:'・', color:'#a9a294', fields:[], logTypes:['登録','そのほか'], logPosition:'bottom'};
 const genreOf = id => { const g = id && S.genres.get(id); return g && !g.deleted ? g : NOGENRE; };
 const itemAlive = id => { const it = S.items.get(id); return !!(it && !it.deleted); };
-/** 目次の並び（ステップ1は登録順＝古い順だけ） */
-const itemsOfGenre = gid => live(S.items).filter(i => (genreOf(i.genreId).id || null) === (gid || null)).sort(byCreated);
-const genreWhere = gid => { const g = genreOf(gid); return {label:`${g.emoji} ${g.name}`, color:g.color}; };
+
+/* ---------------- 章（目次のリスト・章のカード・めくる順・帯の「3 / 12」は、ここで決めた並びだけを使う） ---------------- */
+const ALL = '_all', NONE = '_none';
+const gkey = gid => gid || NONE;                       // ジャンルの id → 章の鍵
+const itemGkey = it => gkey(genreOf(it.genreId).id);
+const isPri = it => typeof it.priorityRank === 'number';
+const prioOn = () => !(S.bmeta && S.bmeta.priorityOn === false);
+const jaCmp = (a, b) => String(a).localeCompare(String(b), 'ja');
+const nameCmp = (a, b) => jaCmp(a.name || '', b.name || '') || byCreated(a, b);
+/** その品のジャンルの年代の項目の値（年代の項目がないジャンルなら undefined） */
+const eraFieldOf = g => g && g.eraFieldId && (g.fields || []).find(f => f.id === g.eraFieldId) || null;
+const hasEraGenre = () => genresSorted().some(g => eraFieldOf(g));
+/** 並べるための値。grp 0＝値あり、1＝不明（年代）、2＝空欄。val は比べる値 */
+function sortVal(f, v){
+  if (f.type === 'era') {
+    if (!v) return {grp:2};
+    if (typeof v.year === 'number') return {grp:0, val:[decadeOfYear(v.year), 0, v.year]};   // 1968年 → 1960年代だけ → 1970年
+    if (typeof v.decade === 'number') return {grp:0, val:[v.decade, 1, 0]};
+    return v.decade === 'unknown' ? {grp:1} : {grp:2};
+  }
+  if (f.type === 'number') return typeof v === 'number' ? {grp:0, val:v} : {grp:2};
+  if (f.type === 'check') return v === true ? {grp:0, val:1} : {grp:2};
+  const s = v == null ? '' : String(v).trim();
+  return s ? {grp:0, val:s} : {grp:2};
+}
+function cmpVal(a, b){
+  if (Array.isArray(a)) { for (let i = 0; i < a.length; i++) { const d = a[i] - b[i]; if (d) return d; } return 0; }
+  if (typeof a === 'number') return a - b;
+  return jaCmp(a, b);
+}
+/** 項目の値で並べる。空は昇順でも降順でも最後。同じなら名前順 → 登録順。merge：不明と空欄を1つの組にする（「ぜんぶ」の章） */
+function fieldCmp(f, dir, get, merge){
+  const sg = dir === 'desc' ? -1 : 1;
+  return (a, b) => {
+    const x = get(a), y = get(b);
+    const gx = merge ? Math.min(1, x.grp) : x.grp, gy = merge ? Math.min(1, y.grp) : y.grp;
+    return gx - gy || (gx === 0 ? sg * cmpVal(x.val, y.val) : 0) || nameCmp(a, b);
+  };
+}
+/** その章で選べる並べ方 */
+function sortOptions(key){
+  if (key === ALL) return hasEraGenre() ? [{key:'era', label:'年代', kind:'era'}] : [{key:'reg', label:'登録順', kind:'reg'}];
+  const g = key === NONE ? NOGENRE : genreOf(key);
+  return [{key:'reg', label:'登録順', kind:'reg'}, {key:'name', label:'名前順', kind:'text'},
+    ...(g.fields || []).filter(f => f.sortable).map(f => ({key:'f:' + f.id, label:f.name, kind:f.type === 'era' || f.type === 'date' ? 'era' : f.type === 'number' ? 'number' : 'text', f}))];
+}
+const DIR_WORDS = {reg:['古い順','新しい順'], era:['古い順','新しい順'], text:['あ → ん','ん → あ'], number:['小さい順','大きい順']};
+const dirWord = (kind, dir) => DIR_WORDS[kind][dir === 'desc' ? 1 : 0];
+/** 今の並べ方 {key, dir}。覚えた並べ方が使えなければ最初の並べ方 */
+function sortOf(key){
+  const m = ((S.bmeta && S.bmeta.sortBy) || {})[key];
+  const opts = sortOptions(key);
+  const def = key === ALL ? {key:opts[0].key, dir: opts[0].key === 'era' ? 'asc' : 'desc'} : {key:'reg', dir:'asc'};
+  return m && opts.some(o => o.key === m.key) ? {key:m.key, dir:m.dir === 'desc' ? 'desc' : 'asc'} : def;
+}
+function chapterItems(key){
+  const all = live(S.items);
+  const s = sortOf(key);
+  if (key === ALL) {
+    // 通しの年代順。年代の項目がないジャンルの品・不明・空欄は最後（その中は名前順）。優先は効かせない
+    if (s.key === 'era') {
+      const get = it => { const f = eraFieldOf(genreOf(it.genreId)); return f ? sortVal(f, (it.values || {})[f.id]) : {grp:2}; };
+      const memo = new Map(all.map(i => [i.id, get(i)]));
+      return all.sort(fieldCmp({type:'era'}, s.dir, it => memo.get(it.id), true));
+    }
+    return all.sort((a, b) => s.dir === 'desc' ? byCreated(b, a) : byCreated(a, b));
+  }
+  const its = all.filter(i => itemGkey(i) === key);
+  const g = key === NONE ? NOGENRE : genreOf(key);
+  let cmp;
+  if (s.key === 'reg') cmp = (a, b) => s.dir === 'desc' ? byCreated(b, a) : byCreated(a, b);
+  else if (s.key === 'name') cmp = (a, b) => (s.dir === 'desc' ? -1 : 1) * jaCmp(a.name || '', b.name || '') || byCreated(a, b);
+  else {
+    const f = g.fields.find(x => 'f:' + x.id === s.key);
+    const memo = new Map(its.map(i => [i.id, sortVal(f, (i.values || {})[f.id])]));
+    cmp = fieldCmp(f, s.dir, it => memo.get(it.id));
+  }
+  if (!prioOn()) return its.sort(cmp);
+  const pri = its.filter(isPri).sort((a, b) => a.priorityRank - b.priorityRank);
+  return [...pri, ...its.filter(i => !isPri(i)).sort(cmp)];
+}
+const chapterIds = key => chapterItems(key).map(i => i.id);
+const chapterCount = key => key === ALL ? live(S.items).length : live(S.items).filter(i => itemGkey(i) === key).length;
+function whereOf(key){
+  if (key === ALL) return {key, label:'📚 ぜんぶ', color:'#2b4a74', emoji:'📚', name:'ぜんぶ'};
+  const g = key === NONE ? NOGENRE : genreOf(key);
+  return {key, label:`${g.emoji} ${g.name}`, color:g.color, emoji:g.emoji, name:g.name};
+}
+/** 品のページのめくる並びを、今の並びに合わせ直す（ジャンルを変えたら、新しいジャンルの章へ） */
+function syncPager(p, it){
+  if (!p.where || p.where.key == null) return;
+  let k = p.where.key;
+  if (k !== ALL && k !== itemGkey(it)) k = itemGkey(it);
+  p.where = whereOf(k); p.ids = chapterIds(k);
+}
+/** 優先の順位を 1 から詰め直す。変わった品を返す */
+function renumberPriority(gid, orderedIds){
+  const k = gkey(gid);
+  const pri = orderedIds ? orderedIds.map(id => S.items.get(id)).filter(Boolean)
+    : live(S.items).filter(i => itemGkey(i) === k && isPri(i)).sort((a, b) => a.priorityRank - b.priorityRank);
+  const changed = [];
+  pri.forEach((it, i) => { if (it.priorityRank !== i + 1) { it.priorityRank = i + 1; changed.push(it); } });
+  return changed;
+}
+/* ---------------- できごと（ログ） ---------------- */
+const byLogNew = (a, b) => (b.date || '').localeCompare(a.date || '') || byCreated(b, a);
+const logsOf = itemId => live(S.logs).filter(l => l.itemId === itemId).sort(byLogNew);
+/** その品の写真をぜんぶ集める：品の写真（photoIds の順）→ できごとの写真（日付の古い順）。[{pid, log}] */
+function itemPhotos(it){
+  const out = (it.photoIds || []).map(pid => ({pid, log:null}));
+  const ls = live(S.logs).filter(l => l.itemId === it.id && (l.photoIds || []).length)
+    .sort((a, b) => (a.date || '').localeCompare(b.date || '') || byCreated(a, b));
+  for (const l of ls) for (const pid of l.photoIds) out.push({pid, log:l});
+  return out;
+}
 
 async function loadShelf(){
   S.books = new Map((await S.shelf.getAll('books')).map(r => [r.id, r]));
@@ -424,9 +631,10 @@ async function loadShelf(){
 }
 async function saveSmeta(patch){ S.smeta = await S.shelf.setMeta(patch); }
 async function loadBook(){
-  for (const n of ['genres','items']) S[n] = new Map((await S.B.getAll(n)).map(r => [r.id, r]));
+  for (const n of ['genres','items','logs']) S[n] = new Map((await S.B.getAll(n)).map(r => [r.id, r]));
   S.bmeta = await S.B.getMeta();
 }
+async function saveBmeta(patch){ S.bmeta = await S.B.setMeta(patch); }
 function backupState(bookId){ return ((S.smeta && S.smeta.backup) || {})[bookId] || {}; }
 async function setBackupState(bookId, patch){
   const all = {...((S.smeta && S.smeta.backup) || {})};
@@ -439,7 +647,22 @@ const thumbCache = new Map();
 const fullCache = new Map();
 /** 写真ごとの主役の位置（0〜1）。写真を読んだときに覚える */
 const focusCache = new Map();
-function noteFocus(p){ if (!p) return; if (p.focusX != null && p.focusY != null) focusCache.set(p.id, [p.focusX, p.focusY]); else focusCache.delete(p.id); }
+/** 写真の撮影日（takenAt）。写真を読んだときに覚える。null＝撮影日なし */
+const takenCache = new Map();
+function noteFocus(p){
+  if (!p) return;
+  if (p.focusX != null && p.focusY != null) focusCache.set(p.id, [p.focusX, p.focusY]); else focusCache.delete(p.id);
+  takenCache.set(p.id, p.takenAt || null);
+}
+async function photoTaken(pid){
+  if (takenCache.has(pid)) return takenCache.get(pid);
+  if (!S.B) return null;
+  const p = await S.B.get('photos', pid).catch(() => null);
+  if (p) noteFocus(p); else takenCache.set(pid, null);
+  return takenCache.get(pid);
+}
+/** 撮影日の ISO 文字 → 「2026/11/16」（端末の時刻で） */
+const fmtTaken = iso => { const d = iso ? new Date(iso) : null; return d && !isNaN(d) ? fmtYMD(localYMD(d)) : ''; };
 /** 切り抜いて見せる写真の中心を主役に合わせる */
 function applyFocus(img, pid){
   if (img.closest('.fpick,.fprev')) return;   // 表紙を変える画面は自前で位置を描く
@@ -448,7 +671,7 @@ function applyFocus(img, pid){
 }
 function clearPhotoCaches(){
   thumbCache.forEach(u => URL.revokeObjectURL(u)); fullCache.forEach(u => URL.revokeObjectURL(u));
-  thumbCache.clear(); fullCache.clear(); focusCache.clear();
+  thumbCache.clear(); fullCache.clear(); focusCache.clear(); takenCache.clear();
 }
 async function thumbURL(pid){
   if (thumbCache.has(pid)) return thumbCache.get(pid);
@@ -921,7 +1144,7 @@ function render(){
   document.body.classList.toggle('in-book', !!S.B);
   if (!S.B) { renderShelf(v); return; }
   $$('nav.tabs [data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === S.tab));
-  ({toc:renderToc, settings:renderSettings})[S.tab](v);
+  ({toc:renderToc, log:renderLogs, settings:renderSettings})[S.tab](v);
   hydrate(v);
 }
 const bookBar = () => `<div class="bbar"><button class="bshelf" id="toShelf">‹ 本棚</button><div class="bname">${h(S.book.name)}</div></div>`;
@@ -985,7 +1208,7 @@ async function openBookById(id){
   try { S.B = await openBookDB(id); }
   catch(e) { alert('図鑑を開けませんでした。\n' + e.message); S.B = null; return; }
   S.book = b; await loadBook();
-  S.tab = 'toc'; S.closed = new Set();
+  S.tab = 'toc'; S.open = new Set(); S.chapter = null; S.chPop = false; S.logFilter = null; S.logLimit = 50;
   await saveSmeta({lastBookId:id});
   window.scrollTo(0, 0);
   render();
@@ -993,7 +1216,7 @@ async function openBookById(id){
 function closeBook(){
   closeAllSheets();
   if (S.B) S.B.close();
-  S.B = null; S.book = null; S.genres = new Map(); S.items = new Map(); S.bmeta = null;
+  S.B = null; S.book = null; S.genres = new Map(); S.items = new Map(); S.logs = new Map(); S.bmeta = null;
   clearPhotoCaches();
 }
 function goShelf(){ closeBook(); window.scrollTo(0, 0); render(); }
@@ -1117,46 +1340,178 @@ function backupDue(){
   if (bs.dismissedAt && daysSince(bs.dismissedAt) < 3) return null;
   return {days, added, never:!bs.lastBackupAt};
 }
+/** 目次に並ぶ章の鍵：ぜんぶ → ジャンル（→ ジャンルが見つからない品があれば「ジャンルなし」） */
+function tocKeys(){
+  const ks = [ALL, ...genresSorted().map(g => g.id)];
+  if (live(S.items).some(i => itemGkey(i) === NONE)) ks.push(NONE);
+  return ks;
+}
+const eventCount = () => live(S.logs).filter(l => l.type !== '登録' && itemAlive(l.itemId)).length;
 function renderToc(v){
-  const gs = genresSorted(), all = live(S.items);
-  const extra = itemsOfGenre(null);   // ジャンルが見つからない品（ふつうはない）
-  const secs = [...gs, ...(extra.length ? [NOGENRE] : [])];
+  if (S.chapter != null && !tocKeys().includes(S.chapter)) S.chapter = null;
+  if (S.chapter != null) return renderChapter(v);
+  const all = live(S.items);
   const due = backupDue();
   v.innerHTML = bookBar()
     + (due ? `<div class="notice"><span class="grow">💾 ${due.never ? 'まだバックアップしていません' : `${due.days}日バックアップしていません`}（その後 ${due.added}点追加）</span><button class="btn small" id="bkGo">設定へ</button><button class="x" id="bkX" aria-label="閉じる">✕</button></div>` : '')
-    + `<div class="vh"><h1>目次</h1><span class="sub">品 ${all.length}点</span></div>`
+    + `<div class="vh"><h1>目次</h1></div><p class="tsum">${all.length}点・できごと ${eventCount()}件</p>`
     + (all.length ? '' : `<p class="hint">下の「＋ 登録」から、最初の品を入れましょう。</p>`)
-    + secs.map(g => {
-      const its = itemsOfGenre(g.id), closed = S.closed.has(g.id || '_none');
-      return `<section class="gsec ${its.length ? '' : 'dim'}" style="--gc:${h(g.color)}">
-        <button class="gh" data-gt="${g.id || '_none'}" aria-expanded="${!closed}"><span class="tw">${closed ? '▸' : '▾'}</span><span class="gn">${h(g.emoji)} ${h(g.name)}</span><span class="gc">${its.length}点</span></button>
-        ${closed ? '' : its.length ? `<div class="igrid">${its.map(i => itemCard(i, g)).join('')}</div>` : `<p class="none">まだありません</p>`}</section>`;
-    }).join('');
+    + `<div class="toc">${tocKeys().map(k => tocRow(k)).join('')}</div>`
+    + `<button class="tadd" id="tocAddGenre">＋ ジャンルを足す</button>`;
   bindBookBar(v);
   if (due) {
     $('#bkGo', v).onclick = () => { S.tab = 'settings'; window.scrollTo(0, 0); render(); };
     $('#bkX', v).onclick = async () => { await setBackupState(S.book.id, {dismissedAt:nowISO()}); render(); };
   }
+  $('#tocAddGenre', v).onclick = () => openGenreForm(null);
   v.onclick = ev => {
-    const gt = ev.target.closest('[data-gt]');
-    if (gt) { const k = gt.dataset.gt; S.closed.has(k) ? S.closed.delete(k) : S.closed.add(k); render(); return; }
-    const c = ev.target.closest('[data-item]');
-    if (c) { const it = S.items.get(c.dataset.item); if (!it) return; const g = genreOf(it.genreId);
-      openItem(it.id, itemsOfGenre(g.id).map(i => i.id), genreWhere(g.id)); }
+    const tw = ev.target.closest('[data-tw]');
+    if (tw) { const k = tw.dataset.tw; S.open.has(k) ? S.open.delete(k) : S.open.add(k); render(); return; }
+    const ch = ev.target.closest('[data-ch]');
+    if (ch) { openChapter(ch.dataset.ch); return; }
+    const li = ev.target.closest('[data-item]');
+    if (li) { const k = li.dataset.key; openItem(li.dataset.item, chapterIds(k), whereOf(k)); }
   };
 }
-function itemCard(it, g){
+function tocRow(k){
+  const w = whereOf(k), n = chapterCount(k), open = n > 0 && S.open.has(k);
+  const star = k !== ALL && prioOn();
+  return `<div class="trow ${n ? '' : 'dim'} ${open ? 'open' : ''}" style="--gc:${h(w.color)}">
+      <button class="ttw" data-tw="${k}" ${n ? '' : 'disabled'} aria-expanded="${open}" aria-label="${h(w.name)}の品を${open ? '閉じる' : '開く'}">${open ? '∨' : '＞'}</button>
+      <button class="tname" data-ch="${k}"><span>${h(w.emoji)}</span><span class="tn">${h(w.name)}</span></button><span class="tc">${n}点</span></div>`
+    + (open ? `<div class="tlist">${chapterItems(k).map(it => {
+        const g = genreOf(it.genreId), pid = it.photoIds && it.photoIds[0];
+        return `<button class="tli" data-item="${it.id}" data-key="${k}"><span class="t38">${pid ? `<img data-photo="${pid}" alt="">` : h(g.emoji)}</span><span class="tin">${h(it.name)}</span>${star && isPri(it) ? '<span class="star">★</span>' : ''}</button>`;
+      }).join('')}</div>` : '');
+}
+function openChapter(k){ S.chapter = k; S.chPop = false; window.scrollTo(0, 0); render(); }
+/** 章：そのジャンルの品を写真カードで */
+function renderChapter(v){
+  const k = S.chapter, w = whereOf(k), its = chapterItems(k), s = sortOf(k);
+  const o = sortOptions(k).find(x => x.key === s.key) || sortOptions(k)[0];
+  const star = k !== ALL && prioOn();
+  const priN = star ? its.filter(isPri).length : 0;
+  v.innerHTML = bookBar()
+    + `<div class="chbar" style="--gc:${h(w.color)}"><button class="chback" id="chBack">‹ 目次</button>
+        <button class="chsel" id="chSel" aria-expanded="${S.chPop}">${h(w.emoji)} ${h(w.name)} <span class="cv">▾</span></button>
+        <button class="chsort" id="chSort">⇅ 並べ方</button>
+        ${S.chPop ? `<div class="chpop">${tocKeys().map(x => { const ww = whereOf(x);
+          const n = chapterCount(x);
+          return `<button data-go="${x}" class="${x === k ? 'on' : ''} ${n ? '' : 'dim'}" style="--gc:${h(ww.color)}"><span class="mn">${h(ww.emoji)} ${h(ww.name)}</span><span class="n">${n}点</span>${x === k ? '<span class="ck">✓</span>' : ''}</button>`; }).join('')}</div>` : ''}</div>`
+    + `<p class="chinfo">${its.length}点・${h(o.label)}（${dirWord(o.kind, s.dir)}）${priN ? `・★優先 ${priN}点が先頭` : ''}</p>`
+    + (its.length ? `<div class="igrid">${its.map(i => itemCard(i, genreOf(i.genreId), {star: star && isPri(i), emoji: k === ALL})).join('')}</div>`
+      : `<div class="empty">このジャンルには、まだ品がありません。<br>下の「＋ 登録」から入れられます。</div>`);
+  bindBookBar(v);
+  $('#chBack', v).onclick = () => { S.chapter = null; S.chPop = false; window.scrollTo(0, 0); render(); };
+  $('#chSel', v).onclick = ev => { ev.stopPropagation(); S.chPop = !S.chPop; render(); };
+  $('#chSort', v).onclick = () => { S.chPop = false; openSortPanel(k); };
+  v.onclick = ev => {
+    const go = ev.target.closest('[data-go]');
+    if (go) { openChapter(go.dataset.go); return; }
+    if (S.chPop && !ev.target.closest('.chpop')) { S.chPop = false; render(); return; }   // 外をタップで閉じる
+    const c = ev.target.closest('[data-item]');
+    if (c) openItem(c.dataset.item, chapterIds(k), whereOf(k));
+  };
+}
+function itemCard(it, g, o = {}){
   const pid = it.photoIds && it.photoIds[0];
-  return `<button class="icard" data-item="${it.id}" style="--gc:${h(g.color)}"><div class="ph">${pid ? `<img data-photo="${pid}" alt="">` : `<span class="ne">${h(g.emoji)}</span>`}</div><div class="nm">${h(it.name)}</div></button>`;
+  return `<button class="icard" data-item="${it.id}" style="--gc:${h(g.color)}"><div class="ph">${pid ? `<img data-photo="${pid}" alt="">` : `<span class="ne">${h(g.emoji)}</span>`}`
+    + (o.star ? '<span class="pst">★</span>' : '') + (o.emoji ? `<span class="pge">${h(g.emoji)}</span>` : '')
+    + `</div><div class="nm">${h(it.name)}</div></button>`;
+}
+/** 下から出る一覧。build(box, close) で中身を作る */
+function openPanel(build){
+  const d = document.createElement('div'); d.className = 'panel';
+  d.innerHTML = `<div class="pbox" role="dialog"></div>`;
+  document.body.appendChild(d);
+  const close = () => { d.remove(); };
+  d.addEventListener('click', ev => { if (ev.target === d) close(); });
+  build($('.pbox', d), close);
+  return close;
+}
+function openSortPanel(k){
+  openPanel((box, close) => {
+    const draw = () => {
+      const s = sortOf(k), opts = sortOptions(k);
+      const isGenre = k !== ALL;
+      box.innerHTML = `<h3>並べ方</h3>`
+        + (k === ALL ? `<p class="hint" style="margin:0 4px 6px">ぜんぶの章では優先は効きません。${hasEraGenre() ? '年代の項目がないジャンルの品・不明・空欄は最後です。' : ''}</p>` : '')
+        + opts.map(o => { const on = o.key === s.key;
+          const dirs = DIR_WORDS[o.kind];
+          return `<button class="sopt ${on ? 'on' : ''}" data-sk="${h(o.key)}"><span class="ck">${on ? '✓' : ''}</span>${h(o.label)}<span class="dir">${on ? `${dirWord(o.kind, s.dir)} ⇅` : dirs[0]}</span></button>`; }).join('')
+        + `<p class="hint" style="margin:6px 4px 0">選んでいる並べ方をもう一度押すと、向きが逆になります。</p>`
+        + (isGenre ? `<label class="sw" style="margin:10px 4px 0"><input type="checkbox" id="sp-pri" ${prioOn() ? 'checked' : ''}>優先を先頭に出す</label>
+          <button class="btn block" id="sp-order" style="margin-top:8px">★ 優先の順番を決める</button>` : '')
+        + `<button class="btn block" id="sp-close" style="margin-top:10px">閉じる</button>`;
+    };
+    draw();
+    box.onclick = async ev => {
+      const b = ev.target.closest('[data-sk]');
+      if (b) {
+        const s = sortOf(k), key = b.dataset.sk;
+        const next = key === s.key ? {key, dir: s.dir === 'desc' ? 'asc' : 'desc'} : {key, dir: k === ALL && key === 'reg' ? 'desc' : 'asc'};
+        await saveBmeta({sortBy:{...((S.bmeta && S.bmeta.sortBy) || {}), [k]:next}});
+        draw(); render(); return;
+      }
+      if (ev.target.closest('#sp-order')) { close(); openPriorityOrder(k); return; }
+      if (ev.target.closest('#sp-close')) close();
+    };
+    box.onchange = async ev => {
+      if (ev.target.id === 'sp-pri') { await saveBmeta({priorityOn:ev.target.checked}); render(); }
+    };
+  });
+}
+/** 優先の順番を決める画面（↑↓・外す） */
+function openPriorityOrder(k){
+  openSheet({title:`★ 優先の順番：${whereOf(k).name}`, build(sh){
+    const pri = live(S.items).filter(i => itemGkey(i) === k && isPri(i)).sort((a, b) => a.priorityRank - b.priorityRank);
+    const g = whereOf(k);
+    sh.body.innerHTML = pri.length ? `<p class="hint" style="margin-top:0">優先の品は、並べ方に関係なく、この順番で章の先頭に出ます。${prioOn() ? '' : '<br>（いまは「優先を先頭に出す」が切ってあります）'}</p>`
+      + pri.map((it, i) => `<div class="prow"><span class="pn">${i + 1}</span><span class="t38">${it.photoIds[0] ? `<img data-photo="${it.photoIds[0]}" alt="">` : h(g.emoji)}</span>
+        <span class="pnm">${h(it.name)}</span><button class="sq" data-pu="${it.id}" ${i ? '' : 'disabled'} aria-label="上へ">↑</button><button class="sq" data-pd="${it.id}" ${i < pri.length - 1 ? '' : 'disabled'} aria-label="下へ">↓</button><button class="sq txt" data-px="${it.id}">外す</button></div>`).join('')
+      : `<div class="empty">優先の品はまだありません。<br>品のページの「☆ 優先に入れる」で入れられます。</div>`;
+    sh.body.onclick = async ev => {
+      const b = ev.target.closest('[data-pu],[data-pd],[data-px]'); if (!b) return;
+      const ids = pri.map(i => i.id);
+      if (b.dataset.px) { const it = S.items.get(b.dataset.px); it.priorityRank = null;
+        const ch = renumberPriority(it.genreId, ids.filter(x => x !== it.id));
+        await safeWrite(() => S.B.putMany([it, ...ch].map(rec => ({store:'items', rec})))); }
+      else {
+        const id = b.dataset.pu || b.dataset.pd, i = ids.indexOf(id), j = i + (b.dataset.pu ? -1 : 1);
+        [ids[i], ids[j]] = [ids[j], ids[i]];
+        const ch = renumberPriority(S.items.get(id).genreId, ids);
+        await safeWrite(() => S.B.putMany(ch.map(rec => ({store:'items', rec}))));
+      }
+      sh.refresh(); render();
+    };
+  }});
 }
 
 /* ---------- 品のページ ---------- */
-function galleryHTML(ids){
-  const many = ids.length > 1;
+/** entries = [{pid, log}]（itemPhotos の結果）。写真の下に撮影日・できごとの行 */
+function galleryHTML(entries){
+  const ids = entries.map(e => e.pid), many = ids.length > 1;
   const ind = !many ? '' : ids.length <= 8 ? `<div class="dots">${ids.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>` : `<div class="cnt">1 / ${ids.length}</div>`;
-  return `<div class="gal" data-ids="${ids.join(',')}" data-i="0"><div class="gi"><img data-full="${ids[0]}" alt="">`
+  return `<div class="gal" data-ids="${ids.join(',')}" data-logs="${entries.map(e => e.log ? e.log.id : '').join(',')}" data-i="0"><div class="gi"><img data-full="${ids[0]}" alt="">`
     + (many ? `<button class="ga prev" data-ga="-1" aria-label="前の写真" hidden>‹</button><button class="ga next" data-ga="1" aria-label="次の写真">›</button>` : '')
-    + ind + `</div></div>`;
+    + ind + `</div><div class="gcap"></div></div>`;
+}
+const logLabel = l => `🗓 ${fmtYMD(l.date)} ${l.type || ''}`;
+/** 写真の下の行：撮影日と、できごとの写真なら「🗓 2026/11/3 作った記録」 */
+async function paintGalCap(g){
+  const i = +g.dataset.i, pid = g.dataset.ids.split(',')[i], lid = (g.dataset.logs || '').split(',')[i];
+  const cap = $('.gcap', g); if (!cap) return;
+  const l = lid && S.logs.get(lid);
+  const logPart = l ? `<button class="glog" data-glog="${l.id}">${h(logLabel(l))}</button>` : '';
+  cap.innerHTML = logPart;
+  const t = await photoTaken(pid);
+  if (+g.dataset.i !== i || !g.isConnected) return;
+  cap.innerHTML = logPart + (t ? `<span>撮影 ${h(fmtTaken(t))}</span>` : '');
+}
+/** 拡大ビューアの下に出す文字 */
+async function viewerCaption(pid, lid){
+  const l = lid && S.logs.get(lid), t = await photoTaken(pid);
+  return [l ? logLabel(l) : '', t ? `撮影 ${fmtTaken(t)}` : ''].filter(Boolean).join('　');
 }
 /** 写真の切り替え部品を i 枚目にする */
 async function setGal(g, i){
@@ -1167,6 +1522,7 @@ async function setGal(g, i){
   if (pv) pv.hidden = i === 0; if (nx) nx.hidden = i === ids.length - 1;
   $$('.dots i', g).forEach((d, k) => d.classList.toggle('on', k === i));
   const cnt = $('.cnt', g); if (cnt) cnt.textContent = `${i + 1} / ${ids.length}`;
+  paintGalCap(g);
   const img = $('img', g); img.dataset.full = ids[i];
   const u = await fullURL(ids[i]); if (u && g.dataset.i == i) { img.src = u; applyFocus(img, ids[i]); }
   for (const d of [-1, 1]) if (ids[i + d]) fullURL(ids[i + d]);   // 前後を先に読む
@@ -1174,30 +1530,87 @@ async function setGal(g, i){
 document.addEventListener('click', ev => {
   const b = ev.target.closest('.gal [data-ga]');
   if (b) { ev.stopPropagation(); const g = b.closest('.gal'); setGal(g, +g.dataset.i + (+b.dataset.ga)); return; }
+  const gl = ev.target.closest('.gal [data-glog]');
+  if (gl) { ev.stopPropagation(); scrollToLog(gl.closest('.sheet-body'), gl.dataset.glog); return; }
   const im = ev.target.closest('.gal img');
-  if (im) { const g = im.closest('.gal'); openViewer(g.dataset.ids.split(','), +g.dataset.i, i => { if (g.isConnected) setGal(g, i); }); }
+  if (im) { const g = im.closest('.gal'), lids = (g.dataset.logs || '').split(','), ids = g.dataset.ids.split(',');
+    openViewer(ids, +g.dataset.i, i => { if (g.isConnected) setGal(g, i); }, i => viewerCaption(ids[i], lids[i])); }
 }, true);
-function openItem(id0, list, where){
+/** 品のページの中で、そのできごとまでスクロールする（5件より後ろなら、ぜんぶ開いてから） */
+function scrollToLog(body, lid){
+  if (!body) return;
+  let el = $(`.lg[data-log="${lid}"]`, body);
+  if (!el) {
+    const sh = sheets.find(s => s.body === body); if (!sh) return;
+    sh.logsAll = sh.pager ? sh.pager.cur : true; sh.refresh();
+    body = sh.body; el = $(`.lg[data-log="${lid}"]`, body); if (!el) return;
+  }
+  const top = el.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop - 70;
+  body.scrollTop = Math.max(0, top);
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+}
+/** 品のページの「できごと」の章 */
+function logSectionHTML(it, sh){
+  const ls = logsOf(it.id), all = sh.logsAll === it.id || ls.length <= 5, shown = all ? ls : ls.slice(0, 5);
+  return `<div class="sec">できごと</div><div class="lgadd"><button class="btn small" data-addlog>＋ できごとを足す</button></div>`
+    + shown.map(l => `<div class="lg" data-log="${l.id}"><button class="lgb" data-editlog="${l.id}"><span class="lgd">${h(fmtYMD(l.date))}</span><span class="lgt">${h(l.type)}</span>${l.memo ? `<div class="lgm">${h(l.memo)}</div>` : ''}</button>`
+      + ((l.photoIds || []).length ? `<div class="lgp">${l.photoIds.map((p, k) => `<button data-lgph="${l.id}" data-k="${k}" aria-label="写真を大きく"><img data-photo="${p}" alt=""></button>`).join('')}</div>` : '')
+      + `</div>`).join('')
+    + (all ? '' : `<button class="btn small block" data-logall style="margin-top:8px">ぜんぶ見る（${ls.length}件）</button>`);
+}
+/** opt.logId：開いたらそのできごとまでスクロール */
+function openItem(id0, list, where, opt = {}){
   if (!itemAlive(id0)) return;
-  openSheet({title:'品のページ', pager:{ids: list && list.includes(id0) ? list : [id0], cur:id0, alive:itemAlive, where,
+  const sh0 = openSheet({title:'品のページ', pager:{ids: list && list.includes(id0) ? list : [id0], cur:id0, alive:itemAlive, where,
     photoOf: id => { const it = S.items.get(id); return it && it.photoIds[0]; }}, build(sh){
     const id = sh.pager.cur, it = S.items.get(id);
     if (!it || it.deleted) { sh.titleEl.textContent = '品のページ'; sh.body.innerHTML = `<div class="empty">この品は消されました。</div>`; pagerFoot(sh); return; }
+    if (!sh.preview) syncPager(sh.pager, it);
+    if (opt.logId && !sh.preview && sh.logsAll === undefined) sh.logsAll = id;
     const g = genreOf(it.genreId);
     sh.titleEl.textContent = it.name;
     sh.body.style.setProperty('--gc', g.color);
     const rows = g.fields.map(f => { const d = fieldDisplay(f, it.values || {}); return d ? `<dt>${h(f.name)}${f.secret ? '<span class="lock" title="ひみつ">🔒</span>' : ''}</dt><dd>${d}</dd>` : ''; }).join('');
     const notes = (it.notes || []).filter(n => (n.text || '').trim());
-    sh.body.innerHTML = (it.photoIds.length ? galleryHTML(it.photoIds) : `<div class="nophoto">${h(g.emoji)}</div>`)
-      + `<div class="ilabel"><h2>${h(it.name)}</h2><div class="gr">${h(g.emoji)} ${h(g.name)}</div></div>`
+    const ph = itemPhotos(it), pri = isPri(it);
+    const logs = logSectionHTML(it, sh), top = g.logPosition === 'top';
+    sh.body.innerHTML = (ph.length ? galleryHTML(ph) : `<div class="nophoto">${h(g.emoji)}</div>`)
+      + `<div class="ilabel"><h2>${h(it.name)}${pri && prioOn() ? ' <span class="star" title="優先">★</span>' : ''}</h2><div class="gr">${h(g.emoji)} ${h(g.name)}</div></div>`
       + (it.oneLine ? `<p class="oneline">${h(it.oneLine)}</p>` : '')
+      + (top ? logs : '')
       + (rows ? `<dl class="flds">${rows}</dl>` : '')
       + (notes.length ? `<div class="sec">能書き</div>${notes.map(n => `<div class="note">${h(n.text)}</div>`).join('')}` : '')
-      + `<div class="row-btns" style="margin-top:22px"><button class="btn" id="i-edit">✏️ 編集</button><button class="btn" id="i-cover" ${it.photoIds.length ? '' : 'disabled'}>🖼 表紙を変える</button></div>`;
+      + (top ? '' : logs)
+      + `<div class="row-btns" style="margin-top:22px"><button class="btn" id="i-edit">✏️ 編集</button><button class="btn" id="i-cover" ${it.photoIds.length ? '' : 'disabled'}>🖼 表紙を変える</button></div>`
+      + `<div class="row-btns" style="margin-top:0"><button class="btn" id="i-pri">${pri ? '★ 優先から外す' : '☆ 優先に入れる'}</button></div>`;
     pagerFoot(sh);
+    $$('.gal', sh.body).forEach(paintGalCap);
     $('#i-edit', sh.body).onclick = () => openEditor({id, list:sh.pager.list(), where:sh.pager.where, parent:sh});
     $('#i-cover', sh.body).onclick = () => openItemCover(id);
+    $('#i-pri', sh.body).onclick = async () => { await togglePriority(id); sh.refresh(); };
+    sh.body.onclick = ev => {
+      if (ev.target.closest('[data-addlog]')) return openLogEditor(id, null);
+      const e = ev.target.closest('[data-editlog]'); if (e) return openLogEditor(id, e.dataset.editlog);
+      const p = ev.target.closest('[data-lgph]');
+      if (p) { const l = S.logs.get(p.dataset.lgph); if (l) openViewer(l.photoIds, +p.dataset.k, null, i => viewerCaption(l.photoIds[i], l.id)); return; }
+      if (ev.target.closest('[data-logall]')) { sh.logsAll = id; sh.refresh(); }
+    };
   }});
+  if (opt.logId) requestAnimationFrame(() => scrollToLog(sh0.body, opt.logId));
+  return sh0;
+}
+async function togglePriority(id){
+  const it = S.items.get(id); if (!it) return;
+  let ch;
+  if (isPri(it)) { it.priorityRank = null; ch = renumberPriority(it.genreId); }
+  else {
+    const k = itemGkey(it);
+    it.priorityRank = Math.max(0, ...live(S.items).filter(i => itemGkey(i) === k && isPri(i)).map(i => i.priorityRank)) + 1;
+    ch = renumberPriority(it.genreId);
+  }
+  const recs = [it, ...ch.filter(x => x !== it)];
+  if (await safeWrite(() => S.B.putMany(recs.map(rec => ({store:'items', rec}))))) pinToast(isPri(it) ? '★ 優先に入れました' : '優先から外しました');
+  else await loadBook();
 }
 /** 品の表紙：見出し写真（1枚目）の選び直しと主役の位置 */
 function openItemCover(id){
@@ -1247,13 +1660,14 @@ function openItemCover(id){
 }
 
 /* ---------------- 写真の拡大ビューア（なんでも図鑑と同じ） ---------------- */
-function openViewer(ids, i0, onIndex){
+/** capFn(i)：写真の下に出す文字（撮影日など）を返す Promise */
+function openViewer(ids, i0, onIndex, capFn){
   if (document.querySelector('.viewer')) return;
   let i = Math.max(0, Math.min(ids.length - 1, i0 || 0));
   const v = document.createElement('div'); v.className = 'viewer';
-  v.innerHTML = `<img alt=""><div class="vc"></div><button class="vx" aria-label="閉じる">✕</button>`;
+  v.innerHTML = `<img alt=""><div class="vc"></div><div class="vd"></div><button class="vx" aria-label="閉じる">✕</button>`;
   document.body.appendChild(v);
-  const img = $('img', v), vc = $('.vc', v);
+  const img = $('img', v), vc = $('.vc', v), vd = $('.vd', v);
   let s = 1, tx = 0, ty = 0;
   let closed = false;
   const draw = (anim) => { img.style.transition = anim ? 'transform .2s ease-out' : 'none'; img.style.transform = `translate(${tx}px,${ty}px) scale(${s})`; };
@@ -1273,6 +1687,8 @@ function openViewer(ids, i0, onIndex){
   };
   const show = async () => {
     vc.textContent = ids.length > 1 ? `${i + 1} / ${ids.length}` : '';
+    vd.textContent = '';
+    if (capFn) { const k = i; capFn(k).then(t => { if (!closed && k === i) vd.textContent = t || ''; }).catch(() => {}); }
     s = 1; tx = 0; ty = 0; draw(false);
     const want = i, u = await fullURL(ids[i]);
     if (!closed && want === i && u) img.src = u;
@@ -1401,11 +1817,11 @@ function addFilesTo(st, files, redraw){
   }
   redraw();
 }
-function photosHTML(st){
+function photosHTML(st, head = true){
   const n = st.photos.length;
   return st.photos.map((p, i) => {
     const img = p.pid ? `<img data-photo="${p.pid}" alt="">` : p.loading ? `<div class="ld">読み込み中…</div>` : p.err ? `<div class="ld">読み込めない写真です<br>${h(p.name)}</div>` : `<img src="${p.thumbUrl}" alt="">`;
-    return `<div class="ep" data-pi="${i}">${img}${i === 0 && !p.err ? '<span class="hd">見出し</span>' : ''}
+    return `<div class="ep" data-pi="${i}">${img}${head && i === 0 && !p.err ? '<span class="hd">見出し</span>' : ''}
       <div class="epc"><button data-pm="-1" ${i === 0 ? 'disabled' : ''} aria-label="左へ">‹</button><button data-px aria-label="外す">✕</button><button data-pm="1" ${i === n - 1 ? 'disabled' : ''} aria-label="右へ">›</button></div></div>`;
   }).join('') + `<button class="addph" id="e-add"><span class="big">＋</span><br>写真</button>`;
 }
@@ -1475,12 +1891,10 @@ function openEditor(opt = {}){
     onClose(){
       dropNewPhotos(ed.st);
       const par = opt.parent;
+      // 下の品のページも同じ品に合わせる（並び・ジャンルの章は、品のページを描き直すときに syncPager で合わせる）
       if (par && shRef.pager && itemAlive(shRef.pager.cur) && sheets.includes(par)) {
-        const it = S.items.get(shRef.pager.cur), gid = genreOf(it.genreId).id;
-        par.pager.cur = it.id;
-        if (!par.pager.ids.includes(it.id) || (par.pager.where && par.pager.where.label !== genreWhere(gid).label)) {
-          par.pager.ids = itemsOfGenre(gid).map(i => i.id); par.pager.where = genreWhere(gid);
-        }
+        const it = S.items.get(shRef.pager.cur);
+        par.pager.cur = it.id; syncPager(par.pager, it);
       }
     },
     build(sh){
@@ -1581,6 +1995,7 @@ async function saveItem(id, st){
   await Promise.all(st.photos.filter(p => p.promise).map(p => p.promise));
   const isNew = !id;
   const it = isNew ? {id:uuid(), urls:[], materialIds:[], priorityRank:null, wikiQuery:null, summary:null} : S.items.get(id);
+  const oldGenre = isNew ? null : it.genreId;
   const ops = [], pids = [], fresh = [];
   let failed = 0;
   for (const p of st.photos) {
@@ -1599,10 +2014,17 @@ async function saveItem(id, st){
   }
   Object.assign(it, {genreId:st.genreId, name, oneLine:st.oneLine.trim(), values,
     notes:st.notes.filter(n => n.text.trim()).map(n => ({id:n.id, text:n.text.replace(/\s+$/, ''), kind:'own', sourceUrl:null})), photoIds:pids});
+  // ジャンルを変えたら優先から外す（元のジャンルの順位は詰め直す）
+  if (!isNew && oldGenre !== st.genreId && isPri(it)) {
+    it.priorityRank = null;
+    for (const c of renumberPriority(oldGenre)) if (c !== it) ops.push({store:'items', rec:c});
+  }
   ops.push({store:'items', rec:it});
-  if (isNew) ops.push({store:'logs', rec:{id:uuid(), itemId:it.id, date:localYMD(), type:'登録', memo:'', photoIds:[]}});
+  let regLog = null;
+  if (isNew) { regLog = {id:uuid(), itemId:it.id, date:localYMD(), type:'登録', memo:'', photoIds:[]}; ops.push({store:'logs', rec:regLog}); }
   if (!(await safeWrite(() => S.B.putMany(ops)))) { await loadBook(); return false; }
   S.items.set(it.id, it);
+  if (regLog) S.logs.set(regLog.id, regLog);
   for (const [pid, p] of fresh) { thumbCache.set(pid, p.thumbUrl); p.kept = true; }   // 作ったサムネイルはそのまま使う
   if (isNew) {
     S.bmeta = await S.B.setMeta({lastGenreId:st.genreId});
@@ -1615,27 +2037,315 @@ async function deleteItem(id){
   const it = S.items.get(id);
   const ops = [{store:'items', rec:it}];
   for (const pid of it.photoIds) { const p = await S.B.get('photos', pid); if (p) { p.deleted = true; ops.push({store:'photos', rec:p}); } }
-  for (const l of await S.B.getAll('logs')) if (l.itemId === id && !l.deleted) { l.deleted = true; ops.push({store:'logs', rec:l}); }
+  for (const l of await S.B.getAll('logs')) if (l.itemId === id && !l.deleted) {
+    l.deleted = true; ops.push({store:'logs', rec:l});
+    for (const pid of l.photoIds || []) { const p = await S.B.get('photos', pid); if (p && !p.deleted) { p.deleted = true; ops.push({store:'photos', rec:p}); } }
+  }
   it.deleted = true;
+  if (isPri(it)) { it.priorityRank = null; for (const c of renumberPriority(it.genreId)) ops.push({store:'items', rec:c}); }
+  const ok = await safeWrite(() => S.B.putMany(ops));
+  await loadBook();
+  return ok;
+}
+
+/* ---------- できごとを足す・直す ---------- */
+function openLogEditor(itemId, logId){
+  const it = S.items.get(itemId); if (!it) return;
+  const g = genreOf(it.genreId);
+  const old = logId ? S.logs.get(logId) : null;
+  const isReg = !!(old && old.type === '登録');
+  const types = (g.logTypes || []).filter(t => t !== '登録');
+  if (!types.length) types.push('そのほか');
+  if (old && !isReg && !types.includes(old.type)) types.push(old.type);   // ジャンルを変えて無くなった種類も出す
+  const st = {date: old ? old.date : localYMD(), type: old ? old.type : types[0], memo: old ? old.memo || '' : '',
+    photos: (old ? old.photoIds || [] : []).map(pid => ({pid})), dateTouched:false};
+  const key = () => JSON.stringify([st.date, st.type, st.memo.replace(/\s+$/, ''), st.photos.map(p => p.pid || p.key)]);
+  let orig = key();
+  const dirty = () => key() !== orig;
+  let shRef = null;
+  /** 写真のいちばん古い撮影日（端末の日付） */
+  const photoDate = () => {
+    let min = null;
+    for (const p of st.photos) {
+      const t = p.pid ? takenCache.get(p.pid) : p.takenAt;
+      if (t && (!min || t < min)) min = t;
+    }
+    return min ? localYMD(new Date(min)) : null;
+  };
+  const paintChip = () => {
+    const box = shRef && $('#l-dchip', shRef.body); if (!box) return;
+    const d = st.dateTouched ? null : photoDate();
+    box.innerHTML = d && d !== st.date ? `<button class="chip ldchip" id="l-usephoto">📷 写真の日付（${h(fmtYMD(d).replace(/^\d+\//, ''))}）にする</button>` : '';
+  };
+  const save = async () => {
+    const r = await saveLog(itemId, old, st, isReg);
+    if (r) { orig = key(); }
+    return r;
+  };
+  shRef = openSheet({title: old ? (isReg ? '登録のできごと' : 'できごとを直す') : 'できごとを足す', form:true,
+    beforeClose: async () => {
+      if (!dirty()) return true;
+      const k = await ask3('変更があります', ['保存して戻る', '保存しないで戻る', '編集を続ける']);
+      if (k === 2) return false;
+      if (k === 1) { dropNewPhotos(st); return true; }
+      const ok = await save(); if (ok) pinToast('保存しました');
+      return !!ok;
+    },
+    onClose(){ dropNewPhotos(st); },
+    build(sh){
+      sh.body.innerHTML = `<p class="hint" style="margin-top:0">${h(g.emoji)} ${h(it.name)}</p>
+        <label class="fl">日付</label><input type="date" id="l-date" value="${h(st.date)}"><div id="l-dchip"></div>
+        <label class="fl">種類</label>${isReg ? `<div class="days">登録（種類は変えられません）</div>`
+          : `<div class="chips wrap" id="l-type">${types.map(t => `<button class="chip ${t === st.type ? 'on' : ''}" data-t="${h(t)}">${h(t)}</button>`).join('')}</div>`}
+        <label class="fl">メモ</label><textarea class="grow" rows="3" id="l-memo">${h(st.memo)}</textarea>
+        <label class="fl">写真 <span class="hint">（何枚でも。なくてもよい）</span></label>
+        <div class="ephotos noswipe" id="e-photos">${photosHTML(st, false)}</div>
+        ${old && !isReg ? `<button class="btn danger block" id="l-del" style="margin-top:26px">このできごとを消す</button>` : ''}`;
+      const body = sh.body;
+      const redraw = () => { const box = $('#e-photos', sh.body); if (box) { box.innerHTML = photosHTML(st, false); hydrate(box); } paintChip(); };
+      $('#e-photos', body).addEventListener('click', ev => {
+        if (ev.target.closest('#e-add')) return pickPhotos(fs => addFilesTo(st, fs, redraw));
+        const tile = ev.target.closest('[data-pi]'); if (!tile) return;
+        const i = +tile.dataset.pi, mv = ev.target.closest('[data-pm]');
+        if (mv) { const j = i + (+mv.dataset.pm); if (j < 0 || j >= st.photos.length) return; [st.photos[i], st.photos[j]] = [st.photos[j], st.photos[i]]; redraw(); }
+        else if (ev.target.closest('[data-px]')) { const [p] = st.photos.splice(i, 1); if (p && !p.pid && p.thumbUrl && !p.kept) URL.revokeObjectURL(p.thumbUrl); redraw(); }
+      });
+      const dIn = $('#l-date', body);
+      const onDate = () => { st.date = dIn.value; st.dateTouched = true; paintChip(); };
+      dIn.addEventListener('input', onDate); dIn.addEventListener('change', onDate);
+      $('#l-dchip', body).onclick = ev => {
+        if (!ev.target.closest('#l-usephoto')) return;
+        const d = photoDate(); if (!d) return;
+        st.date = d; dIn.value = d; st.dateTouched = true; paintChip();
+      };
+      const tb = $('#l-type', body);
+      if (tb) tb.onclick = ev => { const b = ev.target.closest('[data-t]'); if (!b) return; st.type = b.dataset.t; $$('[data-t]', tb).forEach(x => x.classList.toggle('on', x === b)); };
+      $('#l-memo', body).oninput = ev => { st.memo = ev.target.value; grow(ev.target); };
+      const del = $('#l-del', body);
+      if (del) del.onclick = async () => {
+        const k = await ask3('このできごとを消しますか？', ['消す', 'やめる'], 'このできごとの写真もアプリから消えます。', {danger:0});
+        if (k !== 0) return;
+        if (await deleteLog(old.id)) { orig = key(); closeSheet(sh, true); pinToast('消しました'); }
+      };
+      sh.foot.innerHTML = `<button class="btn primary" id="l-save">保存</button>`;
+      $('#l-save', sh.foot).onclick = async ev => {
+        ev.target.disabled = true;
+        const ok = await save();
+        ev.target.disabled = false;
+        if (ok) { closeSheet(sh, true); pinToast(old ? '保存しました' : 'できごとを足しました'); }
+      };
+      paintChip();
+    }});
+  // もとからある写真の撮影日を読んでおく（「写真の日付にする」のため）
+  Promise.all(st.photos.filter(p => p.pid).map(p => photoTaken(p.pid))).then(paintChip);
+  return shRef;
+}
+/** できごとの保存。うまくいけば true */
+async function saveLog(itemId, old, st, isReg){
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(st.date || '')) { alert('日付を入れてください。'); return false; }
+  const memo = st.memo.replace(/\s+$/, '');
+  if (!isReg && !memo.trim() && !st.photos.some(p => !p.err)) { alert('メモか写真を入れてください。'); return false; }
+  await Promise.all(st.photos.filter(p => p.promise).map(p => p.promise));
+  const rec = old ? old : {id:uuid(), itemId};
+  const ops = [], pids = [], fresh = [];
+  let failed = 0;
+  for (const p of st.photos) {
+    if (p.pid) { pids.push(p.pid); continue; }
+    if (p.err || !p.blob) { failed++; continue; }
+    const pr = {id:uuid(), itemId, logId:rec.id, kind:'log', data:await p.blob.arrayBuffer(), thumb:await p.thumbBlob.arrayBuffer(),
+      width:p.width, height:p.height, takenAt:p.takenAt, originalName:p.name};
+    ops.push({store:'photos', rec:pr}); pids.push(pr.id); fresh.push([pr.id, p]);
+  }
+  if (!isReg && !memo.trim() && !pids.length) { alert('写真を読み込めませんでした。メモか写真を入れてください。'); return false; }
+  if (old) for (const o of old.photoIds || []) if (!pids.includes(o)) { const p = await S.B.get('photos', o); if (p) { p.deleted = true; ops.push({store:'photos', rec:p}); } }
+  Object.assign(rec, {date:st.date, memo, photoIds:pids});
+  if (!isReg) rec.type = st.type;
+  ops.push({store:'logs', rec});
+  if (!(await safeWrite(() => S.B.putMany(ops)))) { await loadBook(); return false; }
+  S.logs.set(rec.id, rec);
+  for (const [pid, p] of fresh) { thumbCache.set(pid, p.thumbUrl); takenCache.set(pid, p.takenAt || null); p.kept = true; }
+  if (failed) alert(`読み込めなかった写真 ${failed}枚は保存しませんでした。`);
+  return true;
+}
+async function deleteLog(id){
+  const l = S.logs.get(id); if (!l) return false;
+  const ops = [];
+  for (const pid of l.photoIds || []) { const p = await S.B.get('photos', pid); if (p && !p.deleted) { p.deleted = true; ops.push({store:'photos', rec:p}); } }
+  l.deleted = true; ops.push({store:'logs', rec:l});
   const ok = await safeWrite(() => S.B.putMany(ops));
   if (!ok) await loadBook();
   return ok;
 }
 
+/* ---------- 全体のログ画面 ---------- */
+function renderLogs(v){
+  const showReg = !(S.bmeta && S.bmeta.logShowReg === false);
+  const gsWith = genresSorted().filter(g => chapterCount(g.id) > 0);
+  if (S.logFilter && !gsWith.some(g => g.id === S.logFilter)) S.logFilter = null;
+  const f = S.logFilter;
+  const L = live(S.logs).filter(l => {
+    const it = S.items.get(l.itemId); if (!it || it.deleted) return false;
+    if (!showReg && l.type === '登録') return false;
+    return !f || itemGkey(it) === f;
+  }).sort(byLogNew);
+  const shown = L.slice(0, S.logLimit);
+  let month = '', html = '';
+  for (const l of shown) {
+    const m = /^(\d{4})-(\d{2})/.exec(l.date || ''), mk = m ? `${+m[1]}年${+m[2]}月` : '日付なし';
+    if (mk !== month) { month = mk; html += `<div class="lmon">${h(mk)}</div>`; }
+    const it = S.items.get(l.itemId), g = genreOf(it.genreId), pid = it.photoIds[0], ps = l.photoIds || [];
+    html += `<button class="le" data-le="${l.id}"><div class="led">${h(fmtYMD(l.date).replace(/^\d+\//, ''))}</div>
+      <span class="t38">${pid ? `<img data-photo="${pid}" alt="">` : h(g.emoji)}</span>
+      <div class="lem"><div class="len">${h(it.name)} <span class="lgt">${h(l.type)}</span></div>${l.memo ? `<div class="lemm">${h(l.memo)}</div>` : ''}
+      ${ps.length ? `<div class="lep">${ps.slice(0, 4).map(p => `<img data-photo="${p}" alt="">`).join('')}${ps.length > 4 ? `<span class="more">＋${ps.length - 4}</span>` : ''}</div>` : ''}</div></button>`;
+  }
+  v.innerHTML = bookBar() + `<div class="vh"><h1>ログ</h1><span class="sub">できごと ${L.length}件</span></div>
+    <div class="chips" id="lf"><button class="chip ${f ? '' : 'on'}" data-lf="">ぜんぶ</button>${gsWith.map(g => `<button class="chip g ${f === g.id ? 'on' : ''}" data-lf="${g.id}" style="--gc:${h(g.color)}">${h(g.emoji)} ${h(g.name)}</button>`).join('')}</div>
+    <div class="lfil"><label class="sw"><input type="checkbox" id="lreg" ${showReg ? 'checked' : ''}>「登録」も出す</label></div>`
+    + (L.length ? html + (L.length > shown.length ? `<button class="btn block" id="lmore" style="margin-top:12px">もっと見る（あと ${L.length - shown.length}件）</button>` : '')
+      : `<div class="empty" style="margin-top:12px">品のページの「＋ できごとを足す」で、修理や作った日の記録を残せます。</div>`);
+  bindBookBar(v);
+  $('#lreg', v).onchange = async ev => { await saveBmeta({logShowReg:ev.target.checked}); S.logLimit = 50; render(); };
+  const more = $('#lmore', v); if (more) more.onclick = () => { S.logLimit += 50; render(); };
+  v.onclick = ev => {
+    const c = ev.target.closest('[data-lf]');
+    if (c) { S.logFilter = c.dataset.lf || null; S.logLimit = 50; render(); return; }
+    const e = ev.target.closest('[data-le]');
+    if (e) { const l = S.logs.get(e.dataset.le), it = l && S.items.get(l.itemId); if (!it) return;
+      const k = itemGkey(it); openItem(it.id, chapterIds(k), whereOf(k), {logId:l.id}); }
+  };
+}
+
+/* ---------- ジャンルを足す・直す ---------- */
+const GENRE_COLORS = ['#3d5a80','#b4533a','#8a6a35','#2f6b57','#7d3a5e','#9c4f78','#b0703a','#68707f'];
+const EMPTY_BASE = '_empty';
+const firstGrapheme = s => {
+  s = String(s || '').trim(); if (!s) return '';
+  try { if (window.Intl && Intl.Segmenter) { const it = new Intl.Segmenter('ja', {granularity:'grapheme'}).segment(s)[Symbol.iterator]().next(); if (!it.done) return it.value.segment; } } catch(e) {}
+  return Array.from(s)[0];
+};
+function openGenreForm(gid){
+  const old = gid ? S.genres.get(gid) : null;
+  const gs = genresSorted();
+  const last = S.bmeta && S.bmeta.lastGenreId;
+  const used = new Set(gs.map(g => g.color));
+  const st = {name: old ? old.name : '', emoji: old ? old.emoji : '', color: old ? old.color : (GENRE_COLORS.find(c => !used.has(c)) || GENRE_COLORS[0]),
+    base: old ? null : (gs.some(g => g.id === last) ? last : gs[0] ? gs[0].id : EMPTY_BASE)};
+  const key = () => JSON.stringify([st.name.trim(), firstGrapheme(st.emoji), st.color, st.base]);
+  let orig = key();
+  const cols = GENRE_COLORS.includes(st.color) ? GENRE_COLORS : [...GENRE_COLORS, st.color];
+  openSheet({title: old ? 'ジャンルを直す' : 'ジャンルを足す', form:true,
+    beforeClose: async () => {
+      if (key() === orig) return true;
+      const k = await ask3('変更があります', ['保存して戻る', '保存しないで戻る', '編集を続ける']);
+      if (k === 2) return false;
+      if (k === 1) return true;
+      return await saveGenre(old, st);
+    },
+    build(sh){
+      const baseName = () => st.base === EMPTY_BASE ? '空っぽ（メモだけ）' : genreOf(st.base).name;
+      sh.body.innerHTML = `<label class="fl" style="margin-top:2px">名前</label><input id="gf-name" value="${h(st.name)}" placeholder="例：車" autocomplete="off">
+        <label class="fl">絵文字（1つ）</label><input id="gf-emoji" class="emo-in" value="${h(st.emoji)}" placeholder="📁" autocomplete="off">
+        <p class="hint" style="margin:4px 2px 0">キーボードの 🙂（地球儀のとなり）から選べます。空なら 📁 になります。</p>
+        <label class="fl">色</label><div class="swatches" id="gf-col">${cols.map(c => `<button class="swc ${c === st.color ? 'on' : ''}" data-c="${c}" style="background:${c}" aria-label="色"></button>`).join('')}</div>
+        <label class="fl">見え方</label><div id="gf-prev"></div>
+        ${old ? '' : `<label class="fl">もとにするジャンル</label><div class="chips wrap" id="gf-base">${gs.map(g => `<button class="chip g ${st.base === g.id ? 'on' : ''}" data-b="${g.id}" style="--gc:${h(g.color)}">${h(g.emoji)} ${h(g.name)}</button>`).join('')}<button class="chip ${st.base === EMPTY_BASE ? 'on' : ''}" data-b="${EMPTY_BASE}">空っぽ（メモだけ）</button></div>
+          <p class="hint" id="gf-note"></p>`}
+        ${old ? `<p class="hint" style="margin-top:18px">項目・できごとの種類は、いまは変えられません（あとでできるようになります）。</p>
+          <button class="btn danger block" id="gf-del" style="margin-top:20px">このジャンルを消す</button>` : ''}`;
+      const body = sh.body;
+      const paint = () => {
+        const e = firstGrapheme(st.emoji) || '📁';
+        $('#gf-prev', body).innerHTML = `<span class="chip g on" style="--gc:${h(st.color)};display:inline-flex;align-items:center">${h(e)} ${h(st.name.trim() || '（名前）')}</span>`;
+        const n = $('#gf-note', body);
+        if (n) n.textContent = st.base === EMPTY_BASE ? '項目は「メモ」だけになります。項目の足し引きは、あとでできるようになります。'
+          : `項目は「${baseName()}」と同じになります。項目の足し引きは、あとでできるようになります。`;
+      };
+      paint();
+      $('#gf-name', body).oninput = ev => { st.name = ev.target.value; paint(); };
+      $('#gf-emoji', body).oninput = ev => { st.emoji = ev.target.value; paint(); };
+      $('#gf-emoji', body).onblur = ev => { const e = firstGrapheme(ev.target.value); ev.target.value = e; st.emoji = e; paint(); };
+      $('#gf-col', body).onclick = ev => { const b = ev.target.closest('[data-c]'); if (!b) return; st.color = b.dataset.c; $$('[data-c]', body).forEach(x => x.classList.toggle('on', x === b)); paint(); };
+      const bb = $('#gf-base', body);
+      if (bb) bb.onclick = ev => { const b = ev.target.closest('[data-b]'); if (!b) return; st.base = b.dataset.b; $$('[data-b]', bb).forEach(x => x.classList.toggle('on', x === b)); paint(); };
+      const del = $('#gf-del', body);
+      if (del) del.onclick = async () => { if (await deleteGenre(old.id)) { orig = key(); closeSheet(sh, true); } };
+      sh.foot.innerHTML = `<button class="btn primary" id="gf-ok">${old ? '保存' : '足す'}</button>`;
+      $('#gf-ok', sh.foot).onclick = async ev => {
+        ev.target.disabled = true;
+        const ok = await saveGenre(old, st);
+        ev.target.disabled = false;
+        if (ok) { orig = key(); closeSheet(sh, true); pinToast(old ? '保存しました' : 'ジャンルを足しました'); }
+      };
+    }});
+}
+async function saveGenre(old, st){
+  const name = st.name.trim();
+  if (!name) { alert('ジャンルの名前を入れてください。'); return false; }
+  const emoji = firstGrapheme(st.emoji) || '📁';
+  let rec;
+  if (old) rec = Object.assign(old, {name, emoji, color:st.color});
+  else {
+    // もとにするジャンルから写す：項目（id も同じ）・年代の項目・できごとの種類と位置・名前の欄の見出し
+    const b = st.base === EMPTY_BASE ? GENRE_DEFS['g-other'] : S.genres.get(st.base);
+    if (!b) { alert('もとにするジャンルが見つかりません。'); return false; }
+    rec = {id:'g-' + uuid(), name, emoji, color:st.color, order: Math.max(0, ...live(S.genres).map(g => g.order || 0)) + 1,
+      fields:clone(b.fields || []), eraFieldId:b.eraFieldId || null, logTypes:clone(b.logTypes || ['登録','そのほか']), logPosition:b.logPosition || 'bottom'};
+    if (b.nameLabel) rec.nameLabel = b.nameLabel;
+  }
+  if (!(await safeWrite(() => S.B.put('genres', rec)))) { await loadBook(); return false; }
+  S.genres.set(rec.id, rec);
+  return true;
+}
+async function deleteGenre(id){
+  const g = S.genres.get(id); if (!g) return false;
+  const n = chapterCount(id);
+  if (n) { alert(`品が ${n}点あります。先に、品のジャンルをほかへ変えてください。`); return false; }
+  if (live(S.genres).length <= 1) { alert('ジャンルが1つだけのときは消せません。'); return false; }
+  const k = await ask3(`「${g.name}」を消しますか？`, ['消す', 'やめる'], '品が0点のジャンルです。', {danger:0});
+  if (k !== 0) return false;
+  g.deleted = true;
+  if (!(await safeWrite(() => S.B.put('genres', g)))) { await loadBook(); return false; }
+  S.open.delete(id); if (S.chapter === id) S.chapter = null;
+  pinToast('消しました');
+  return true;
+}
+async function moveGenre(id, d){
+  const gs = genresSorted(), i = gs.findIndex(g => g.id === id), j = i + d;
+  if (i < 0 || j < 0 || j >= gs.length) return;
+  [gs[i], gs[j]] = [gs[j], gs[i]];
+  const ch = [];
+  gs.forEach((g, k) => { if (g.order !== k + 1) { g.order = k + 1; ch.push(g); } });
+  if (!(await safeWrite(() => S.B.putMany(ch.map(rec => ({store:'genres', rec})))))) await loadBook();
+  render();
+}
+
 /* ---------- 設定 ---------- */
 function renderSettings(v){
+  const gs = genresSorted();
   v.innerHTML = bookBar() + `<div class="vh"><h1>設定</h1></div>
+    <div class="card"><h2>🗂 ジャンル</h2>
+      ${gs.map((g, i) => `<div class="gline"><span class="ge">${h(g.emoji)}</span><span class="gnm" style="--gc:${h(g.color)}">${h(g.name)}<small>${chapterCount(g.id)}点</small></span>
+        <button class="sq" data-gm="${g.id}" data-d="-1" ${i ? '' : 'disabled'} aria-label="上へ">↑</button><button class="sq" data-gm="${g.id}" data-d="1" ${i < gs.length - 1 ? '' : 'disabled'} aria-label="下へ">↓</button><button class="sq txt" data-ge="${g.id}">直す</button></div>`).join('')}
+      <button class="btn block" id="gAdd" style="margin-top:10px">＋ ジャンルを足す</button>
+      <p class="hint" style="margin:6px 0 0">並び順は、目次・登録のジャンルの順番になります。</p></div>
     <div class="card"><h2>💾 この図鑑のバックアップ</h2><div id="bkBox"></div></div>
     <div class="card"><h2>📦 保存の状態</h2><div id="storageInfo" class="hint">確認中…</div></div>
     <p class="hint center">データはこの端末の中だけにあります。ときどきバックアップしてください。<br>コレクション図鑑 v${APP_VERSION}</p>`;
   bindBookBar(v);
+  $('#gAdd', v).onclick = () => openGenreForm(null);
+  v.onclick = ev => {
+    const m = ev.target.closest('[data-gm]'); if (m) return moveGenre(m.dataset.gm, +m.dataset.d);
+    const e = ev.target.closest('[data-ge]'); if (e) return openGenreForm(e.dataset.ge);
+  };
   exportUI($('#bkBox', v), S.B, S.book);
   storageInfo();
 }
 async function storageInfo(){
   const box = $('#storageInfo'); if (!box) return;
   const its = live(S.items); let ph = 0; its.forEach(i => ph += i.photoIds.length);
-  let s = `この図鑑：品 ${its.length}点・写真 ${ph}枚<br>`;
+  const ls = live(S.logs).filter(l => itemAlive(l.itemId)); let lph = 0; ls.forEach(l => lph += (l.photoIds || []).length);
+  let s = `この図鑑：品 ${its.length}点・写真 ${ph + lph}枚（うち、できごとの写真 ${lph}枚）・できごと ${ls.filter(l => l.type !== '登録').length}件<br>`;
   s += `消されにくい保存：${S.persisted === true ? '有効' : S.persisted === false ? '許可されませんでした（ブラウザ任せ）' : 'この環境では確かめられません'}<br>`;
   try { if (navigator.storage && navigator.storage.estimate) { const e = await navigator.storage.estimate();
     if (e && e.usage != null) s += `使っている容量のめやす：${(e.usage / 1048576).toFixed(1)}MB${e.quota ? `（上限のめやす ${(e.quota / 1073741824).toFixed(1)}GB）` : ''}<br>`; } } catch(e) {}
@@ -1787,7 +2497,12 @@ async function importFiles(fileList){
         }
         for (let i = 0; i < ops.length; i += 200) await db.putRaw(ops.slice(i, i + 200));
       }
-      if (d.meta && !(await db.get('meta', 'meta'))) await db.putRaw([{store:'meta', rec:{...d.meta, key:'meta'}}]);
+      // 図鑑の meta（並べ方・優先のスイッチ・「登録」を出すか など）：なければ入れる。あれば新しい方を残す
+      if (d.meta) {
+        const cm = await db.get('meta', 'meta');
+        if (!cm) await db.putRaw([{store:'meta', rec:{...d.meta, key:'meta'}}]);
+        else if (newer(d.meta, cm)) await db.putRaw([{store:'meta', rec:{...cm, ...d.meta, key:'meta'}}]);
+      }
       let ops = [];
       for (const p of d.photos || []) {
         const cur = await db.get('photos', p.id);
@@ -1836,6 +2551,7 @@ async function init(){
   } catch(e) {}
   $$('nav.tabs [data-tab]').forEach(b => b.onclick = () => {
     if (S.tab === b.dataset.tab && window.scrollY > 4) { window.scrollTo({top:0, behavior:'smooth'}); return; }
+    if (S.tab === 'toc' && b.dataset.tab === 'toc') { S.chapter = null; S.chPop = false; }   // 章を開いているときは目次へ戻る
     S.tab = b.dataset.tab; window.scrollTo(0, 0); render(); resetZoom();
   });
   $('#plusBtn').onclick = () => startRegister();
