@@ -495,10 +495,10 @@ var insId=null,insT=0,held=null,preId=null,preTimer=0,lost=null,lostRoll=false,s
 var elClock=document.getElementById('clock'),elPanel=document.getElementById('panel'),elToast=document.getElementById('toast'),elPeek=document.getElementById('peek');
 var elModal=document.getElementById('modal'),elBox=document.getElementById('mbox');
 var tmp=[0,0,0,0];
-var UI={full:false,at:0,ah:0,fit:1,snd:1},INS={t:0,r:0,b:0,l:0},SAT=0,fitExtra=0,fitInfo='',isLand=false,PADL=0,PADR=0;
+var UI={full:false,at:0,ah:0,fit:1,sv:1,sb:1,vl:1},INS={t:0,r:0,b:0,l:0},SAT=0,fitExtra=0,fitInfo='',isLand=false,PADL=0,PADR=0;
 var SNAPS=[],pageOpen=false,pageTab='map',bellOnly=false,cmpDiff=false,bigCv=null,bigCtx=null,bigScale=1,cmpSel=-1,pageAcc=0,fhits=[],peekTimer=0,panelHtml='',clockHtml='',mctx=ctx,resetArmed=0;
 var elPage=document.getElementById('page'),elPBody=document.getElementById('pbody'),elFs=document.getElementById('fs');
-function loadUI(){try{var o=JSON.parse(localStorage.getItem(KEY+'-ui')||'null'),k;if(o)for(k in UI)if(o[k]!==undefined)UI[k]=o[k]}catch(e){}}
+function loadUI(){try{var o=JSON.parse(localStorage.getItem(KEY+'-ui')||'null'),k;if(o)for(k in UI)if(o[k]!==undefined)UI[k]=o[k];if(o&&o.snd===0&&o.sv===undefined){UI.sv=0;UI.sb=0}}catch(e){}}
 function saveUI(){try{localStorage.setItem(KEY+'-ui',JSON.stringify(UI))}catch(e){}}
 function hm(t){var s=((t%DAY)+DAY)%DAY,hh=Math.floor(s/3600),mm=Math.floor(s%3600/60);return (hh<10?'0':'')+hh+':'+(mm<10?'0':'')+mm}
 function peek(h,ms){elPeek.innerHTML=h;elPeek.style.opacity=1;clearTimeout(peekTimer);peekTimer=setTimeout(function(){elPeek.style.opacity=0},ms||4500)}
@@ -1906,6 +1906,7 @@ function renderCmp(){
   if(sn){drawSnap(A,sn);document.getElementById('capA').textContent=snapCap(sn,snapLabel(sn)+'（'+dayOf(sn.t)+'日め '+hm(sn.t)+'）')}
   drawNow();pageAcc=0;
 }
+function sg(a,cur,att){return '<div class="seg">'+a.map(function(v){return '<button '+att+'="'+v[0]+'"'+(cur===v[0]?' class="on"':'')+'>'+v[1]+'</button>'}).join('')+'</div>'}
 function renderSum(){
   var hs=S.hist,cr=S.cr,juv=0,old=0,i,c,eld=null,kid=null,bells=[],h,d;
   function tr(a,b){return '<tr><td>'+a+'</td><td>'+b+'</td></tr>'}
@@ -1927,7 +1928,10 @@ function renderSum(){
   for(i=hs.days.length-1;i>=Math.max(0,hs.days.length-14);i--){d=hs.days[i];h+=dr(d.d+'日め',d.n,d.g,d.b,d.x)}
   h+='</table><div class="note">ひつじと草は、その日の終わりの数です。</div>';
   h+='<h3>時間の速さ</h3><div class="seg">'+[1,10,100,1000].map(function(v){return '<button data-v="'+v+'"'+(speed===v?' class="on"':'')+'>×'+v+'</button>'}).join('')+'</div><div class="note">ふだんは ×1（本物の時間と同じ）。早送り中は、時計の横に倍率が出ます。</div>';
-  h+='<h3>音</h3><div class="seg">'+[[1,'入'],[0,'切']].map(function(v){return '<button data-snd="'+v[0]+'"'+((UI.snd?1:0)===v[0]?' class="on"':'')+'>'+v[1]+'</button>'}).join('')+'</div><div class="note">ひつじがときどき鳴き、鈴の子が歩くと鈴が鳴ります。iPhoneの消音モードのときは鳴りません。</div>';
+  h+='<h3>音</h3><div class="fitr"><span style="min-width:3em;text-align:left">鳴き声</span>'+sg([[1,'入'],[0,'切']],UI.sv?1:0,'data-sv')+'</div>'+
+    '<div class="fitr"><span style="min-width:3em;text-align:left">鈴</span>'+sg([[1,'入'],[0,'切']],UI.sb?1:0,'data-sb')+'</div>'+
+    '<div class="fitr"><span style="min-width:3em;text-align:left">音量</span>'+sg([[0,'小'],[1,'中'],[2,'大']],UI.vl|0,'data-vl')+'</div>'+
+    '<div class="note">ひつじがときどき鳴き、鈴の子が歩くと鈴が鳴ります（いちばん近い1匹だけ）。iPhoneの消音モードのときは鳴りません。</div>';
   h+='<h3>画面の合わせ</h3><div class="note" style="margin-top:0">ホーム画面版で、上が時刻の帯に隠れる・下にすきまが出るときの調整です。</div>'+
     '<div class="fitr">上の余白<button data-f="at-">−</button><span>'+UI.at+'</span><button data-f="at+">＋</button></div>'+
     '<div class="fitr">下の長さ<button data-f="ah-">−</button><span>'+UI.ah+'</span><button data-f="ah+">＋</button></div>'+
@@ -1957,7 +1961,7 @@ elPBody.addEventListener('click',function(ev){
   if(t.id==='cdiff'){cmpDiff=!cmpDiff;renderPage(true);return}
   if(t.id==='csnap'){addSnap();cmpSel=SNAPS.length-1;renderPage(true);toast('いまの草原を残しました');return}
   b=t.closest('[data-s]');if(b){cmpSel=+b.getAttribute('data-s');renderPage(true);return}
-  b=t.closest('[data-snd]');if(b){UI.snd=+b.getAttribute('data-snd');saveUI();renderPage(true);return}
+  b=t.closest('[data-sv],[data-sb],[data-vl]');if(b){f=b.getAttribute('data-sv');if(f!=null)UI.sv=+f;f=b.getAttribute('data-sb');if(f!=null)UI.sb=+f;f=b.getAttribute('data-vl');if(f!=null){UI.vl=+f;sndVolume()}saveUI();renderPage(true);return}
   b=t.closest('[data-v]');if(b){speed=+b.getAttribute('data-v');renderPage(true);updateUI();return}
   b=t.closest('[data-f]');
   if(b){
@@ -1970,7 +1974,7 @@ elPBody.addEventListener('click',function(ev){
 
 // ===== 音（ひつじの声・鈴）=====
 // 録音をそのまま鳴らす。シミュレーションには一切さわらない（乱数も別）。
-var SNDK={idleMin:20,idleMax:60,night:3,vVoice:1,vBell:0.55,bellIn:0.15,bellOut:0.3,bellMax:2,voiceMax:2,mark:1.2,far:300,bellHold:0.35};
+var SNDK={vol:[0.12,0.3,0.6],idleMin:20,idleMax:60,night:3,vVoice:1,vBell:0.3,bellIn:0.15,bellOut:0.3,bellMax:1,voiceMax:2,mark:1.2,far:300,bellHold:0.35};
 var AU={ac:null,out:null,buf:{},ok:false,loop:null,next:0,voices:[],bells:{},unlocked:false,err:''};
 var sndLog=[];window.__sndLog=sndLog;
 var sndSeed=(Date.now()^0x5bd1e995)>>>0,SP={x:0,y:0,s:0};
@@ -1992,7 +1996,7 @@ function auTouch(){
       try{if(navigator.audioSession&&navigator.audioSession.type!=='ambient')navigator.audioSession.type='ambient'}catch(e){}
       AU.ac=new C();
       var comp=AU.ac.createDynamicsCompressor(),g=AU.ac.createGain();
-      comp.threshold.value=-8;comp.knee.value=8;comp.ratio.value=4;g.gain.value=0.9;
+      comp.threshold.value=-8;comp.knee.value=8;comp.ratio.value=4;AU.master=g;sndVolume();
       comp.connect(g);g.connect(AU.ac.destination);AU.out=comp;
       Promise.all(['lamb','adult','bell'].map(function(k){return sndDecode(AU.ac,sndB64(SND[k])).then(function(b){AU.buf[k]=b})}))
         .then(function(){AU.loop=sndTrim(AU.buf.bell);AU.ok=true})
@@ -2003,7 +2007,9 @@ function auTouch(){
   }catch(e){AU.err=String(e&&e.message||e)}
 }
 ['pointerdown','touchend','click','keydown'].forEach(function(n){document.addEventListener(n,auTouch,true)});
-function auLive(){return !!(UI.snd&&AU.ok&&AU.ac&&AU.ac.state==='running')}
+function auLive(k){return !!((k==='bell'?UI.sb:UI.sv)&&AU.ok&&AU.ac&&AU.ac.state==='running')}
+// 全体の音量（小・中・大）。出口の 0.9 に掛ける
+function sndVolume(){if(AU.master)AU.master.gain.value=0.9*SNDK.vol[clamp(UI.vl|0,0,2)]}
 function sndAllowed(){return !busy&&speed<10&&!document.hidden}
 function sndPush(o){o.t=Math.round(nowT()*100)/100;sndLog.push(o);if(sndLog.length>200)sndLog.shift()}
 function r2(v){return Math.round(v*100)/100}
@@ -2050,14 +2056,14 @@ function sndClip(name,P,gm){
 // 一声鳴く（why: idle＝ふだん／lost＝迷子／grab＝つまむ）
 function sndVoice(c,why){
   if(!c||!sndAllowed())return false;
-  var T=nowT(),k=c.age<MATURE?'lamb':'adult',P=sndPlace(c),live=auLive(),q;
+  var T=nowT(),k=c.age<MATURE?'lamb':'adult',P=sndPlace(c),live=auLive('voice'),q;
   AU.voices=AU.voices.filter(function(v){return v.end>T});
   if(why==='idle'&&AU.voices.length>=SNDK.voiceMax)return false;
   while(AU.voices.length>=SNDK.voiceMax){q=AU.voices.shift();try{if(q.src)q.src.stop()}catch(e){}}
   q={end:T+(k==='lamb'?1.3:1.07),src:null};
   if(live){try{q.src=sndClip(k,P,SNDK.vVoice)}catch(e){live=false}}
   AU.voices.push(q);
-  if(why==='idle'&&UI.snd)c.vm=T;
+  if(why==='idle'&&UI.sv)c.vm=T;
   sndPush({k:k,id:c.id,n:c.name,why:why,vol:r2(P.vol*SNDK.vVoice),pan:r2(P.pan),lp:Math.round(P.lp),on:P.on,played:live});
   return true;
 }
@@ -2101,11 +2107,11 @@ function bellSet(b,c,on,why,P){
   b.on=on;
   if(!on)bellNodeOff(b,why==='hidden');
   P=P||(c?sndPlace(c):{vol:0,pan:0,lp:0});
-  sndPush({k:on?'bell-on':'bell-off',id:b.id,n:c?c.name:'',why:why,vol:r2(P.vol*SNDK.vBell),pan:r2(P.pan),lp:Math.round(P.lp),on:!!P.on,played:on?auLive():!!b.wasLive});
-  b.wasLive=on?auLive():false;
+  sndPush({k:on?'bell-on':'bell-off',id:b.id,n:c?c.name:'',why:why,vol:r2(P.vol*SNDK.vBell),pan:r2(P.pan),lp:Math.round(P.lp),on:!!P.on,played:on?auLive('bell'):!!b.wasLive});
+  b.wasLive=on?auLive('bell'):false;
 }
 function sndBells(T){
-  var B=AU.bells,E=sndEar(),i,c,b,id,list=[],want={},live=auLive(),P,t;
+  var B=AU.bells,E=sndEar(),i,c,b,id,list=[],want={},live=auLive('bell'),P,t;
   for(i=0;i<S.cr.length;i++){
     c=S.cr[i];if(!c.bell||c.dead)continue;
     b=B[c.id];
