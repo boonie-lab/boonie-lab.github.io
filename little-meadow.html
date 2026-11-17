@@ -56,6 +56,18 @@ button{font:inherit;color:inherit;background:transparent;border:0;cursor:pointer
 .row .chip{width:18px;height:18px;border-radius:50%;flex:none;border:3px solid #000}
 .row .rn{font-size:15px;font-weight:600;min-width:4.2em}
 .row .rs{color:#b9c4a8;flex:1}
+div.row{cursor:pointer}
+div.row.gone{cursor:default}
+div.row.gone .rn,div.row.gone .chip{opacity:.5}
+.row .chip.fl{border:0;font-size:13px;line-height:18px;text-align:center}
+.fam{flex:none;padding:5px 10px;border:1px solid #6f7d5e;border-radius:14px;font-size:12px;color:#e9f1d4}
+.fh{margin:12px 0 2px;font-weight:600;color:#f2d470;font-size:13px}
+.cnl{margin-top:12px;text-align:center;font-weight:600;color:#f2d470;font-size:14px}
+.cnav{display:flex;align-items:center;gap:8px;margin-top:4px}
+.cnav input{flex:1;min-width:0;accent-color:#dfe8c8;height:28px}
+.cnav .tog{flex:none}
+.cnav .tog:disabled{opacity:.4}
+.cnav input{touch-action:none}
 #page{position:absolute;inset:0;z-index:6;background:#222d1f;display:none;flex-direction:column;padding:var(--sat) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
 #page .ph{display:flex;align-items:center;gap:8px;padding:8px 12px 8px}
 #page .ph h2{flex:1;margin:0;font-size:17px;font-weight:600}
@@ -189,7 +201,17 @@ function mkCreature(x,y,t,L){
     sp:t.sp,vis:t.vis,lazy:t.lazy,hung:t.hung,
     wh:L.wh,ws:L.ws,wl:L.wl,fc:L.fc,pat:L.pat,horn:L.horn,ear:L.ear,size:L.size,
     st:'rest',tx:x,ty:y,timer:rnd(5,40),cd:0,kids:0,pa:'',pb:'',ma:-1,mb:-1,tid:-1,b:{},bf:-1,poo:0,bell:false,kl:[],dead:false};
-  S.cr.push(c);return c;
+  S.cr.push(c);regAdd(c.id,c.name,-1,-1,Math.round(S.t),-1,0);return c;
+}
+// 名簿：生まれた子全員を、旅立ったあとも残す（家族の一覧用。ひつじの動きには使わない）
+// 1行＝[番号, 名前, 親1の番号, 親2の番号, 生まれた時(不明はnull), 旅立った時(-1=暮らしている, -2=時期不明), 鈴(0/1)]
+var REGMAX=1000;
+function regFind(id){if(!S.reg)return null;for(var i=S.reg.length-1;i>=0;i--)if(S.reg[i][0]===id)return S.reg[i];return null}
+function regAdd(id,name,a,b,t,g,bl){
+  if(!S.reg)return null;
+  var r=[id,name,a,b,t,g,bl?1:0],i;S.reg.push(r);
+  if(S.reg.length>REGMAX){for(i=0;i<S.reg.length;i++)if(S.reg[i][5]!==-1){S.reg.splice(i,1);break}}
+  return r;
 }
 function randTraits(){return{sp:rnd(4.5,7.5),vis:rnd(3,6),lazy:Math.random(),hung:rnd(48,62)}}
 function mixTraits(a,b){
@@ -202,7 +224,7 @@ function newDrought(t){return{next:t+rnd(2.5,5)*DAY,until:0,warned:false}}
 function newWorld(){
   var now=new Date(),i,x,y,c;
   S={t:now.getHours()*3600+now.getMinutes()*60+now.getSeconds(),gacc:0,imm:0,nid:1,
-     g:new Float32Array(N),f:new Float32Array(N),cl:new Float32Array(N),cln:0,cr:[],gavg:0.6,poo:[],fl:[],dr:null};
+     g:new Float32Array(N),f:new Float32Array(N),cl:new Float32Array(N),cln:0,cr:[],gavg:0.6,poo:[],fl:[],dr:null,reg:[]};
   S.dr=newDrought(S.t);S.hist=newHist(S.t);
   var p1=rnd(0,6),p2=rnd(0,6),p3=rnd(0,6);
   for(y=0;y<ROWS;y++)for(x=0;x<COLS;x++){
@@ -364,6 +386,7 @@ function mate(a,b){
   a.e-=20;b.e-=20;a.cd=COOLDOWN*rnd(0.8,1.2);b.cd=COOLDOWN*rnd(0.8,1.2);a.kids++;b.kids++;
   var ch=mkCreature((a.x+b.x)/2,(a.y+b.y)/2,mixTraits(a,b),mixLook(a,b));
   ch.pa=a.name;ch.pb=b.name;ch.ma=a.id;ch.mb=b.id;
+  var rg=regFind(ch.id);if(rg){rg[2]=a.id;rg[3]=b.id}
   addBond(ch,a,1);addBond(ch,b,1);addBond(a,b,0.5);
   a.st='rest';a.timer=60;b.st='rest';b.timer=60;
   a.kl.push([ch.id,ch.name]);b.kl.push([ch.id,ch.name]);
@@ -376,6 +399,8 @@ function die(c,why){
   var i=cellOf(c);if(S.g[i]<0.12)S.g[i]=0.12;
   var ad=Math.floor(c.age/DAY)+1;
   S.fl.push([Math.round(c.x),Math.round(c.y),Math.round(S.t),pick(4),c.name,ad,c.kids,c.bell?1:0,why==='age'?1:0,c.id]);
+  var rg=regFind(c.id)||regAdd(c.id,c.name,c.ma,c.mb,Math.round(S.t-c.age),-1,0);
+  if(rg){rg[5]=Math.round(S.t);rg[6]=c.bell?1:0}
   S.hist.gone++;S.hist.dx++;hlog({k:'d',n:c.name,a:ad,w:why==='age'?1:0,kd:c.kids,bl:c.bell?1:0,id:c.id});
   hooks.event('death',{c:c,why:why,x:c.x,y:c.y});
 }
@@ -597,7 +622,7 @@ function save(){
   if(!S||busy)return;
   try{
     var cls=[],ci;for(ci=0;ci<N;ci++)if(S.cl[ci]>0.02)cls.push([ci,Math.round(S.cl[ci]*100)]);
-    var o={v:2,cl:cls,t:S.t,gacc:S.gacc,imm:S.imm,nid:S.nid,sel:selId,real:Date.now(),poo:S.poo,fl:S.fl,dr:S.dr,hist:S.hist,
+    var o={v:2,cl:cls,t:S.t,gacc:S.gacc,imm:S.imm,nid:S.nid,sel:selId,real:Date.now(),poo:S.poo,fl:S.fl,dr:S.dr,hist:S.hist,reg:S.reg,
       g:Array.prototype.map.call(S.g,function(v){return Math.round(v*100)}),
       f:Array.prototype.map.call(S.f,function(v){return Math.round(v*100)}),
       cr:S.cr.map(function(c){
@@ -622,7 +647,7 @@ function load(){
     if(!o||(o.v!==1&&o.v!==2)||!o.g||o.g.length!==N||!o.cr)return null;
     if(o.v===1)flipOld(o);
     S={t:o.t,gacc:o.gacc||0,imm:o.imm||0,nid:o.nid,g:new Float32Array(N),f:new Float32Array(N),cl:new Float32Array(N),cln:0,cr:o.cr,gavg:0.5,
-       poo:o.poo||[],fl:o.fl||[],dr:o.dr||newDrought(o.t),hist:o.hist||newHist(o.t)};
+       poo:o.poo||[],fl:o.fl||[],dr:o.dr||newDrought(o.t),hist:o.hist||newHist(o.t),reg:Array.isArray(o.reg)?o.reg:null};
     for(i=0;i<N;i++){S.g[i]=o.g[i]/100;S.f[i]=(o.f?o.f[i]:0)/100}
     if(o.cl)o.cl.forEach(function(p){S.cl[p[0]]=p[1]/100;S.cln++});
     for(i=0;i<S.cr.length;i++){
@@ -635,9 +660,43 @@ function load(){
       if(c.bf===undefined)c.bf=-1;if(!c.poo)c.poo=0;if(!c.kl)c.kl=[];
     }
     S.cr.forEach(function(ch){[ch.ma,ch.mb].forEach(function(pid){var p=byId(pid);if(p&&!p.kl.some(function(k){return k[0]===ch.id}))p.kl.push([ch.id,ch.name])})});
+    regSeed();
     selId=o.sel==null?null:o.sel;
     return o.real||null;
   }catch(e){return null}
+}
+// 名簿がない古い保存：できごと・いまの子・親の名前・子どもの一覧・花から、拾える分だけ集める
+// 名簿があるときは、暮らしている子のもれだけ足す
+function regSeed(){
+  var idx={},i,r,e,c,f,L=S.hist&&S.hist.log||[],fresh=!S.reg;
+  if(fresh)S.reg=[];
+  for(i=0;i<S.reg.length;i++)idx[S.reg[i][0]]=S.reg[i];
+  function add(id,name,a,b,t,g,bl){if(id==null||id<0)return null;if(idx[id])return idx[id];return idx[id]=regAdd(id,name,a,b,t,g,bl)}
+  function setPar(r,pid){if(!r||pid==null||pid<0||r[2]===pid||r[3]===pid)return;if(r[2]<0)r[2]=pid;else if(r[3]<0)r[3]=pid}
+  if(fresh){
+    for(i=0;i<L.length;i++){
+      e=L[i];if(e.id==null)continue;
+      if(e.k==='b')add(e.id,e.n,e.pi?e.pi[0]:-1,e.pi?e.pi[1]:-1,e.t,-2,0);
+      else if(e.k==='i')add(e.id,e.n,-1,-1,e.t,-2,0);
+      else if(e.k==='d'){r=add(e.id,e.n,-1,-1,null,e.t,e.bl);r[5]=e.t;r[6]=e.bl?1:0}
+    }
+  }
+  for(i=0;i<S.cr.length;i++){
+    c=S.cr[i];r=add(c.id,c.name,c.ma,c.mb,Math.round(S.t-c.age),-1,0);
+    r[5]=-1;if(r[4]==null)r[4]=Math.round(S.t-c.age);setPar(r,c.ma);setPar(r,c.mb);
+  }
+  if(!fresh)return;
+  for(i=0;i<S.cr.length;i++){
+    c=S.cr[i];
+    if(c.ma>=0)add(c.ma,c.pa||'？',-1,-1,null,-2,0);
+    if(c.mb>=0)add(c.mb,c.pb||'？',-1,-1,null,-2,0);
+    (c.kl||[]).forEach(function(k){setPar(add(k[0],k[1],c.id,-1,null,-2,0),c.id)});
+  }
+  for(i=0;i<S.fl.length;i++){
+    f=S.fl[i];if(f[9]==null||f[4]==null)continue;
+    r=add(f[9],f[4],-1,-1,null,f[2],f[7]);if(r[5]<0){r[5]=f[2];r[6]=f[7]?1:0}
+  }
+  for(i=0;i<S.reg.length;i++){r=S.reg[i];if(r[5]===-1&&!byId(r[0]))r[5]=-2}
 }
 
 function catchUp(sec,showReport){
@@ -826,13 +885,15 @@ function drawBell(g,x,y,r){
   g.fillStyle='rgba(255,255,255,.75)';ell(g,x-r*0.35,y-r*0.35,r*0.22,r*0.22);
 }
 function drawSheep(g,px,py,u,c,T,sel,showName){
-  var dir=Math.cos(c.h)>=0?1:-1,st=c.st,hd=held&&held.id===c.id?held:null,ld=c.held===2?T-c.ld:9,fun=!!c.play,air=0,sq=0,shk=0;
-  if(c.held||fun)st=c.play===2?'wander':'idle';
+  var dir=Math.cos(c.h)>=0?1:-1,st=c.st,hd=held&&held.id===c.id?held:null,ld=c.held===2?T-c.ld:9,fun=!!c.play,air=0,sq=0,shk=0,hq=null;
+  if(c.held||fun)st='idle';
+  if(fun&&c.hop)dir=c.hop.dir;
   else if(c.lost===1&&st==='rest'){st='idle';if(Math.floor(T/0.9+c.id)%3===0)dir=-dir}
   var mv=isMoving(st),lying=st==='sleep'||st==='rest';
   if(hd)air=Math.max(0,hd.lift)*u;
-  else if(c.hop&&T>c.hop.t&&(T-c.hop.t)/0.42<c.hop.n)air=Math.abs(Math.sin((T-c.hop.t)/0.42*3.1416))*u*0.9;
+  else if((hq=hopQ(c,T)))air=hq.lift*HOPK.h*HOPK.bodyH*u;
   if(ld<0.4)sq=Math.sin(ld/0.4*3.1416);
+  if(hq)sq=Math.max(sq,hq.squash);
   else if(ld<1.3)shk=Math.sin(T*42)*(1-(ld-0.4)/0.9);
   else if(ld<2.5&&Math.floor((ld-1.3)/0.4)%2===0)dir=-dir;
   if(c.sn&&T-c.sn<1.6)dir=-dir;
@@ -848,12 +909,23 @@ function drawSheep(g,px,py,u,c,T,sel,showName){
   if(sel){g.strokeStyle='#b9b0ff';g.lineWidth=2.5;g.beginPath();g.ellipse(0,0,u*1.9,u*0.42,0,0,6.2832);g.stroke()}
   if(air)g.translate(0,-air);
   if(sq)g.scale(1+0.14*sq,1-0.18*sq);
+  // 跳ねる：跳ぶ前にぐっとかがむ・前後の傾き（上がるとき鼻が上）・背中の丸め
+  var ar=hq?hq.arch:0,eb=hq?hq.ear*1.1*(c.ear===1?1.6:1)-hq.flop*0.6:0;
+  function bd(x){if(!ar)return 0;var t=x/(1.3*u);return t>=1||t<=-1?0:-ar*u*0.66*(1-t*t)}
+  if(hq&&hq.prep)g.translate(0,u*0.16*hq.prep);
+  if(hq&&hq.tilt){g.translate(0,by);g.rotate(-hq.tilt);g.translate(0,-by)}
   if(shk){g.translate(shk*u*0.06,0);g.rotate(shk*0.05)}
   if(hd){g.translate(0,by-u*0.8);g.rotate(hd.sw*dir*0.22);g.translate(0,u*0.8-by)}
   g.fillStyle=face;
   if(!lying){
     var lx=[-u*0.8,-u*0.45,u*0.45,u*0.8];
     for(i=0;i<4;i++){
+      if(hq){
+        // 4本の脚をおなかの下へ集める（前脚は後ろへ、後ろ脚は前へ）
+        var ll=(u*0.45-u*0.16*hq.prep)*(1-0.25*hq.tuck),ang=hq.tuck*0.8;
+        g.save();g.translate(lx[i],-u*0.45+bd(lx[i])*0.5);g.rotate(lx[i]>0?ang:-ang);
+        g.fillRect(-u*0.09,0,u*0.18,ll);g.restore();continue;
+      }
       if(hd){
         g.save();g.translate(lx[i],-u*0.85);g.rotate(hd.sw*dir*(0.8+i*0.12)+Math.sin(T*3+i*1.9)*0.07);
         g.fillRect(-u*0.09,0,u*0.18,u*0.98);ell(g,0,u*0.98,u*0.1,u*0.06);g.restore();continue;
@@ -866,20 +938,21 @@ function drawSheep(g,px,py,u,c,T,sel,showName){
     var gr=ps?0:u*0.08;
     g.fillStyle=ps?wool(c,old?-4:0):wool(c,-28);
     ell(g,-u*1.4,by-u*0.1,u*0.24+gr,u*0.24+gr);
-    ell(g,0,by,u*1.3+gr,u*0.82+gr);
-    for(i=0;i<7;i++){var an=3.1416+i*3.1416/6;ell(g,Math.cos(an)*u*1.15,by+Math.sin(an)*u*0.68,u*0.36+gr,u*0.36+gr)}
-    for(i=0;i<5;i++){var a2=0.25+i*0.66;ell(g,Math.cos(a2)*u*1.15,by+Math.sin(a2)*u*0.62,u*0.3+gr,u*0.3+gr)}
-    ell(g,u*1.05,by-u*0.35,u*0.42+gr,u*0.42+gr);
+    if(ar){ell(g,-u*0.55,by+bd(-u*0.55),u*0.8+gr,u*0.8+gr);ell(g,u*0.55,by+bd(u*0.55),u*0.8+gr,u*0.8+gr);ell(g,0,by+bd(0)*0.9,u*0.9+gr,u*0.78+gr)}
+    else ell(g,0,by,u*1.3+gr,u*0.82+gr);
+    for(i=0;i<7;i++){var an=3.1416+i*3.1416/6,ax=Math.cos(an)*u*1.15;ell(g,ax,by+Math.sin(an)*u*0.68+bd(ax),u*0.36+gr,u*0.36+gr)}
+    for(i=0;i<5;i++){var a2=0.25+i*0.66,bx0=Math.cos(a2)*u*1.15;ell(g,bx0,by+Math.sin(a2)*u*0.62+bd(bx0),u*0.3+gr,u*0.3+gr)}
+    ell(g,u*1.05,by-u*0.35+bd(u*1.05),u*0.42+gr,u*0.42+gr);
   }
-  if(c.pat===1){g.fillStyle=wool(c,c.wl<50?24:-16);ell(g,-u*0.5,by-u*0.1,u*0.3,u*0.26);ell(g,u*0.2,by+u*0.2,u*0.24,u*0.2);ell(g,u*0.35,by-u*0.4,u*0.2,u*0.17)}
-  else if(c.pat===2){g.fillStyle=wool(c,c.wl<50?24:-18);ell(g,-u*0.05,by-u*0.42,u*0.8,u*0.36)}
+  if(c.pat===1){g.fillStyle=wool(c,c.wl<50?24:-16);ell(g,-u*0.5,by-u*0.1+bd(-u*0.5),u*0.3,u*0.26);ell(g,u*0.2,by+u*0.2+bd(u*0.2),u*0.24,u*0.2);ell(g,u*0.35,by-u*0.4+bd(u*0.35),u*0.2,u*0.17)}
+  else if(c.pat===2){g.fillStyle=wool(c,c.wl<50?24:-18);ell(g,-u*0.05,by-u*0.42+bd(0)*0.9,u*0.8,u*0.36)}
   if(c.bell){
     var bx=u*1.12+(mv?Math.sin(T*9+c.id)*u*0.06:0),bY=by+u*0.62;
     g.strokeStyle='#b5483a';g.lineWidth=Math.max(1,u*0.09);g.lineCap='round';
     g.beginPath();g.moveTo(u*0.95,by-u*0.1);g.quadraticCurveTo(u*1.3,by+u*0.3,bx,bY-u*0.12);g.stroke();
     drawBell(g,bx,bY,u*0.19);
   }
-  var hx=u*1.5,hy=by-u*0.3;
+  var hx=u*1.5,hy=by-u*0.3+ar*u*0.26;
   if(look){hx=u*1.42;hy=by-u*0.42+(joy?Math.sin(T*6+c.id)*u*0.03:0)}
   else if(st==='eat'){hx=u*1.55;hy=-u*0.34+Math.sin(T*7+c.id)*u*0.05}
   else if(st==='sleep'){hx=u*1.42;hy=by+u*0.28}
@@ -888,7 +961,7 @@ function drawSheep(g,px,py,u,c,T,sel,showName){
   if(look){
     g.fillStyle=face;
     for(i=-1;i<=1;i+=2){
-      g.save();g.translate(hx+i*u*0.4,hy-u*0.04);g.rotate(i*((c.ear===2?0.85:c.ear===1?0.05:0.4)+tw));
+      g.save();g.translate(hx+i*u*0.4,hy-u*0.04);g.rotate(i*((c.ear===2?0.85:c.ear===1?0.05:0.4)+tw-eb*0.5));
       ell(g,i*u*0.2,0,c.ear===2?u*0.36:u*0.28,u*0.13);g.restore();
     }
     if(c.horn===1){
@@ -917,9 +990,9 @@ function drawSheep(g,px,py,u,c,T,sel,showName){
     g.fillStyle=face;
     g.save();g.translate(hx-u*0.3,hy-u*0.08);
     if(up){g.rotate(1.4+tw);ell(g,-u*0.26,0,c.ear===2?u*0.4:u*0.3,u*0.12)}
-    else if(c.ear===0){g.rotate(0.9+tw);ell(g,-u*0.12,u*0.1,u*0.3,u*0.13)}
-    else if(c.ear===1){g.rotate(-0.9+tw);ell(g,-u*0.15,-u*0.05,u*0.3,u*0.13)}
-    else{g.rotate(1.25+tw);ell(g,-u*0.05,u*0.2,u*0.46,u*0.13)}
+    else if(c.ear===0){g.rotate(0.9+tw+eb);ell(g,-u*0.12,u*0.1,u*0.3,u*0.13)}
+    else if(c.ear===1){g.rotate(-0.9+tw+eb);ell(g,-u*0.15,-u*0.05,u*0.3,u*0.13)}
+    else{g.rotate(1.25+tw+eb);ell(g,-u*0.05,u*0.2,u*0.46,u*0.13)}
     g.restore();
     if(beard&&st!=='eat'){g.fillStyle=wool(c,-10);ell(g,hx+u*0.3,hy+u*0.3+bl/2,u*0.1,bl/2);g.fillStyle=face}
     ell(g,hx,hy,u*0.46,u*0.37);ell(g,hx+u*0.3,hy+u*0.1,u*0.3,u*0.25);
@@ -1183,7 +1256,7 @@ function drawScope(T){
           g.fillStyle='rgba(120,190,255,.9)';g.beginPath();g.moveTo(wxv,wyv-u*0.42);g.quadraticCurveTo(wxv+u*0.3,wyv,wxv,wyv+u*0.16);g.quadraticCurveTo(wxv-u*0.3,wyv,wxv,wyv-u*0.42);g.fill();
         }
       }
-      if(o.mk)drawMark(g,px,py-uH*2.4-(o.hop?uH:0)-22,o,T,w);
+      if(o.mk)drawMark(g,px,py-uH*2.4-hopAir(o,T,uH)-22,o,T,w);
       hits.push({id:o.id,x:px,y:py-uH,r:Math.max(16,uH*1.8),u:uH});
     }
   }
@@ -1291,8 +1364,7 @@ function statusText(c){
   var o=byId(c.tid),f=byId(c.bf),st=c.st;
   if(c.held===1)return 'つままれている';
   if(c.held===2)return 'きょろきょろしている';
-  if(c.play===1)return 'ぴょんぴょん跳ねている';
-  if(c.play===2)return 'かけ回っている';
+  if(c.play)return 'ぴょんぴょん跳ねている';
   if(c.lost===1)return '迷子になっている';
   if(c.lost===2)return (o?o.name+'の所へ走っている':'親の所へ走っている');
   if(st==='eat')return S.cl[cellOf(c)]>0.05?'おいしい草を食べている':'草を食べている';
@@ -1354,15 +1426,86 @@ function openRoster(){
   var list=S.cr.slice().sort(function(a,b){return (b.bell?1:0)-(a.bell?1:0)||b.age-a.age}),h='<h2>みんな（'+list.length+'匹）</h2>',i,c,tt;
   for(i=0;i<list.length;i++){
     c=list[i];
-    h+='<button class="row" data-id="'+c.id+'"><span class="chip" style="background:'+wool(c)+';border-color:'+FACE[c.fc]+'"></span><span class="rn">'+c.name+(c.bell?' 🔔':'')+'</span>'+
-      '<span class="rs">'+ageDays(c)+'日め・'+stageOf(c)+'　'+(c.e<20?'<span style="color:#ffb38a">弱っている</span>　':'')+((tt=titlesOf(c))?'<span style="color:#f2d470">'+tt+'</span>':statusText(c))+'</span></button>';
+    h+='<div class="row" data-id="'+c.id+'"><span class="chip" style="background:'+wool(c)+';border-color:'+FACE[c.fc]+'"></span><span class="rn">'+c.name+(c.bell?' 🔔':'')+'</span>'+
+      '<span class="rs">'+ageDays(c)+'日め・'+stageOf(c)+'　'+(c.e<20?'<span style="color:#ffb38a">弱っている</span>　':'')+((tt=titlesOf(c))?'<span style="color:#f2d470">'+tt+'</span>':statusText(c))+'</span>'+
+      '<button class="fam" data-fam="'+c.id+'">家族</button></div>';
   }
   h+='<button class="ok" id="mok">とじる</button>';
-  elBox.innerHTML=h;elModal.style.display='flex';
+  elBox.innerHTML=h;elModal.style.display='flex';elBox.scrollTop=0;
   document.getElementById('mok').onclick=closeModal;
   Array.prototype.forEach.call(elBox.querySelectorAll('.row'),function(b){
     b.onclick=function(){select(+b.getAttribute('data-id'));closeModal()};
   });
+  bindFam();
+}
+// ===== 家族（名簿から、血のつながりをたどる）=====
+function regIndex(){
+  var m={},ch={},i,r;
+  for(i=0;i<S.reg.length;i++){r=S.reg[i];m[r[0]]=r}
+  for(i=0;i<S.reg.length;i++){
+    r=S.reg[i];
+    if(r[2]>=0)(ch[r[2]]=ch[r[2]]||[]).push(r);
+    if(r[3]>=0&&r[3]!==r[2])(ch[r[3]]=ch[r[3]]||[]).push(r);
+  }
+  return{m:m,ch:ch};
+}
+function genUp(k){return k===1?'親':k===2?'祖父母':k===3?'曽祖父母':k+'代前'}
+function genDown(k){return k===1?'子':k===2?'孫':k===3?'ひ孫':k===4?'やしゃご':k+'代あとの子孫'}
+function famRow(r,note){
+  var c=byId(r[0]),f=null,info,chip,go=true,bl;
+  if(c){
+    bl=c.bell;chip='<span class="chip" style="background:'+wool(c)+';border-color:'+FACE[c.fc]+'"></span>';
+    info=ageDays(c)+'日め・'+stageOf(c)+(c.lost===1?'・迷子':'');
+  }else{
+    bl=!!r[6];f=flowerOf(r[0],r[1],r[5]>=0?r[5]:null);go=!!f;chip='<span class="chip fl">🌼</span>';
+    info=(r[4]!=null&&r[5]>=0?(Math.floor((r[5]-r[4])/DAY)+1)+'日めに':'')+'旅立った'+(f?'・花が咲いている':'');
+  }
+  return '<div class="row'+(go?'':' gone')+'"'+(go?' data-go="'+r[0]+'"':'')+'>'+chip+'<span class="rn">'+r[1]+(bl?' 🔔':'')+'</span>'+
+    '<span class="rs">'+info+(note?'　'+note:'')+'</span><button class="fam" data-fam="'+r[0]+'">家族</button></div>';
+}
+function openFamily(id){
+  var X=regIndex(),me=X.m[id],h,seen={},cur,next,gens,k,sib=[],ps;
+  if(!me){openRoster();return}
+  h='<button class="back" id="fback">↩ みんなへ戻る</button><h2 style="margin-top:10px">'+me[1]+' の家族</h2>'+famRow(me);
+  function addNext(list,ids){ids.forEach(function(r){if(r&&!seen[r[0]]){seen[r[0]]=1;list.push(r)}})}
+  // 上の代
+  seen[id]=1;cur=[me];gens=[];
+  for(k=0;k<20;k++){next=[];cur.forEach(function(r){addNext(next,[X.m[r[2]],X.m[r[3]]])});if(!next.length)break;gens.push(next);cur=next}
+  if(!gens.length)h+='<div class="fh">'+genUp(1)+'</div><div class="note" style="margin-top:2px">'+(me[2]<0&&me[3]<0?'親の記録はありません（旅の者や、はじめからいた子など）':'親の記録は残っていません')+'</div>';
+  gens.forEach(function(g,i){h+='<div class="fh">'+genUp(i+1)+'（'+g.length+'匹）</div>';g.forEach(function(r){h+=famRow(r)})});
+  // きょうだい
+  ps=[me[2],me[3]].filter(function(p){return p>=0});
+  if(ps.length){
+    S.reg.forEach(function(r){if(r[0]!==id&&(ps.indexOf(r[2])>=0||ps.indexOf(r[3])>=0))sib.push(r)});
+    if(sib.length){
+      h+='<div class="fh">きょうだい（'+sib.length+'匹）</div>';
+      sib.forEach(function(r){var both=ps.length===2&&ps.indexOf(r[2])>=0&&ps.indexOf(r[3])>=0;h+=famRow(r,both?'':'片親が同じ')});
+    }
+  }
+  // 下の代
+  seen={};seen[id]=1;cur=[me];
+  for(k=1;k<=40;k++){
+    next=[];cur.forEach(function(r){addNext(next,X.ch[r[0]]||[])});
+    if(!next.length){if(k===1)h+='<div class="fh">'+genDown(1)+'</div><div class="note" style="margin-top:2px">まだいません</div>';break}
+    h+='<div class="fh">'+genDown(k)+'（'+next.length+'匹）</div>';next.forEach(function(r){h+=famRow(r)});cur=next;
+  }
+  h+='<div class="note">名前をタップすると、その子の所へ行きます（旅立った子は花へ。花も散った子はうすく出ます）。「家族」で、その子の家族をたどれます。<br>名簿は、この版から記録を始めました。それより前に旅立った子は、分かる分だけ出ています。</div>';
+  h+='<button class="ok" id="mok">とじる</button>';
+  elBox.innerHTML=h;elModal.style.display='flex';elBox.scrollTop=0;
+  document.getElementById('mok').onclick=closeModal;
+  document.getElementById('fback').onclick=openRoster;
+  bindFam();
+}
+function famGo(id){
+  var c=byId(id),r,f;
+  if(busy)return;
+  if(c){closeModal();jumpTo(c);return}
+  r=regFind(id);f=r&&flowerOf(id,r[1],r[5]>=0?r[5]:null);
+  if(f){closeModal();goFlower(f)}
+}
+function bindFam(){
+  Array.prototype.forEach.call(elBox.querySelectorAll('[data-fam]'),function(b){b.onclick=function(ev){ev.stopPropagation();openFamily(+b.getAttribute('data-fam'))}});
+  Array.prototype.forEach.call(elBox.querySelectorAll('[data-go]'),function(b){b.onclick=function(){famGo(+b.getAttribute('data-go'))}});
 }
 
 function toWorldOn(el,ev){var r=el.getBoundingClientRect();return[(ev.clientX-r.left)/r.width*W,(ev.clientY-r.top)/r.height*H]}
@@ -1391,7 +1534,7 @@ function touchSheep(c,T,direct){
   c.et=T;c.wt=T;c.wd=m===0?0.9:direct?2.6:1.8;
   if(direct&&m>0)c.wn=T;
   if(direct&&m===2)c.wsm=T;
-  if(m===2&&c.age<MATURE&&!c.play&&c.st!=='sleep'&&speed===1&&Math.random()<0.34)startHop(c,T,direct?2:1,0.15);
+  if(m===2&&c.age<MATURE&&!c.play&&c.st!=='sleep'&&speed===1&&Math.random()<HOPK.touchP)startHop(c,T,HOPK.touchN[direct?1:0],0.15,null);
 }
 function gustAt(wx,wy,s,r,T,soft){
   var i,c,dx,dy;
@@ -1514,38 +1657,109 @@ function holdTick(rdt,T){
     else if(c.held===1&&!(held&&held.id===c.id)){c.held=0;c.timer=3}
   }
 }
+// ===== 跳ねる（スキップ）=====
+// 形は試しページ lamb-hop-lab.html で決めた値（1回0.6秒・高さは体の高さの1.25倍・1回で体の長さ1つぶん進む）。
+// 「その場」と「かけ回る」を1つにまとめ、跳ねながら進む。画面側だけの動き（保存しない）。
+// 頻度と回数だけは設定の「跳ね方の調整」で直せる（HOPS）。そのほかの数字はここにまとめる。
+var HOPK={
+  T:0.6,h:1.25,stride:1.0,arch:0.7,tuck:0.8,ear:0.8,squash:0.5,tilt:0.4,
+  paths:['inplace','circle','eight','wiggle'], // 1回ごとにこの中からランダム（多すぎたら circle と wiggle だけに）
+  bodyH:2.2,bodyL:3.0,  // 体の高さ・長さ（drawSheep の u の何倍か）
+  off:450,              // 画面に映っていない子：平均7.5分に1回
+  eMin:60,              // おなか60%以上
+  touchP:0.5,touchN:[1,2], // 風でさわったとき（まんぷくのこども）：2回に1回、その場で1〜2回
+  followP:0.5,followR:30,followE:50,followDelay:[0.25,0.4] // つられて跳ねる子
+};
+var HOPDEF={f:120,n:10},HOPS={f:120,n:10},HOPF=[30,45,60,90,120,180,240,300];
+function loadHop(){try{var o=JSON.parse(localStorage.getItem(KEY+'-hop')||'null');if(o){if(HOPF.indexOf(o.f)>=0)HOPS.f=o.f;if(o.n>=4&&o.n<=12)HOPS.n=Math.round(o.n)}}catch(e){}}
+function saveHop(){try{localStorage.setItem(KEY+'-hop',JSON.stringify(HOPS))}catch(e){}}
+function hopFreqText(s){s=Math.round(s);if(s<60)return s+'秒';var m=Math.floor(s/60),r=s%60;return m+'分'+(r?r+'秒':'')}
 function canPlay(c,emin){return c.age<MATURE&&!c.held&&!c.play&&!c.lost&&c.e>=emin&&c.st!=='sleep'}
-function startHop(c,T,n,delay){c.play=1;c.zm=null;c.hop={t:T+(delay||0),n:n}}
-function startZoom(c,T,pts,delay){var t0=T+(delay||0);c.play=2;c.hop=null;c.zm={p:pts,i:0,t:t0,end:t0+rnd(6,10)}}
+// 道すじ（体の長さ＝1 の単位。u＝前、v＝横）
+function hopRng(seed){var s=seed>>>0||1;return function(){s=(s*1664525+1013904223)>>>0;return s/4294967296}}
+function hopLocal(type,len,side,seed){
+  var pts=[],M=240,i,s,ds=len/M,r,f,sg,ss,R,w1,w2,p1,p2,A,B,hh=0,xx=0,yy=0,cum=[0];
+  if(type==='circle'){r=len/(2*Math.PI);for(i=0;i<=M;i++){s=len*i/M;f=s/r;pts.push([r*Math.sin(f),side*r*(1-Math.cos(f))])}}
+  else if(type==='eight'){r=len/(4*Math.PI);for(i=0;i<=M;i++){s=len*i/M;sg=s<len/2?side:-side;ss=s<len/2?s:s-len/2;f=ss/r;pts.push([r*Math.sin(f),sg*r*(1-Math.cos(f))])}}
+  else{
+    R=hopRng(seed);w1=0.7+R()*0.7;w2=1.6+R()*1.2;p1=R()*6.28;p2=R()*6.28;A=0.8+R()*0.5;B=0.4+R()*0.4;pts.push([0,0]);
+    for(i=1;i<=M;i++){s=ds*i;hh+=side*(A*Math.sin(w1*s+p1)+B*Math.sin(w2*s+p2))*ds;xx+=Math.cos(hh)*ds;yy+=Math.sin(hh)*ds;pts.push([xx,yy])}
+  }
+  for(i=1;i<pts.length;i++)cum.push(cum[i-1]+Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]));
+  return{pts:pts,cum:cum,len:cum[cum.length-1]};
+}
+function hopLocalAt(po,d){
+  var c=po.cum,lo=0,hi=c.length-1,m,sg,t,a,b;d=clamp(d,0,po.len);
+  while(hi-lo>1){m=(lo+hi)>>1;if(c[m]<=d)lo=m;else hi=m}
+  sg=c[hi]-c[lo]||1;t=(d-c[lo])/sg;a=po.pts[lo];b=po.pts[hi];
+  return[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t];
+}
+function hopW(ox,oy,h,bl,p){var cs=Math.cos(h),sn=Math.sin(h);return[ox+(p[0]*cs-p[1]*sn)*bl,oy+(p[0]*sn+p[1]*cs)*bl]}
+function hopAt(hp,d){return hopW(hp.ox,hp.oy,hp.h,hp.bl,hopLocalAt(hp.lp,d))}
+// 草原のはし・森のきわにかからないか（Cの回で池もここに足す）
+function hopFits(ox,oy,h,lp,bl){
+  for(var i=0;i<lp.pts.length;i+=6){var w=hopW(ox,oy,h,bl,lp.pts[i]);if(w[0]<12||w[0]>W-12||w[1]<12||w[1]>H-12)return false}
+  return true;
+}
+// 行き先を確かめ、かかるなら向きを変える。どの向きもだめなら null（＝その場）
+function hopPlan(c,type,n,h,side,seed){
+  if(type==='inplace')return null;
+  var bl=HOPK.bodyL*4.6*c.size*ageScale(c),lp=hopLocal(type,n*HOPK.stride,side,seed),tries=[h,h+1.5708,h-1.5708,h+3.1416,Math.atan2(H/2-c.y,W/2-c.x)],i;
+  for(i=0;i<tries.length;i++)if(hopFits(c.x,c.y,tries[i],lp,bl))return{lp:lp,h:tries[i],bl:bl};
+  return null;
+}
+function hopFollow(o,pl){return pl&&hopFits(o.x,o.y,pl.h,pl.lp,pl.bl)?pl:null}
+function startHop(c,T,n,delay,pl){
+  var hh=pl?pl.h:c.h,cs=Math.cos(hh);
+  c.play=1;c.zm=null;
+  c.hop={t:T+(delay||0),n:n,lp:pl?pl.lp:null,h:hh,bl:pl?pl.bl:0,ox:c.x,oy:c.y,dir:Math.abs(cs)>0.3?(cs>0?1:-1):(Math.cos(c.h)>=0?1:-1)};
+}
+// 1回の跳ねの中での進み具合（空中は一定の速さ）
+function hopFwd(p){return p<0.12?0.04*p/0.12:p<0.88?0.04+0.92*(p-0.12)/0.76:0.96+0.04*(p-0.88)/0.12}
+// いまの体の形（null＝跳ねていない）。lift は 0〜1
+function hopQ(c,T){
+  var hp=c.play&&c.hop,K=HOPK,el,p,u,s,A,s2,q;
+  if(!hp)return null;
+  el=T-hp.t;if(el<0||el>=hp.n*K.T)return null;
+  p=el/K.T;p-=Math.floor(p);
+  q={lift:0,arch:0,tuck:0,ear:0,flop:0,squash:0,prep:0,tilt:0};
+  if(p<0.12)q.prep=Math.sin(Math.PI*p/0.12)*K.squash;
+  else if(p<0.88){u=(p-0.12)/0.76;s=Math.sin(Math.PI*u);A=Math.pow(s,0.55);
+    q.lift=s;q.arch=K.arch*A;q.tuck=K.tuck*A;q.ear=K.ear*A;q.tilt=K.tilt*0.32*Math.cos(Math.PI*u)}
+  else{s2=Math.sin(Math.PI*(p-0.88)/0.12);q.squash=K.squash*s2;q.flop=K.ear*s2}
+  return q;
+}
+function hopAir(c,T,u){var q=hopQ(c,T);return q?q.lift*HOPK.h*HOPK.bodyH*u:0}
 function playTick(rdt,T){
-  var i,j,c,o,z,p,dx,dy,d,v,pts,n,a,r,qx,qy,hop,ok=speed===1&&!busy&&darkness(S.t)<0.3,vis={};
+  var i,j,c,o,hp,el,k,p,d,a,b,e,tx,ty,tl,n,pl,K=HOPK,ok=speed===1&&!busy&&darkness(S.t)<0.3,vis={};
   if(!pageOpen)for(i=0;i<hits.length;i++)vis[hits[i].id]=1;
   for(i=0;i<S.cr.length;i++){
     c=S.cr[i];
-    if(c.play===1){if(!c.hop||T>c.hop.t+c.hop.n*0.42){c.play=0;c.hop=null}continue}
-    if(c.play===2){
-      z=c.zm;
-      if(!z||T>z.end||speed!==1||z.i>=z.p.length){c.play=0;c.zm=null;continue}
-      if(T<z.t)continue;
-      p=z.p[z.i];dx=p[0]-c.x;dy=p[1]-c.y;d=Math.sqrt(dx*dx+dy*dy);v=c.sp*0.85*1.6*rdt;
-      if(d>0.01)c.h=Math.atan2(dy,dx);
-      if(d<=v){c.x=p[0];c.y=p[1];z.i++}else{c.x+=dx/d*v;c.y+=dy/d*v}
+    if(c.play){
+      hp=c.hop;
+      if(!hp||speed!==1||c.held){c.play=0;c.hop=null;continue}
+      el=T-hp.t;if(el<0)continue;
+      n=hp.n*K.stride;
+      if(el>=hp.n*K.T){
+        if(hp.lp){a=hopAt(hp,n);b=hopAt(hp,n-0.08);c.x=a[0];c.y=a[1];if(a[0]!==b[0]||a[1]!==b[1])c.h=Math.atan2(a[1]-b[1],a[0]-b[0])}
+        c.play=0;c.hop=null;continue;
+      }
+      if(hp.lp){
+        k=Math.floor(el/K.T);p=el/K.T-k;d=Math.min(n,K.stride*(k+hopFwd(p)));
+        a=hopAt(hp,d);c.x=a[0];c.y=a[1];
+        b=hopAt(hp,Math.min(n,d+0.06));e=hopAt(hp,Math.max(0,d-0.06));tx=b[0]-e[0];ty=b[1]-e[1];tl=Math.sqrt(tx*tx+ty*ty);
+        if(tl>1e-6){c.h=Math.atan2(ty,tx);if(Math.abs(tx/tl)>0.3)hp.dir=tx>0?1:-1}
+      }
       continue;
     }
-    if(c.play){c.play=0;continue}
-    if(!ok||!canPlay(c,70)||Math.random()>rdt/(vis[c.id]?120:450))continue;
-    hop=Math.random()<0.5;pts=null;
-    if(hop)startHop(c,T,3+pick(3),0);
-    else{
-      pts=[];qx=c.x;qy=c.y;
-      for(j=0,n=2+pick(3);j<n;j++){a=rnd(0,6.2832);r=rnd(18,36);qx=clamp(qx+Math.cos(a)*r,10,W-10);qy=clamp(qy+Math.sin(a)*r*0.6,10,H-10);pts.push([qx,qy])}
-      startZoom(c,T,pts,0);
-    }
+    if(!ok||!canPlay(c,K.eMin)||Math.random()>rdt/(vis[c.id]?HOPS.f:K.off))continue;
+    n=HOPS.n;
+    pl=hopPlan(c,K.paths[pick(K.paths.length)],n,c.h+rnd(-0.6,0.6),Math.random()<0.5?1:-1,1+pick(1e9));
+    startHop(c,T,n,0,pl);
     for(j=0;j<S.cr.length;j++){
       o=S.cr[j];
-      if(o===c||!canPlay(o,50)||dist(c,o)>30||Math.random()<0.5)continue;
-      if(hop)startHop(o,T,2+pick(3),rnd(0.2,0.7));
-      else startZoom(o,T,pts.map(function(q){return[clamp(q[0]+rnd(-6,6),10,W-10),clamp(q[1]+rnd(-5,5),10,H-10)]}),rnd(0.3,0.7));
+      if(o===c||!canPlay(o,K.followE)||dist(c,o)>K.followR||Math.random()>=K.followP)continue;
+      startHop(o,T,n,rnd(K.followDelay[0],K.followDelay[1]),hopFollow(o,pl));
     }
   }
 }
@@ -1901,14 +2115,24 @@ function renderCmp(){
   var bw=elPBody.clientWidth-24,bh=elPBody.clientHeight,wide=bw>620,cw,i,h,sn,A;
   cw=Math.floor(wide?Math.min((bw-12)/2,Math.max(180,(bh-120)*W/H)):Math.min(bw,Math.max(170,(bh-150)/2*W/H)));
   if(cmpSel<0||cmpSel>=SNAPS.length){cmpSel=0;for(i=SNAPS.length-1;i>=0;i--)if(S.t-SNAPS[i].t>=DAY/2){cmpSel=i;break}}
-  h='<div class="cmp'+(wide?' wide':'')+'"><div style="width:'+cw+'px"><div class="cap" id="capA"></div><canvas id="cmpA"></canvas></div><div style="width:'+cw+'px"><div class="cap" id="capB"></div><canvas id="cmpB"></canvas></div></div><div class="chips">';
-  for(i=SNAPS.length-1;i>=0;i--)h+='<button class="tog'+(i===cmpSel?' on':'')+'" data-s="'+i+'">'+snapLabel(SNAPS[i])+'</button>';
-  h+='</div><div class="chips"><button class="tog'+(cmpDiff?' on':'')+'" id="cdiff">草のちがいを色で見る</button><button class="tog" id="csnap">いまの草原を残す</button></div><div class="note">6時間ごとに1枚、草原のようすを残します（7日分まで。留守の間の分も残ります）。ボタンで、くらべる時をえらべます。「草のちがいを色で見る」は右の絵に色をつけます：水色＝草が増えた所、だいだい色＝草が減った所（食べられた・日照りなど）。</div>';
+  h='<div class="cmp'+(wide?' wide':'')+'"><div style="width:'+cw+'px"><div class="cap" id="capA"></div><canvas id="cmpA"></canvas></div><div style="width:'+cw+'px"><div class="cap" id="capB"></div><canvas id="cmpB"></canvas></div></div>'+
+    '<div class="cnl" id="cmpLbl"></div><div class="cnav"><button class="tog" id="cprev">◀ 前</button>'+
+    '<input type="range" id="cslide" min="0" max="'+Math.max(0,SNAPS.length-1)+'" step="1" value="'+cmpSel+'"'+(SNAPS.length<2?' disabled':'')+'>'+
+    '<button class="tog" id="cnext">次 ▶</button></div>';
+  h+='<div class="chips"><button class="tog'+(cmpDiff?' on':'')+'" id="cdiff">草のちがいを色で見る</button><button class="tog" id="csnap">いまの草原を残す</button></div><div class="note">6時間ごとに1枚、草原のようすを残します（7日分まで。留守の間の分も残ります）。つまみを動かすと、左の絵がパラパラ漫画のように切りかわります（左が古い、右が新しい）。「草のちがいを色で見る」は右の絵に色をつけます：水色＝草が増えた所、だいだい色＝草が減った所（食べられた・日照りなど）。</div>';
   elPBody.innerHTML=h;
   A=document.getElementById('cmpA');sizeCmp(A,cw);sizeCmp(document.getElementById('cmpB'),cw);
-  sn=SNAPS[cmpSel];
+  cmpShow(true);pageAcc=0;
+}
+// 左の絵（選んだ時）を描きかえる。つまみ・前・次から呼ぶ
+function cmpShow(all){
+  var sn=SNAPS[cmpSel],A=document.getElementById('cmpA'),l=document.getElementById('cmpLbl'),s=document.getElementById('cslide'),p=document.getElementById('cprev'),n=document.getElementById('cnext');
+  if(!A)return;
   if(sn){drawSnap(A,sn);document.getElementById('capA').textContent=snapCap(sn,snapLabel(sn)+'（'+dayOf(sn.t)+'日め '+hm(sn.t)+'）')}
-  drawNow();pageAcc=0;
+  if(l)l.textContent=sn?snapLabel(sn)+'（'+(cmpSel+1)+'／'+SNAPS.length+'枚め）':'まだ残した絵がありません';
+  if(s&&+s.value!==cmpSel)s.value=cmpSel;
+  if(p)p.disabled=cmpSel<=0;if(n)n.disabled=cmpSel>=SNAPS.length-1;
+  if(all||cmpDiff)drawNow();
 }
 function sg(a,cur,att){return '<div class="seg">'+a.map(function(v){return '<button '+att+'="'+v[0]+'"'+(cur===v[0]?' class="on"':'')+'>'+v[1]+'</button>'}).join('')+'</div>'}
 function renderSum(){
@@ -1937,6 +2161,11 @@ function renderSum(){
     '<div class="fitr"><span style="min-width:3em;text-align:left">音量</span>'+sg([[0,'小'],[1,'中'],[2,'大']],UI.vl|0,'data-vl')+'</div>'+
     '<div class="note">ひつじがときどき鳴き、鈴の子が歩き出すと、ときどき鈴が鳴ります。iPhoneの消音モードのときは鳴りません。</div>'+
     '<div class="fitr"><button id="sndtest">音を試す</button></div><div class="note" id="sndst">'+sndStatus()+'</div>';
+  h+='<h3>跳ね方の調整</h3>'+
+    '<div class="fitr"><span style="min-width:3em;text-align:left">頻度</span><button data-hp="f-">−</button><span style="min-width:6.5em">'+hopFreqText(HOPS.f)+'に1回</span><button data-hp="f+">＋</button></div>'+
+    '<div class="fitr"><span style="min-width:3em;text-align:left">回数</span><button data-hp="n-">−</button><span style="min-width:6.5em">'+HOPS.n+'回（'+(HOPS.n*HOPK.T).toFixed(1)+'秒）</span><button data-hp="n+">＋</button></div>'+
+    '<div class="fitr"><button data-hp="rst">初期値にもどす</button></div>'+
+    '<div class="note">頻度は、画面に映っているこども1匹あたりの平均です（昼・おなか60%以上・×1のとき）。こどもが5匹映っていると、どれかが跳ねるのは平均'+hopFreqText(HOPS.f/5)+'に1回。回数を減らすと、円や8の字も小さくなります。初期値は「2分に1回・10回」。この調整は、この端末の中だけに残ります。</div>';
   h+='<h3>画面の合わせ</h3><div class="note" style="margin-top:0">ホーム画面版で、上が時刻の帯に隠れる・下にすきまが出るときの調整です。</div>'+
     '<div class="fitr">上の余白<button data-f="at-">−</button><span>'+UI.at+'</span><button data-f="at+">＋</button></div>'+
     '<div class="fitr">下の長さ<button data-f="ah-">−</button><span>'+UI.ah+'</span><button data-f="ah+">＋</button></div>'+
@@ -1946,6 +2175,10 @@ function renderSum(){
   elPBody.innerHTML=h;
 }
 document.getElementById('pclose').onclick=closePage;
+elPBody.addEventListener('input',function(ev){
+  if(ev.target.id!=='cslide'||busy)return;
+  cmpSel=clamp(+ev.target.value,0,Math.max(0,SNAPS.length-1));cmpShow();
+});
 document.getElementById('tabs').onclick=function(ev){var t=ev.target.getAttribute('data-t');if(t){pageTab=t;renderPage()}};
 elPBody.addEventListener('click',function(ev){
   var t=ev.target,b,e,tg,f;
@@ -1965,10 +2198,18 @@ elPBody.addEventListener('click',function(ev){
   }
   if(t.id==='cdiff'){cmpDiff=!cmpDiff;renderPage(true);return}
   if(t.id==='csnap'){addSnap();cmpSel=SNAPS.length-1;renderPage(true);toast('いまの草原を残しました');return}
-  b=t.closest('[data-s]');if(b){cmpSel=+b.getAttribute('data-s');renderPage(true);return}
+  if(t.id==='cprev'||t.id==='cnext'){cmpSel=clamp(cmpSel+(t.id==='cprev'?-1:1),0,Math.max(0,SNAPS.length-1));cmpShow();return}
   if(t.id==='sndtest'){sndTest();setTimeout(function(){var e=document.getElementById('sndst');if(e)e.textContent=sndStatus()},900);return}
   b=t.closest('[data-sv],[data-sb],[data-vl]');if(b){f=b.getAttribute('data-sv');if(f!=null)UI.sv=+f;f=b.getAttribute('data-sb');if(f!=null)UI.sb=+f;f=b.getAttribute('data-vl');if(f!=null){UI.vl=+f;sndVolume()}saveUI();renderPage(true);return}
   b=t.closest('[data-v]');if(b){speed=+b.getAttribute('data-v');renderPage(true);updateUI();return}
+  b=t.closest('[data-hp]');
+  if(b){
+    f=b.getAttribute('data-hp');var fi=HOPF.indexOf(HOPS.f);if(fi<0)fi=HOPF.indexOf(HOPDEF.f);
+    if(f==='f-')HOPS.f=HOPF[Math.max(0,fi-1)];else if(f==='f+')HOPS.f=HOPF[Math.min(HOPF.length-1,fi+1)];
+    else if(f==='n-')HOPS.n=Math.max(4,HOPS.n-1);else if(f==='n+')HOPS.n=Math.min(12,HOPS.n+1);
+    else{HOPS.f=HOPDEF.f;HOPS.n=HOPDEF.n}
+    saveHop();renderPage(true);return;
+  }
   b=t.closest('[data-f]');
   if(b){
     f=b.getAttribute('data-f');
@@ -2128,7 +2369,7 @@ function sndBells(T){
   for(i=0;i<S.cr.length;i++){
     c=S.cr[i];if(!c.bell||c.dead)continue;
     alive[c.id]=1;
-    w=!c.held&&c.play!==1&&(c.play===2||isMoving(c.st));
+    w=!c.held&&(c.play?!!(c.hop&&c.hop.lp):isMoving(c.st));
     b=B[c.id];
     if(!b){b=B[c.id]={wk:w,since:T,last:-99,pend:0};continue}
     if(w&&!b.wk){
@@ -2229,7 +2470,7 @@ if(window.visualViewport)window.visualViewport.addEventListener('resize',resizeS
 if(window.ResizeObserver){new ResizeObserver(function(){var a=document.getElementById('app');if(a.clientWidth!==lastAW||a.clientHeight!==lastAH)resize()}).observe(document.getElementById('app'))}
 
 (function init(){
-  loadUI();
+  loadUI();loadHop();
   var real=load();
   if(!S)newWorld();
   if(S.hist.sn==null)S.hist.sn=noonIdx(S.t);
