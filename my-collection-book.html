@@ -412,10 +412,18 @@ input[type=range]{width:100%;min-height:40px;accent-color:var(--accent)}
 /* 品のページ：写真の説明 */
 .gcap .gcp{flex:0 0 100%;text-align:center;font-family:var(--serif);font-size:14px;color:var(--ink);white-space:pre-wrap;word-break:break-word;padding:2px 0}
 .at .acap{position:absolute;right:2px;bottom:2px;font-size:11px;line-height:1.4;background:rgba(255,254,250,.88);border-radius:6px;padding:0 3px;pointer-events:none}
+
+/* ===== ステップ3c-1 ===== */
+/* 選ぶ項目（いくつでも選べる）のチップ */
+.msel{padding-bottom:2px}
+/* 日付の欄の下の小さな知らせ（できごとの日付の自動） */
+.ldnote{font-size:13px;color:var(--ink2);margin:6px 2px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ldnote .chip{min-height:36px;font-size:14px}
 </style>
 </head>
 <body>
 <div id="app"><div id="view"></div></div>
+<!-- 「＋ 登録」は右端（v0.5）。タブが5つになったら真ん中に戻す（持ち主と決めた。2026-11-17） -->
 <nav class="tabs"><div class="in">
   <button data-tab="toc"><span class="ic">📖</span>目次</button>
   <button data-tab="log"><span class="ic">🗓</span>ログ</button>
@@ -429,10 +437,10 @@ input[type=range]{width:100%;min-height:40px;accent-color:var(--accent)}
 <script>
 'use strict';
 /* ============================================================
-   コレクション図鑑 (my-collection-book) ステップ3b-2
+   コレクション図鑑 (my-collection-book) ステップ3c-1
    なんでも図鑑 my-field-guide.html v1.2 の部品を流用（写真を切る画面は openCrop を参考に作り直し）
    ============================================================ */
-const APP_VERSION = '0.5';
+const APP_VERSION = '0.6';
 const SCHEMA_VERSION = 1;
 /* ---- 写真の大きさ・バックアップを分ける枚数（実機で重ければ、ここの数字だけ下げる） ---- */
 const PHOTO_SIZE = {max:1024, q:0.75, thumbMax:320, thumbQ:0.7};   // 大きい写真 長辺1024px・品質0.75／サムネイル 320px・品質0.7
@@ -795,10 +803,34 @@ const fullCache = new Map();
 const focusCache = new Map();
 /** 写真の撮影日（takenAt）。写真を読んだときに覚える。null＝撮影日なし */
 const takenCache = new Map();
+/** 写真の「本物の撮影日か」の印（takenExif。v0.6）。true／false／undefined（v0.5 までの写真＝分からない） */
+const exifCache = new Map();
 function noteFocus(p){
   if (!p) return;
   if (p.focusX != null && p.focusY != null) focusCache.set(p.id, [p.focusX, p.focusY]); else focusCache.delete(p.id);
   takenCache.set(p.id, p.takenAt || null);
+  exifCache.set(p.id, p.takenExif);
+}
+/** 写真の撮影日と印 {t, x}。覚えていなければ読みに行く */
+async function photoMeta(pid){
+  if (!(takenCache.has(pid) && exifCache.has(pid)) && S.B) {
+    const p = await S.B.get('photos', pid).catch(() => null);
+    if (p) noteFocus(p); else { takenCache.set(pid, null); exifCache.set(pid, undefined); }
+  }
+  return {t:takenCache.get(pid) || null, x:exifCache.get(pid)};
+}
+/**
+ * 撮影日を選ぶ（4-2）。list = [{t:撮影日の ISO, x:takenExif}]。いちばん古い日（端末の日付）。
+ * 使う写真：印が true か、印なし（古い写真）。allowFalse のときだけ、使える写真が1枚もなければ false の写真も見る（q:true＝「？」をつける）
+ * 戻り値 {d:'YYYY-MM-DD', q} か null
+ */
+function pickShotDate(list, allowFalse){
+  const good = list.filter(e => e && e.t && e.x !== false);
+  const use = good.length ? good : allowFalse ? list.filter(e => e && e.t && e.x === false) : [];
+  if (!use.length) return null;
+  const min = use.reduce((a, e) => e.t < a ? e.t : a, use[0].t);
+  const d = new Date(min);
+  return isNaN(d) ? null : {d:localYMD(d), q:!good.length};
 }
 async function photoTaken(pid){
   if (takenCache.has(pid)) return takenCache.get(pid);
@@ -817,13 +849,13 @@ function applyFocus(img, pid){
 }
 function clearPhotoCaches(){
   thumbCache.forEach(u => URL.revokeObjectURL(u)); fullCache.forEach(u => URL.revokeObjectURL(u));
-  thumbCache.clear(); fullCache.clear(); focusCache.clear(); takenCache.clear(); missingPhotos.clear();
+  thumbCache.clear(); fullCache.clear(); focusCache.clear(); takenCache.clear(); exifCache.clear(); missingPhotos.clear();
 }
 /** 写真の読み込みの覚えを、その写真の分だけ捨てる（消したとき） */
 function forgetPhoto(pid){
   if (thumbCache.has(pid)) { URL.revokeObjectURL(thumbCache.get(pid)); thumbCache.delete(pid); }
   if (fullCache.has(pid)) { URL.revokeObjectURL(fullCache.get(pid)); fullCache.delete(pid); }
-  focusCache.delete(pid); takenCache.delete(pid);
+  focusCache.delete(pid); takenCache.delete(pid); exifCache.delete(pid);
 }
 async function thumbURL(pid){
   if (thumbCache.has(pid)) return thumbCache.get(pid);
@@ -936,8 +968,9 @@ async function shrinkFile(file){
   try {
     const big = await shrink(img, PHOTO_SIZE.max, PHOTO_SIZE.q);
     const th = await shrink(img, PHOTO_SIZE.thumbMax, PHOTO_SIZE.thumbQ);
+    // takenExif（v0.6）：true＝写真の中に撮影日があった、false＝なかった（takenAt はファイルの日時）
     return {blob:big.blob, width:big.width, height:big.height, thumbBlob:th.blob,
-      takenAt: taken || new Date(file.lastModified || Date.now()).toISOString()};
+      takenAt: taken || new Date(file.lastModified || Date.now()).toISOString(), takenExif: !!taken};
   } finally { URL.revokeObjectURL(url); }
 }
 /** 登録・できごとの画面用（サムネイルの URL も作る） */
@@ -1026,11 +1059,22 @@ function calcDays(from, to){
   const d = Math.round((b - a) / 86400000) + 1;
   return d >= 1 ? d : null;
 }
+/**
+ * 「選ぶ」の項目の値を読む所は、これ1つ（v0.6）。文字1つでも配列でも、文字の配列で返す（空なら []）。
+ * 使っている所：fieldDisplay（品のページ）・fieldText（検索）・isEmptyVal（空の判定）・fieldInputHTML（編集の欄）・saveItem（保存の形をそろえる）
+ */
+const selVals = v => Array.isArray(v) ? v.filter(x => typeof x === 'string' && x) : (typeof v === 'string' && v ? [v] : []);
+/** 選んだものを、選択肢の順に並べる（選択肢にないものは後ろに、入っていた順で） */
+const selOrdered = (f, v) => { const a = selVals(v), o = (f && f.options) || []; return [...o.filter(x => a.includes(x)), ...a.filter(x => !o.includes(x))]; };
+const selText = (f, v) => selOrdered(f, v).join('・');
 const isEmptyVal = (f, v) => {
   if (v == null || v === '' || v === false) return true;
+  if (Array.isArray(v)) return !selVals(v).length;
   if (f && f.type === 'era') return v.decade == null && v.year == null;
   return false;
 };
+/** 保存しない空の値か（項目を見ずに、値だけで決める。登録・編集の保存と、変更があるかの比べに使う） */
+const blankVal = v => v == null || v === '' || v === false || (Array.isArray(v) ? !selVals(v).length : typeof v === 'object' && v.decade == null && v.year == null);
 /** 品のページに出す文字（HTML）。空なら '' */
 function fieldDisplay(f, values){
   const v = values[f.id];
@@ -1041,6 +1085,7 @@ function fieldDisplay(f, values){
     case 'date': return v ? h(fmtYMD(v)) : '';
     case 'number': return typeof v === 'number' ? h(v.toLocaleString('ja-JP')) : '';
     case 'url': return v ? (/^https?:\/\//i.test(v) ? `<a href="${h(v)}" target="_blank" rel="noopener">${h(v)}</a>` : h(v)) : '';
+    case 'select': return h(selText(f, v));   // いくつも選んであれば「赤・白」（スイッチを切ったあとも全部出す）
     default: return isEmptyVal(f, v) ? '' : h(v);
   }
 }
@@ -1584,6 +1629,7 @@ function fieldText(f, values){
     case 'date': return v ? fmtYMD(v) : '';
     case 'number': return typeof v === 'number' ? v.toLocaleString('ja-JP') : (v == null ? '' : String(v));
     case 'check': case 'days': return '';
+    case 'select': return selText(f, v);
     default: return v == null ? '' : String(v);
   }
 }
@@ -1606,7 +1652,7 @@ function buildSearch(it, logsByItem){
   if (it.captions) {
     const ok = new Set([...(it.photoIds || []), ...(it.album || []).map(a => a.pid)]);
     for (const l of logsByItem.get(it.id) || []) (l.photoIds || []).forEach(x => ok.add(x));
-    for (const [pid, t] of Object.entries(it.captions)) if (ok.has(pid)) add('cap', '写真の説明', t);
+    for (const [pid, t] of Object.entries(it.captions)) if (ok.has(pid)) add('cap', 'キャプション', t);
   }
   // できごとのメモと種類（新しい順）。自動でできる「登録」の種類の名前は探さない（どの品にもあるため）
   for (const l of logsByItem.get(it.id) || []) add('log', `できごと ${fmtYMD(l.date)}`, [l.type === '登録' ? '' : l.type, l.memo].filter(Boolean).join(' '), '', l.id);
@@ -1987,7 +2033,7 @@ async function addAlbumPhotos(itemId, files, sh){
     it.album = [...(it.album || []), ...batch.map(r => ({pid:r.id, takenAt:r.takenAt}))];
     try {
       await S.B.putMany([...batch.map(rec => ({store:'photos', rec})), {store:'items', rec:it}]);
-      for (const r of batch) takenCache.set(r.id, r.takenAt || null);
+      for (const r of batch) { takenCache.set(r.id, r.takenAt || null); exifCache.set(r.id, r.takenExif); }
       saved += batch.length; batch = []; return true;
     } catch(e) {
       Object.assign(it, before); if (!before.album) delete it.album;
@@ -2000,7 +2046,7 @@ async function addAlbumPhotos(itemId, files, sh){
       try {
         const r = await shrinkFile(f);
         batch.push({id:uuid(), itemId, logId:null, kind:'album', data:await r.blob.arrayBuffer(), thumb:await r.thumbBlob.arrayBuffer(),
-          width:r.width, height:r.height, takenAt:r.takenAt, originalName:f.name});
+          width:r.width, height:r.height, takenAt:r.takenAt, takenExif:r.takenExif, originalName:f.name});
       } catch(e) { failed++; }
       done++; ov.set(done);
       if (batch.length >= ALBUM_BATCH && !(await flush())) break;
@@ -2113,7 +2159,7 @@ function openViewer(ids, i0, onIndex, capFn, opt = {}){
   const tools = !!opt.itemId;
   const v = document.createElement('div'); v.className = 'viewer' + (tools ? ' tools' : '');
   v.innerHTML = `<img alt=""><div class="vc"></div><div class="vd"></div><button class="vx" aria-label="閉じる">✕</button>`
-    + (tools ? `<div class="vtools"><button data-vt="cut">✂ 切る</button><button data-vt="cap">💬 説明</button></div>` : '');
+    + (tools ? `<div class="vtools"><button data-vt="cut">✂ 切る</button><button data-vt="cap">💬 キャプション</button></div>` : '');
   document.body.appendChild(v);
   const img = $('img', v), vc = $('.vc', v), vd = $('.vd', v);
   let s = 1, tx = 0, ty = 0;
@@ -2173,7 +2219,7 @@ function openViewer(ids, i0, onIndex, capFn, opt = {}){
     if (edit) return;
     const pid = ids[i];
     edit = document.createElement('div'); edit.className = 'vedit';
-    edit.innerHTML = `<label class="fl" style="margin-top:0">写真の説明</label><textarea rows="3" maxlength="${CAPTION_MAX}" placeholder="例：1972年のカタログに載っていた色">${h(capNow())}</textarea>
+    edit.innerHTML = `<label class="fl" style="margin-top:0">キャプション</label><textarea rows="3" maxlength="${CAPTION_MAX}" placeholder="例：1972年のカタログに載っていた色">${h(capNow())}</textarea>
       <div class="row-btns"><button class="btn primary" data-ve="ok">保存</button><button class="btn" data-ve="no">やめる</button></div>`;
     v.appendChild(edit); vc.style.visibility = 'hidden';
     const ta = $('textarea', edit); ta.focus();
@@ -2181,7 +2227,7 @@ function openViewer(ids, i0, onIndex, capFn, opt = {}){
       const b = ev.target.closest('[data-ve]'); if (!b) return;
       if (b.dataset.ve === 'no') { closeEdit(); return; }
       b.disabled = true;
-      if (await setCaption(opt.itemId, pid, ta.value)) { changed = true; closeEdit(); if (ids[i] === pid) paintCap(lastInfo); pinToast('説明を保存しました'); }
+      if (await setCaption(opt.itemId, pid, ta.value)) { changed = true; closeEdit(); if (ids[i] === pid) paintCap(lastInfo); pinToast('キャプションを保存しました'); }
       else b.disabled = false;
     });
   };
@@ -2459,6 +2505,7 @@ async function replacePhoto(itemId, oldPid, r){
   const rec = {id:uuid(), itemId:old.itemId || itemId, logId:old.logId || null, kind:old.kind || 'photo',
     data:await r.blob.arrayBuffer(), thumb:await r.thumbBlob.arrayBuffer(), width:r.width, height:r.height,
     takenAt:old.takenAt || null, originalName:old.originalName || null, croppedFrom:oldPid};   // 撮影日は元の写真のまま。主役の位置は写さない
+  if (old.takenExif != null) rec.takenExif = old.takenExif;   // 撮影日を写すので「本物の撮影日か」の印も写す（v0.6）
   const sw = a => a.map(x => x === oldPid ? rec.id : x);
   const it2 = {...it};
   let itChanged = false, found = false;
@@ -2477,7 +2524,7 @@ async function replacePhoto(itemId, oldPid, r){
   if (itChanged) S.items.set(it2.id, it2);
   ls.forEach(l => S.logs.set(l.id, l));
   forgetPhoto(oldPid);
-  thumbCache.set(rec.id, URL.createObjectURL(r.thumbBlob)); takenCache.set(rec.id, rec.takenAt || null);
+  thumbCache.set(rec.id, URL.createObjectURL(r.thumbBlob)); takenCache.set(rec.id, rec.takenAt || null); exifCache.set(rec.id, rec.takenExif);
   searchDirty(itemId);
   return true;
 }
@@ -2517,14 +2564,15 @@ function newState(){
   const gs = genresSorted();
   const last = S.bmeta && S.bmeta.lastGenreId;
   const gid = gs.some(g => g.id === last) ? last : (gs[0] ? gs[0].id : null);
-  return {name:'', genreId:gid, oneLine:'', values:{}, notes:[], photos:[]};
+  const st = {name:'', genreId:gid, oneLine:'', values:{}, notes:[], photos:[]};
+  fillRegDates(st);   // 「登録した日を自動で」の項目に今日（v0.6）
+  return st;
 }
 /** 変更があるかを比べるための文字（空の値は数えない） */
 function stateKey(st){
   const vals = {};
   for (const [k, v] of Object.entries(st.values)) {
-    if (v == null || v === '' || v === false) continue;
-    if (typeof v === 'object' && v.decade == null && v.year == null) continue;
+    if (blankVal(v)) continue;
     vals[k] = v;
   }
   return JSON.stringify({n:st.name, g:st.genreId, o:st.oneLine, v:Object.keys(vals).sort().map(k => [k, vals[k]]),
@@ -2544,15 +2592,34 @@ function dropNewPhoto(p){
   if (p.thumbUrl && !p.kept) URL.revokeObjectURL(p.thumbUrl);
 }
 function dropNewPhotos(st){ if (!st) return; st.photos.forEach(dropNewPhoto); }
-function addFilesTo(st, files, redraw){
+/** onDone（v0.6）：足した写真が全部読み込み終わったとき（ほかに読み込み中の足した写真がなければ）に1回。撮影日の自動に使う。
+ *  足すときに切る・切り直すのは数えない（p.adding は足したときの読み込みだけ） */
+function addFilesTo(st, files, redraw, onDone){
   files = imageFiles(files);
+  const ps = [];
   for (const f of files) {
-    const p = {key:uuid(), name:f.name, loading:true, file:f};   // file：切るときに使う（保存まで持っておく）
+    const p = {key:uuid(), name:f.name, loading:true, adding:true, file:f};   // file：切るときに使う（保存まで持っておく）
     p.promise = processFile(f).then(r => { Object.assign(p, r); p.orig = {blob:r.blob, thumbBlob:r.thumbBlob, width:r.width, height:r.height, thumbUrl:r.thumbUrl}; },
-      () => { p.err = true; }).then(() => { p.loading = false; redraw(); });
-    st.photos.push(p);
+      () => { p.err = true; }).then(() => { p.loading = false; p.adding = false; redraw(); });
+    st.photos.push(p); ps.push(p.promise);
   }
   redraw();
+  if (onDone && ps.length) Promise.all(ps).then(() => { if (!st.photos.some(p => p.adding)) onDone(); });
+}
+/** 登録・編集・できごとの画面の写真の列から、撮影日の材料を集める（読み込み中・読み込めなかった写真は数えない） */
+function shotList(st){
+  return st.photos.map(p => p.pid ? (takenCache.has(p.pid) ? {t:takenCache.get(p.pid), x:exifCache.get(p.pid)} : null)
+    : !p.loading && !p.err && p.takenAt ? {t:p.takenAt, x:p.takenExif} : null).filter(Boolean);
+}
+/** 画面の写真の列のうち、保存ずみの写真の撮影日を読んでおく */
+const preloadShots = st => Promise.all(st.photos.filter(p => p.pid).map(p => photoMeta(p.pid)));
+/** 入れ方（fill）が x の、見える日付の項目 */
+const fillFields = (g, ...xs) => fieldsOf(g).filter(f => f.type === 'date' && xs.includes(f.fill));
+/** 「登録した日を自動で」：空の欄に今日を入れる。入れたら true */
+function fillRegDates(st){
+  let n = 0;
+  for (const f of fillFields(genreOf(st.genreId), 'regAuto')) if (isEmptyVal(f, st.values[f.id])) { st.values[f.id] = localYMD(); n++; }
+  return n > 0;
 }
 /** 「見出し」の印をつける写真の番号（-1＝つけない）。見出しの写真が品の写真の中にあるときだけ */
 function headIndex(st){
@@ -2580,16 +2647,32 @@ function fieldInputHTML(f, v){
     case 'longtext': return lab + `<textarea class="grow" rows="2" data-f="${f.id}">${h(val)}</textarea>`;
     case 'number': return lab + `<input type="text" inputmode="decimal" data-f="${f.id}" value="${h(val)}" autocomplete="off">`;
     case 'era': return lab + renderEraInput(f.id, v);
-    case 'date': return lab + `<input type="date" data-f="${f.id}" value="${h(val)}">`;
+    // 日付：入れ方が「撮影日のチップ」「撮影日を自動で」なら、欄の下にチップの場所（v0.6）
+    case 'date': return lab + `<input type="date" data-f="${f.id}" value="${h(val)}">` + (f.fill === 'photoChip' || f.fill === 'photoAuto' ? `<div data-dchip="${f.id}"></div>` : '');
     case 'select': {
       // 選択肢を減らしても、入っている値は選択肢に足して出す（値は消さない）
-      const opts = [...(f.options || [])]; if (typeof v === 'string' && v && !opts.includes(v)) opts.push(v);
-      return lab + `<select data-f="${f.id}"><option value="">（空欄）</option>${opts.map(o => `<option ${o === v ? 'selected' : ''}>${h(o)}</option>`).join('')}</select>`;
+      const cur = selVals(v), opts = [...(f.options || [])];
+      if (f.multi) {   // いくつでも選べる：チップを押すたびに選ぶ・外す
+        for (const x of cur) if (!opts.includes(x)) opts.push(x);
+        return lab + `<div class="chips wrap msel" data-ms="${f.id}">${opts.map(o => `<button type="button" class="chip ${cur.includes(o) ? 'on' : ''}" data-mv="${h(o)}">${h(o)}</button>`).join('') || '<span class="hint">選択肢がありません</span>'}</div>`;
+      }
+      const one = selOrdered(f, v)[0] || '';   // いくつも入っている品（スイッチを切ったあと）は1つ目（品のページに出る順の1つ目）
+      if (one && !opts.includes(one)) opts.push(one);
+      return lab + `<select data-f="${f.id}"><option value="">（空欄）</option>${opts.map(o => `<option ${o === one ? 'selected' : ''}>${h(o)}</option>`).join('')}</select>`;
     }
     case 'check': return `<label class="sw"><input type="checkbox" data-f="${f.id}" ${v === true ? 'checked' : ''}>${h(f.name)}${f.secret ? '<span class="lock">🔒</span>' : ''}</label>`;
     case 'url': return lab + `<input type="url" data-f="${f.id}" value="${h(val)}" placeholder="https://" autocomplete="off">`;
     case 'days': return lab + `<div class="days" data-days="${f.id}"></div>`;
     default: return lab + `<input type="text" data-f="${f.id}" value="${h(val)}" autocomplete="off">`;
+  }
+}
+/** 撮影日のチップ（4-5）：「撮影日のチップ」「撮影日を自動で」の欄の下。撮影日があって、欄の値と違うときだけ。false の写真だけなら「？」つき */
+function paintDateChips(box, st){
+  const fs = fillFields(genreOf(st.genreId), 'photoChip', 'photoAuto'); if (!fs.length) return;
+  const d = pickShotDate(shotList(st), true);
+  for (const f of fs) {
+    const el = $(`[data-dchip="${f.id}"]`, box); if (!el) continue;
+    el.innerHTML = d && d.d !== (st.values[f.id] || '') ? `<button type="button" class="chip ldchip" data-dput="${h(f.id)}" data-d="${d.d}">📷 ${h(fmtYMD(d.d))}${d.q ? '？' : ''} を入れる</button>` : '';
   }
 }
 const fieldsHTML = (g, values) => fieldsOf(g).map(f => fieldInputHTML(f, values[f.id])).join('') || '<p class="hint">このジャンルには項目がありません。</p>';
@@ -2663,9 +2746,25 @@ function openEditor(opt = {}){
       const body = sh.body;
       body.innerHTML = editorHTML(st, isNew);
       const ph = $('#e-photos', body);
-      const redraw = () => { if (ed.st !== st && !isNew) return; const box = $('#e-photos', sh.body); if (box) { box.innerHTML = photosHTML(st); hydrate(box); } };
+      const live_ = () => isNew || ed.st === st;   // めくって別の品へ行ったあとの、遅れて届いた処理は捨てる
+      const paintChips = () => { if (!live_()) return; const box = $('#e-fields', sh.body); if (box) paintDateChips(box, st); };
+      const redraw = () => { if (!live_()) return; const box = $('#e-photos', sh.body); if (box) { box.innerHTML = photosHTML(st); hydrate(box); } paintChips(); };
+      /** 「撮影日を自動で」（v0.6）：写真を足して読み込みが終わったとき、空の欄にいちばん古い撮影日。入力ずみは変えない */
+      const autoPhoto = async () => {
+        if (!live_()) return;
+        await preloadShots(st);
+        if (!live_()) return;
+        const g = genreOf(st.genreId), d = pickShotDate(shotList(st), false);
+        const fs = d ? fillFields(g, 'photoAuto').filter(f => isEmptyVal(f, st.values[f.id])) : [];
+        if (!fs.length) return;
+        fs.forEach(f => { st.values[f.id] = d.d; });
+        const box = $('#e-fields', sh.body); if (!box) return;
+        fs.forEach(f => { const el = $(`[data-f="${f.id}"]`, box); if (el) el.value = d.d; });
+        paintDays(box, g, st.values); paintDateChips(box, st);
+        const more = $('#e-more', sh.body); if (more) more.open = true;   // 入った日付が見えるように
+      };
       ph.addEventListener('click', ev => {
-        if (ev.target.closest('#e-add')) return pickPhotos(fs => addFilesTo(st, fs, redraw));
+        if (ev.target.closest('#e-add')) return pickPhotos(fs => addFilesTo(st, fs, redraw, autoPhoto));
         const tile = ev.target.closest('[data-pi]'); if (!tile) return;
         const i = +tile.dataset.pi, mv = ev.target.closest('[data-pm]');
         if (mv) { const j = i + (+mv.dataset.pm); if (j < 0 || j >= st.photos.length) return; [st.photos[i], st.photos[j]] = [st.photos[j], st.photos[i]]; redraw(); }
@@ -2677,10 +2776,30 @@ function openEditor(opt = {}){
       bindChips($('#e-genre', body), gid => {
         st.genreId = gid; const g = genreOf(gid);
         $('#e-nml', body).textContent = g.nameLabel || '名前';
-        const fb = $('#e-fields', body); fb.innerHTML = fieldsHTML(g, st.values); paintDays(fb, g, st.values); growAll(fb);
+        const reg = isNew && fillRegDates(st);   // 登録の途中でジャンルを選び直したら、新しいジャンルの「登録した日を自動で」にも今日
+        const fb = $('#e-fields', body); fb.innerHTML = fieldsHTML(g, st.values); paintDays(fb, g, st.values); paintDateChips(fb, st); growAll(fb);
+        const more = $('#e-more', body); if (reg && more) more.open = true;
       });
       const fb = $('#e-fields', body);
       paintDays(fb, genreOf(st.genreId), st.values);
+      paintDateChips(fb, st);
+      if (isNew && fillFields(genreOf(st.genreId), 'regAuto').some(f => st.values[f.id])) { const more = $('#e-more', body); if (more) more.open = true; }
+      if (!sh.preview && st.photos.some(p => p.pid)) preloadShots(st).then(paintChips);   // 保存ずみの写真の撮影日（チップのため）
+      fb.addEventListener('click', ev => {
+        const mv = ev.target.closest('[data-mv]');
+        if (mv) {   // いくつでも選べる：押すたびに選ぶ・外す
+          const fid = mv.closest('[data-ms]').dataset.ms, a = selVals(st.values[fid]), x = mv.dataset.mv;
+          const next = a.includes(x) ? a.filter(y => y !== x) : [...a, x];
+          if (next.length) st.values[fid] = next; else delete st.values[fid];
+          mv.classList.toggle('on', next.includes(x)); return;
+        }
+        const dp = ev.target.closest('[data-dput]');
+        if (dp) {   // 撮影日のチップ
+          const fid = dp.dataset.dput; st.values[fid] = dp.dataset.d;
+          const el = $(`[data-f="${fid}"]`, fb); if (el) el.value = dp.dataset.d;
+          paintDays(fb, genreOf(st.genreId), st.values); paintDateChips(fb, st);
+        }
+      });
       const onField = ev => {
         const t = ev.target, era = t.closest('[data-era]');
         if (era) { syncEraInput(era, t.classList.contains('era-y') ? 'year' : 'decade'); st.values[era.dataset.era] = readEraInput(era); return; }
@@ -2688,7 +2807,7 @@ function openEditor(opt = {}){
         const g = genreOf(st.genreId), f = fieldsOf(g).find(x => x.id === fid); if (!f) return;
         st.values[fid] = f.type === 'check' ? t.checked : f.type === 'number' ? parseNum(t.value) : t.value;
         if (t.tagName === 'TEXTAREA') grow(t);
-        if (f.type === 'date') paintDays(fb, g, st.values);
+        if (f.type === 'date') { paintDays(fb, g, st.values); paintDateChips(fb, st); }
       };
       fb.addEventListener('input', onField); fb.addEventListener('change', onField);
       const nb = $('#e-notes', body);
@@ -2755,7 +2874,7 @@ async function saveItem(id, st, btn){
     if (p.pid) { pids.push(p.pid); continue; }
     if (p.err || !p.blob) { failed++; continue; }
     const rec = {id:uuid(), itemId:it.id, logId:null, kind:'photo', data:await p.blob.arrayBuffer(), thumb:await p.thumbBlob.arrayBuffer(),
-      width:p.width, height:p.height, takenAt:p.takenAt, originalName:p.name};
+      width:p.width, height:p.height, takenAt:p.takenAt, takenExif:!!p.takenExif, originalName:p.name};
     ops.push({store:'photos', rec}); pids.push(rec.id); fresh.push([rec.id, p]);
   }
   if (!isNew) for (const old of it.photoIds) if (!pids.includes(old)) { const p = await S.B.get('photos', old); if (p) ops.push({store:'photos', rec:markPhotoDeleted(p)}); }
@@ -2763,9 +2882,14 @@ async function saveItem(id, st, btn){
   const removedPids = isNew ? [] : it.photoIds.filter(x => !pids.includes(x));
   const values = {};
   for (const [k, v] of Object.entries(st.values)) {
-    if (v == null || v === '' || v === false) continue;
-    if (typeof v === 'object' && v.decade == null && v.year == null) continue;
+    if (blankVal(v)) continue;
     values[k] = v;
+  }
+  // 選ぶ項目の値の形をそろえる（v0.6）：いくつでも選べる → 配列、ふつう → 文字1つ（いくつも入っていたら1つ目）
+  for (const f of fieldsOf(g)) {
+    if (f.type !== 'select' || !(f.id in values)) continue;
+    const a = selOrdered(f, values[f.id]);   // 選択肢の順にそろえる
+    if (!a.length) delete values[f.id]; else values[f.id] = f.multi ? a : a[0];
   }
   Object.assign(it, {genreId:st.genreId, name, oneLine:st.oneLine.trim(), values,
     notes:st.notes.filter(n => n.text.trim()).map(n => ({id:n.id, text:n.text.replace(/\s+$/, ''), kind:'own', sourceUrl:null})), photoIds:pids});
@@ -2782,7 +2906,7 @@ async function saveItem(id, st, btn){
   if (!(await safeWrite(() => S.B.putMany(ops)))) { await loadBook(); return false; }
   S.items.set(it.id, it);
   if (regLog) S.logs.set(regLog.id, regLog);
-  for (const [pid, p] of fresh) { thumbCache.set(pid, p.thumbUrl); p.kept = true; dropNewPhoto(p); }   // 作ったサムネイルはそのまま使う（切る前の絵は捨てる）
+  for (const [pid, p] of fresh) { thumbCache.set(pid, p.thumbUrl); takenCache.set(pid, p.takenAt || null); exifCache.set(pid, !!p.takenExif); p.kept = true; dropNewPhoto(p); }   // 作ったサムネイルはそのまま使う（切る前の絵は捨てる）
   removedPids.forEach(forgetPhoto);
   searchDirty(it.id);
   if (isNew) {
@@ -2817,7 +2941,8 @@ function openLogEditor(itemId, logId){
   if (!types.length) types.push('そのほか');
   if (old && !isReg && !types.includes(old.type)) types.push(old.type);   // ジャンルを変えて無くなった種類も出す
   const st = {date: old ? old.date : localYMD(), type: old ? old.type : types[0], memo: old ? old.memo || '' : '',
-    photos: (old ? old.photoIds || [] : []).map(pid => ({pid})), dateTouched:false};
+    photos: (old ? old.photoIds || [] : []).map(pid => ({pid})), dateTouched:false,
+    autoOff: !!old, autoDate:null};   // 日付の自動（v0.6）：新しく足すときだけ。autoDate＝自動で入れた日付（その間だけ知らせを出す）
   const key = () => JSON.stringify([st.date, st.type, st.memo.replace(/\s+$/, ''), st.photos.map(p => p.pid || p.key)]);
   let orig = key();
   const dirty = () => key() !== orig;
@@ -2834,7 +2959,20 @@ function openLogEditor(itemId, logId){
   const paintChip = () => {
     const box = shRef && $('#l-dchip', shRef.body); if (!box) return;
     const d = st.dateTouched ? null : photoDate();
-    box.innerHTML = d && d !== st.date ? `<button class="chip ldchip" id="l-usephoto">📷 写真の日付（${h(fmtYMD(d).replace(/^\d+\//, ''))}）にする</button>` : '';
+    const note = st.autoDate && st.autoDate === st.date && !st.autoOff
+      ? `<div class="ldnote">📷 写真の日付にしました<button type="button" class="chip" id="l-today">今日にもどす</button></div>` : '';
+    box.innerHTML = note + (d && d !== st.date ? `<button class="chip ldchip" id="l-usephoto">📷 写真の日付（${h(fmtYMD(d).replace(/^\d+\//, ''))}）にする</button>` : '');
+  };
+  /** 新しいできごとで、本人が日付を触っていない間に写真を足したら、日付をいちばん古い撮影日に（本物の撮影日の写真だけ） */
+  const autoDate = () => {
+    if (st.autoOff || st.dateTouched) return;
+    const ts = st.photos.filter(p => !p.pid && !p.loading && !p.err && p.takenAt && p.takenExif === true).map(p => p.takenAt);
+    if (!ts.length) return;
+    const d = localYMD(new Date(ts.reduce((a, t) => t < a ? t : a, ts[0])));
+    if (d === st.date) return;
+    st.date = d; st.autoDate = d;
+    const dIn = shRef && $('#l-date', shRef.body); if (dIn) dIn.value = d;
+    paintChip();
   };
   const save = async btn => {
     const r = await saveLog(itemId, old, st, isReg, btn);
@@ -2863,17 +3001,20 @@ function openLogEditor(itemId, logId){
       const body = sh.body;
       const redraw = () => { const box = $('#e-photos', sh.body); if (box) { box.innerHTML = photosHTML(st, false); hydrate(box); } paintChip(); };
       $('#e-photos', body).addEventListener('click', ev => {
-        if (ev.target.closest('#e-add')) return pickPhotos(fs => addFilesTo(st, fs, redraw));
+        if (ev.target.closest('#e-add')) return pickPhotos(fs => addFilesTo(st, fs, redraw, autoDate));
         const tile = ev.target.closest('[data-pi]'); if (!tile) return;
         const i = +tile.dataset.pi, mv = ev.target.closest('[data-pm]');
         if (mv) { const j = i + (+mv.dataset.pm); if (j < 0 || j >= st.photos.length) return; [st.photos[i], st.photos[j]] = [st.photos[j], st.photos[i]]; redraw(); }
-        else if (ev.target.closest('[data-px]')) { const [p] = st.photos.splice(i, 1); dropNewPhoto(p); redraw(); }
+        else if (ev.target.closest('[data-px]')) { const [p] = st.photos.splice(i, 1); dropNewPhoto(p); redraw(); }   // 写真を外しても日付は戻さない
         else if (ev.target.closest('[data-cutme]')) cropNewPhoto(st.photos[i], redraw);   // 保存ずみの写真をタップしても何もしない
       });
       const dIn = $('#l-date', body);
-      const onDate = () => { st.date = dIn.value; st.dateTouched = true; paintChip(); };
+      const onDate = () => { if (dIn.value === st.date) return; st.date = dIn.value; st.dateTouched = true; st.autoOff = true; paintChip(); };
       dIn.addEventListener('input', onDate); dIn.addEventListener('change', onDate);
       $('#l-dchip', body).onclick = ev => {
+        if (ev.target.closest('#l-today')) {   // 今日にもどす：この画面を閉じるまで、もう自動で変えない
+          st.date = localYMD(); dIn.value = st.date; st.autoOff = true; st.autoDate = null; paintChip(); return;
+        }
         if (!ev.target.closest('#l-usephoto')) return;
         const d = photoDate(); if (!d) return;
         st.date = d; dIn.value = d; st.dateTouched = true; paintChip();
@@ -2913,7 +3054,7 @@ async function saveLog(itemId, old, st, isReg, btn){
     if (p.pid) { pids.push(p.pid); continue; }
     if (p.err || !p.blob) { failed++; continue; }
     const pr = {id:uuid(), itemId, logId:rec.id, kind:'log', data:await p.blob.arrayBuffer(), thumb:await p.thumbBlob.arrayBuffer(),
-      width:p.width, height:p.height, takenAt:p.takenAt, originalName:p.name};
+      width:p.width, height:p.height, takenAt:p.takenAt, takenExif:!!p.takenExif, originalName:p.name};
     ops.push({store:'photos', rec:pr}); pids.push(pr.id); fresh.push([pr.id, p]);
   }
   if (!isReg && !memo.trim() && !pids.length) { alert('写真を読み込めませんでした。メモか写真を入れてください。'); return false; }
@@ -2933,7 +3074,7 @@ async function saveLog(itemId, old, st, isReg, btn){
   removed.forEach(forgetPhoto);
   searchDirty(itemId);
   if (!old) { const bs = backupState(S.book.id); await setBackupState(S.book.id, {logsSince:(bs.logsSince || 0) + 1}); }   // 新しいできごとも催促に数える
-  for (const [pid, p] of fresh) { thumbCache.set(pid, p.thumbUrl); takenCache.set(pid, p.takenAt || null); p.kept = true; dropNewPhoto(p); }
+  for (const [pid, p] of fresh) { thumbCache.set(pid, p.thumbUrl); takenCache.set(pid, p.takenAt || null); exifCache.set(pid, !!p.takenExif); p.kept = true; dropNewPhoto(p); }
   if (failed) alert(`読み込めなかった写真 ${failed}枚は保存しませんでした。`);
   return true;
 }
@@ -3152,7 +3293,8 @@ function openFieldForm(gid, fid){
   const g0 = S.genres.get(gid); if (!g0) return;
   const old = fid ? g0.fields.find(f => f.id === fid) : null;
   const st = {name: old ? old.name : '', type: old ? old.type : 'text', options: old ? (old.options || []).join('\n') : '',
-    sortable: old ? !!old.sortable : false, secret: old ? !!old.secret : false};
+    sortable: old ? !!old.sortable : false, secret: old ? !!old.secret : false,
+    fill: old && old.type === 'date' ? old.fill || '' : '', multi: !!(old && old.type === 'select' && old.multi)};   // v0.6
   openSheet({title: old ? '項目を直す' : '項目を足す', form:true, build(sh){
     const g = S.genres.get(gid);
     const types = FIELD_TYPES.filter(([t]) => t !== 'era' || !hasVisibleEra(g) || (old && old.type === 'era'));
@@ -3165,8 +3307,16 @@ function openFieldForm(gid, fid){
       ${old ? `<button class="btn danger block" id="ff-hide" style="margin-top:26px">この項目をしまう</button>` : ''}`;
     const more = () => {
       const box = $('#ff-more', body);
+      const saved = old && (S.genres.get(gid).fields.find(x => x.id === old.id) || {}).fill;   // 保存ずみの入れ方
+      const fillNote = (FILL_WAYS.find(x => x[0] === st.fill) || [])[2];
       box.innerHTML = (st.type === 'select' ? `<label class="fl">選択肢（1行に1つ）</label><textarea class="grow" rows="4" id="ff-opts">${h(st.options)}</textarea>
-          ${old ? '<p class="hint" style="margin:4px 2px 0">選択肢を減らしても、品に入っている内容は消えません。</p>' : ''}` : '')
+          ${old ? '<p class="hint" style="margin:4px 2px 0">選択肢を減らしても、品に入っている内容は消えません。</p>' : ''}
+          <label class="sw"><input type="checkbox" id="ff-multi" ${st.multi ? 'checked' : ''}>いくつでも選べる</label>
+          ${old && old.multi && !st.multi ? '<p class="hint" style="margin:0 2px">いくつも選んである品は、次に直したとき1つになります。</p>' : ''}` : '')
+        + (st.type === 'date' ? `<label class="fl">入れ方</label><div class="chips wrap" id="ff-fill">${FILL_WAYS.map(([k, l]) => `<button type="button" class="chip ${st.fill === k ? 'on' : ''}" data-fill="${k}">${h(l)}</button>`).join('')}</div>
+          ${fillNote ? `<p class="hint" style="margin:0 2px">${h(fillNote)}</p>` : ''}
+          ${old && (saved === 'photoAuto' || saved === 'regAuto') && st.fill === saved ? `<button type="button" class="btn block" id="ff-bulk" style="margin-top:10px">空欄の品にまとめて入れる</button>
+            <p class="hint" style="margin:4px 2px 0">${saved === 'photoAuto' ? 'この項目が空の品に、品の写真のいちばん古い撮影日を入れます。' : 'この項目が空の品に、その品を登録した日を入れます。'}入力ずみの品は変えません。</p>` : ''}` : '')
         + (SORTABLE_TYPES.includes(st.type) ? `<label class="sw"><input type="checkbox" id="ff-sort" ${st.sortable ? 'checked' : ''}>並べ方に使う</label>` : '')
         + (st.type === 'days' ? '' : `<label class="sw"><input type="checkbox" id="ff-secret" ${st.secret ? 'checked' : ''}>ひみつ 🔒</label>`);
       growAll(box);
@@ -3175,13 +3325,21 @@ function openFieldForm(gid, fid){
     $('#ff-name', body).oninput = ev => { st.name = ev.target.value; };
     const tb = $('#ff-type', body);
     if (tb) tb.onclick = ev => { const b = ev.target.closest('[data-t]'); if (!b) return; st.type = b.dataset.t; st.sortable = st.type === 'era';
+      if (st.type !== 'date') st.fill = '';   // 種類を日付以外にしたら入れ方は消す
+      if (st.type !== 'select') st.multi = false;
       $$('[data-t]', tb).forEach(x => x.classList.toggle('on', x === b)); more(); };
+    $('#ff-more', body).addEventListener('click', ev => {
+      const fc = ev.target.closest('[data-fill]');
+      if (fc) { st.fill = fc.dataset.fill; more(); return; }
+      if (ev.target.closest('#ff-bulk')) bulkFillDates(gid, old.id);
+    });
     $('#ff-more', body).addEventListener('input', ev => {
       if (ev.target.id === 'ff-opts') { st.options = ev.target.value; grow(ev.target); }
     });
     $('#ff-more', body).addEventListener('change', ev => {
       if (ev.target.id === 'ff-sort') st.sortable = ev.target.checked;
       if (ev.target.id === 'ff-secret') st.secret = ev.target.checked;
+      if (ev.target.id === 'ff-multi') { st.multi = ev.target.checked; more(); }
     });
     const hide = $('#ff-hide', body);
     if (hide) hide.onclick = async () => {
@@ -3205,15 +3363,59 @@ function openFieldForm(gid, fid){
         f.name = name; f.sortable = sortable;
         if (f.type !== 'days') f.secret = st.secret;
         if (f.type === 'select') f.options = opts;
+        applyFieldWays(f, st);
       } else {
         const f = {id:'f-' + uuid(), name, type:st.type, secret:st.secret, sortable};
         if (st.type === 'select') f.options = opts;
+        applyFieldWays(f, st);
         g2.fields = [...(g2.fields || []), f];
         if (st.type === 'era') g2.eraFieldId = f.id;   // しまった年代の項目があっても、新しい方にする
       }
       if (await putGenre(g2)) { closeSheet(sh, true); pinToast(old ? '保存しました' : '項目を足しました'); }
     };
   }});
+}
+/** 日付の入れ方（v0.6）。[値, チップの言葉, ひとこと]。'' ＝手で入れる（項目に fill を持たない） */
+const FILL_WAYS = [['', '手で入れる', ''], ['photoAuto', '📷 撮影日を自動で', '写真を足すと、空の欄に撮影日が入ります'],
+  ['photoChip', '📷 撮影日のチップ', '欄の横のチップを押すと、撮影日が入ります'], ['regAuto', '登録した日を自動で', '新しく登録するとき、今日の日付が入ります']];
+/** 項目に入れ方（日付）・いくつでも選べる（選ぶ）を書く。種類が違えば消す */
+function applyFieldWays(f, st){
+  if (f.type === 'date' && st.fill) f.fill = st.fill; else delete f.fill;
+  if (f.type === 'select' && st.multi) f.multi = true; else delete f.multi;
+}
+/** その品の「登録した日」（端末の日付）：品を作った日時。なければ「登録」のできごとの日付 */
+function regDateOf(it){
+  const d = it.createdAt ? new Date(it.createdAt) : null;
+  if (d && !isNaN(d)) return localYMD(d);
+  const l = live(S.logs).find(x => x.itemId === it.id && x.type === '登録');
+  return l && /^\d{4}-\d{2}-\d{2}$/.test(l.date || '') ? l.date : null;
+}
+/** 空欄の品にまとめて入れる（4-6）。入れ方が「撮影日を自動で」「登録した日を自動で」で保存ずみの項目だけ */
+async function bulkFillDates(gid, fid){
+  const g = S.genres.get(gid), f = g && g.fields.find(x => x.id === fid);
+  if (!f || f.type !== 'date' || !(f.fill === 'photoAuto' || f.fill === 'regAuto')) return;
+  const its = live(S.items).filter(i => i.genreId === gid && isEmptyVal(f, (i.values || {})[fid]));
+  const put = [];
+  await withWait('調べています…', async () => {
+    for (const it of its) {
+      let d = null;
+      if (f.fill === 'regAuto') d = regDateOf(it);
+      else {   // 品の写真だけ。いちばん古い撮影日（本物の撮影日か、印のない古い写真）
+        const list = [];
+        for (const pid of it.photoIds || []) { const p = await S.B.get('photos', pid).catch(() => null); if (p && !p.deleted) list.push({t:p.takenAt, x:p.takenExif}); }
+        const r = pickShotDate(list, false); d = r && r.d;
+      }
+      if (d) put.push([it, d]);
+    }
+  });
+  if (!put.length) { alert('入れる品はありません。'); return; }
+  const k = await ask3(`${put.length}点の品に日付を入れます。`, ['入れる', 'やめる'], '入力ずみの品は変えません。');
+  if (k !== 0) return;
+  const recs = put.map(([it, d]) => ({...it, values:{...(it.values || {}), [fid]:d}}));
+  if (!(await safeWrite(() => S.B.putMany(recs.map(rec => ({store:'items', rec})))))) { await loadBook(); return; }   // updatedAt も新しくなる（バックアップの合流で届くように）
+  recs.forEach(r => { S.items.set(r.id, r); searchDirty(r.id); });
+  render();
+  pinToast(`${recs.length}点に入れました`);
 }
 function openLogTypes(gid){
   openSheet({title:'できごとの種類を直す', build(sh){
