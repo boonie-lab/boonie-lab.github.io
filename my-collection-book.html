@@ -440,6 +440,20 @@ input[type=range]{width:100%;min-height:40px;accent-color:var(--accent)}
 .optadd .btn{flex:0 0 auto}
 .chip.addopt{color:var(--accent);border-style:dashed}
 .fedit{margin-top:12px}
+
+/* ===== ステップ3c-2b ===== */
+/* 品をほかのジャンルへ移す：品を選ぶ一覧 */
+.mvr{display:flex;align-items:center;gap:10px;width:100%;min-height:52px;border:0;border-bottom:1px dotted var(--line);background:none;text-align:left;padding:4px 6px;font-family:var(--serif);font-size:16px}
+.mvr .tin{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mvr .mck{flex:0 0 26px;height:26px;border-radius:13px;border:2px solid var(--line);background:#fffefa;color:#fff;font-size:15px;line-height:22px;text-align:center}
+.mvr.on{background:#eef2f8}
+.mvr.on .mck{background:var(--accent);border-color:var(--accent)}
+.mvgh{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0 2px;padding:3px 4px 3px 8px;background:var(--paper2);border-left:4px solid var(--gc);font-family:var(--serif);font-weight:700;font-size:14px;border-radius:2px}
+.mvgh small{font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-weight:400;font-size:12px;color:var(--ink2)}
+.mvgh .btn{margin-left:auto;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-weight:400}
+/* 確かめる画面 */
+.mvlead{font-family:var(--serif);font-weight:700;font-size:17px;margin:2px 2px 12px;line-height:1.6}
+.mvl{margin:6px 2px;font-size:15px;line-height:1.6}
 </style>
 </head>
 <body>
@@ -458,10 +472,10 @@ input[type=range]{width:100%;min-height:40px;accent-color:var(--accent)}
 <script>
 'use strict';
 /* ============================================================
-   コレクション図鑑 (my-collection-book) ステップ3c-2a
+   コレクション図鑑 (my-collection-book) ステップ3c-2b
    なんでも図鑑 my-field-guide.html v1.2 の部品を流用（写真を切る画面は openCrop を参考に作り直し）
    ============================================================ */
-const APP_VERSION = '0.7';
+const APP_VERSION = '0.8';
 const SCHEMA_VERSION = 1;
 /* ---- 写真の大きさ・バックアップを分ける枚数（実機で重ければ、ここの数字だけ下げる） ---- */
 const PHOTO_SIZE = {max:1024, q:0.75, thumbMax:320, thumbQ:0.7};   // 大きい写真 長辺1024px・品質0.75／サムネイル 320px・品質0.7
@@ -3289,14 +3303,14 @@ function baseGenre(base){
   if (String(base).startsWith(TPL_BASE)) return GENRE_DEFS[base.slice(TPL_BASE.length)] || null;
   const g = S.genres.get(base); return g && !g.deleted ? g : null;
 }
-function openGenreForm(gid){
+function openGenreForm(gid, opt = {}){
   const old = gid ? S.genres.get(gid) : null;
   const gs = genresSorted();
   const last = S.bmeta && S.bmeta.lastGenreId;
   const used = new Set(gs.map(g => g.color));
   const st = {name: old ? old.name : '', emoji: old ? old.emoji : '', color: old ? old.color : (GENRE_COLORS.find(c => !used.has(c)) || GENRE_COLORS[0]),
     nameLabel: old ? old.nameLabel || '' : '',
-    base: old ? null : (gs.some(g => g.id === last) ? last : gs[0] ? gs[0].id : EMPTY_BASE)};
+    base: old ? null : opt.base && gs.some(g => g.id === opt.base) ? opt.base : (gs.some(g => g.id === last) ? last : gs[0] ? gs[0].id : EMPTY_BASE)};
   const key = () => JSON.stringify([st.name.trim(), firstGrapheme(st.emoji), st.color, st.base, st.nameLabel.trim()]);
   let orig = key();
   const cols = GENRE_COLORS.includes(st.color) ? GENRE_COLORS : [...GENRE_COLORS, st.color];
@@ -3320,7 +3334,8 @@ function openGenreForm(gid){
         <label class="fl">見え方</label><div id="gf-prev"></div>
         ${old ? `<label class="fl">名前の欄の見出し</label><input id="gf-nl" value="${h(st.nameLabel)}" placeholder="名前" autocomplete="off">
           <p class="hint" style="margin:4px 2px 0">登録・編集で、品の名前の欄に出る見出しです。空なら「名前」。例：作品名</p>
-          <button class="btn block" id="gf-fields" style="margin-top:18px">${h(fieldBtnText())}</button><button class="btn block" id="gf-logs" style="margin-top:8px">できごとの種類を直す ›</button>` : ''}
+          <button class="btn block" id="gf-fields" style="margin-top:18px">${h(fieldBtnText())}</button><button class="btn block" id="gf-logs" style="margin-top:8px">できごとの種類を直す ›</button>
+          <button class="btn block" id="gf-move" style="margin-top:8px" ${chapterCount(old.id) ? '' : 'disabled'}>品をほかのジャンルへ移す ›</button>` : ''}
         ${old ? '' : `<label class="fl">もとにするジャンル</label><div id="gf-base">
           <p class="hint" style="margin:2px 2px 4px">この図鑑のジャンル</p><div class="chips wrap">${gs.map(g => baseChip(g.id, g)).join('')}</div>
           ${tpls.length ? `<p class="hint" style="margin:6px 2px 4px">はじめから入っている型</p><div class="chips wrap">${tpls.map(id => baseChip(TPL_BASE + id, GENRE_DEFS[id])).join('')}</div>` : ''}
@@ -3346,6 +3361,8 @@ function openGenreForm(gid){
       if (fbtn) fbtn.onclick = () => openFieldList(old.id, () => { if (fbtn.isConnected) fbtn.textContent = fieldBtnText(); });
       const lbtn = $('#gf-logs', body);
       if (lbtn) lbtn.onclick = () => openLogTypes(old.id);
+      const mbtn = $('#gf-move', body);
+      if (mbtn) mbtn.onclick = () => { if (chapterCount(old.id)) openMoveItems(old.id, sh); };   // v0.8
       const del = $('#gf-del', body);
       if (del) del.onclick = async () => { if (await deleteGenre(old.id)) { orig = key(); closeSheet(sh, true); } };
       sh.foot.innerHTML = `<button class="btn primary" id="gf-ok">${old ? '保存' : '足す'}</button>`;
@@ -3353,7 +3370,7 @@ function openGenreForm(gid){
         ev.target.disabled = true;
         const ok = await saveGenre(old, st);
         ev.target.disabled = false;
-        if (ok) { orig = key(); closeSheet(sh, true); pinToast(old ? '保存しました' : 'ジャンルを足しました'); }
+        if (ok) { orig = key(); closeSheet(sh, true); pinToast(old ? '保存しました' : 'ジャンルを足しました'); if (!old && opt.onAdded) opt.onAdded(ok); }
       };
     }});
 }
@@ -3379,7 +3396,7 @@ async function saveGenre(old, st){
   if (!(await safeWrite(() => S.B.put('genres', rec)))) { await loadBook(); return false; }
   S.genres.set(rec.id, rec);
   searchReset();
-  return true;
+  return rec.id;   // v0.8：足したジャンルの id（品を移す流れで、そのまま移す先にする）
 }
 /* ---------- 項目を直す・できごとの種類を直す（変えるたびにその場で保存） ---------- */
 /** ジャンルのレコードを書く。だめなら読み直す */
@@ -3697,6 +3714,197 @@ async function deleteGenre(id){
   S.open.delete(id); if (S.chapter === id) S.chapter = null;
   pinToast('消しました');
   return true;
+}
+/* ---------- 品をほかのジャンルへ移す（v0.8。統合も分割も「品を選んで、ほかのジャンルへ移す」1つの流れ） ---------- */
+/** 確かめる画面での項目の呼び名（年代の項目は「年代（発売年）」） */
+const moveFieldName = f => f.type === 'era' && f.name !== '年代' ? `年代（${f.name}）` : f.name;
+/**
+ * 項目の合わせ方（6-2）。移す元の見える項目を1つずつ見る。dst は書き換えず、書き換えたあとのジャンル g（写し）を返す。
+ * {g, add:[足す項目], copy:[[元の項目, 先の項目]]（値を写す）, hidden:[見えなくなる元の項目]}
+ *  1. 先に同じ id の項目がある（しまってあっても）→ 何もしない（しまってあれば「見えなくなる」に出す）
+ *  2. 先に同じ名前・同じ種類で id の違う見える項目がある → 値を写す
+ *  3. どちらでもない → 先に足す（id・名前・種類・選択肢・ひみつ・入れ方・いくつでも選べる。並べ方・区切りは写さない）
+ *     年代は、先に見える年代の項目があれば足さない。かかった日数は、もとの2つの日付が先にある（足した）ときだけ足す
+ */
+function planMove(src, dst){
+  const g = clone(dst); g.fields = g.fields || [];
+  const add = [], copy = [], hidden = [];
+  const visSame = f => fieldsOf(g).find(x => x.name === f.name && x.id !== f.id);
+  const vis = fieldsOf(src);
+  for (const f of [...vis.filter(x => x.type !== 'days'), ...vis.filter(x => x.type === 'days')]) {   // かかった日数は日付のあとで
+    const ex = g.fields.find(x => x.id === f.id);
+    if (ex) { if (ex.hidden) hidden.push(f); continue; }
+    const same = visSame(f);
+    if (same && same.type === f.type) { if (f.type !== 'days') copy.push([f, same]); continue; }   // かかった日数は先のものを使う（値は持たない）
+    if (f.type === 'era' && hasVisibleEra(g)) { hidden.push(f); continue; }
+    if (f.type === 'days' && !(g.fields.some(x => x.id === f.from) && g.fields.some(x => x.id === f.to))) { hidden.push(f); continue; }
+    // 同じ名前で種類が違う見える項目があるときは、名前のあとに元のジャンルの名前をつけて足す（同じ名前の項目は作らない）
+    const nf = {id:f.id, name: same ? `${f.name}（${src.name}）` : f.name, type:f.type, secret: f.type === 'days' ? false : !!f.secret, sortable:false};
+    if (f.type === 'select') nf.options = [...(f.options || [])];
+    if (f.type === 'days') { nf.from = f.from; nf.to = f.to; }
+    if (f.type === 'date' && f.fill) nf.fill = f.fill;
+    if (f.type === 'select' && f.multi) nf.multi = true;
+    g.fields.push(nf); add.push(nf);
+    if (f.type === 'era') g.eraFieldId = f.id;
+  }
+  return {g, add, copy, hidden};
+}
+/** 移す準備：項目の合わせ方と、品ごとの値（区切りの項目はまだ入れない）。画面を描くたび・移す直前に作り直す */
+function prepareMove(srcId, dstId, ids){
+  const src = S.genres.get(srcId), dst = S.genres.get(dstId);
+  if (!src || src.deleted || !dst || dst.deleted) return null;
+  const its = ids.map(id => S.items.get(id)).filter(it => it && !it.deleted && it.genreId === srcId);
+  const plan = planMove(src, dst), vals = new Map();
+  for (const it of its) {
+    const v = {...(it.values || {})};
+    for (const [f, d] of plan.copy) {
+      if (isEmptyVal(f, v[f.id]) || !isEmptyVal(d, v[d.id])) continue;   // 先の欄が空の品だけ。元の id の値は消さない
+      if (f.type === 'select') {   // 先の選択肢にない値は、選択肢に足す
+        const a = selOrdered(f, v[f.id]);
+        d.options = [...(d.options || []), ...a.filter(x => !(d.options || []).includes(x))];
+        v[d.id] = d.multi ? a : a.length === 1 ? a[0] : a;
+      } else v[d.id] = clone(v[f.id]);
+    }
+    vals.set(it.id, v);
+  }
+  return {src, dst, its, plan, vals, gf:groupFieldOf(plan.g), pri:its.some(isPri)};
+}
+/**
+ * 移す（6-4）。品の genreId・値・優先、移す先のジャンル、移す元に残った品の優先の順位を、1回の書き込みで保存。失敗したら何も変えない。
+ * gv：区切りの項目に入れる値（null＝入れない）。その項目に値が入っている品は変えない
+ */
+async function executeMove(mv, gv){
+  const {src, its, plan, vals, gf} = mv, g = plan.g;
+  const moved = new Set(its.map(i => i.id));
+  const recs = its.map(it => {
+    const v = {...vals.get(it.id)};
+    if (gf && gv && isEmptyVal(gf, v[gf.id])) {
+      v[gf.id] = gf.multi ? [gv] : gv;
+      const f = g.fields.find(x => x.id === gf.id);
+      if (!(f.options || []).includes(gv)) f.options = [...(f.options || []), gv];   // 「『スカジャン』にする」：選択肢になければ足す
+    }
+    const r = {...it, genreId:g.id, values:v};
+    if (isPri(r)) r.priorityRank = null;   // 優先は外す（ジャンルを変えると外れるのと同じ）
+    return r;
+  });
+  const rest = live(S.items).filter(i => i.genreId === src.id && !moved.has(i.id) && isPri(i)).sort((a, b) => a.priorityRank - b.priorityRank);
+  const ren = []; rest.forEach((it, k) => { if (it.priorityRank !== k + 1) ren.push({...it, priorityRank:k + 1}); });   // 移す元の順位を詰め直す
+  const ops = [...recs, ...ren].map(rec => ({store:'items', rec}));
+  const gch = JSON.stringify(g) !== JSON.stringify(mv.dst);
+  if (gch) ops.unshift({store:'genres', rec:g});
+  // 品が多くても1回の書き込み（品のレコードは写真を持たないので軽い。途中で失敗しても何も変わらない）
+  if (!(await safeWrite(() => S.B.putMany(ops)))) { await loadBook(); return false; }
+  if (gch) S.genres.set(g.id, g);
+  [...recs, ...ren].forEach(r => S.items.set(r.id, r));
+  searchReset();   // 検索の文字は作り直す。バックアップの催促には数えない
+  return true;
+}
+/** 品を選ぶ → 移す先を選ぶ → 確かめる → 移す。fromSheet：「ジャンルを直す」の画面 */
+function openMoveItems(srcId, fromSheet){
+  const sel = new Set(), flow = [];
+  const finish = async (mv, n) => {
+    const moved = new Set(mv.its.map(i => i.id)), sn = mv.src.name;
+    for (const s of [...flow].reverse()) if (sheets.includes(s)) closeSheet(s, true);
+    // 移した品を開いている品のページ・編集は閉じる。移す元の章を開いていたら目次に戻る
+    for (const s of [...sheets].reverse()) if (s.pager && moved.has(s.pager.cur)) closeSheet(s, true);
+    if (S.chapter === srcId) { S.chapter = null; S.chPop = false; }
+    render();
+    pinToast(`${n}点を「${mv.plan.g.name}」へ移しました`);
+    if (chapterCount(srcId) === 0) {
+      const k = await ask3(`「${sn}」は0点になりました。このジャンルを消しますか？`, ['消す', '残す'], null, {danger:0});
+      const g = S.genres.get(srcId);
+      if (k === 0 && g && !g.deleted && live(S.genres).length > 1) {
+        g.deleted = true;
+        if (await safeWrite(() => S.B.put('genres', g))) {
+          S.open.delete(srcId); if (S.chapter === srcId) S.chapter = null;
+          if (fromSheet && sheets.includes(fromSheet)) closeSheet(fromSheet, true);
+          render(); pinToast(`「${sn}」を消しました`); return;
+        } else await loadBook();
+      }
+    }
+    if (fromSheet && sheets.includes(fromSheet)) fromSheet.refresh();
+    render();
+  };
+  /* ---- 3. 確かめる ---- */
+  const openConfirm = (dstId, ids) => {
+    let gv;   // 区切りの項目に入れる値（undefined＝まだ決めていない → 移す元のジャンルの名前）
+    flow.push(openSheet({title:'確かめる', form:true, build(sh){
+      const mv = prepareMove(srcId, dstId, ids);
+      if (!mv || !mv.its.length) { sh.body.innerHTML = `<div class="empty">移す品が見つかりません。</div>`; return; }
+      const sn = mv.src.name, dn = mv.dst.name, gf = mv.gf;
+      if (gv === undefined) gv = gf ? sn : null;
+      sh.body.style.setProperty('--gc', mv.dst.color);
+      const L = [];
+      if (mv.plan.add.length) L.push(`「${dn}」に足す項目：${mv.plan.add.map(f => moveFieldName(f)).join('、')}`);
+      for (const [f, d] of mv.plan.copy) L.push(`「${moveFieldName(f)}」は「${dn}」の「${moveFieldName(d)}」に入ります`);
+      for (const f of mv.plan.hidden) L.push(`「${moveFieldName(f)}」は「${dn}」では見えません（内容は消えません）`);
+      if (mv.pri) L.push('優先（★）は外れます');
+      const opts = gf ? [sn, ...(gf.options || []).filter(o => o !== sn)] : [];
+      sh.body.innerHTML = `<p class="mvlead">${mv.its.length}点を「${h(sn)}」から「${h(dn)}」へ移します。</p>`
+        + L.map(t => `<p class="mvl">・${h(t)}</p>`).join('')
+        + (gf ? `<label class="fl">「${h(gf.name)}」をどうしますか</label><div class="chips wrap" id="mv-grp">`
+            + opts.map((o, i) => `<button type="button" class="chip ${gv === o ? 'on' : ''}" data-gv="${h(o)}">${i === 0 ? `「${h(o)}」にする` : h(o)}</button>`).join('')
+            + `<button type="button" class="chip ${gv === null ? 'on' : ''}" data-gvn>入れない</button></div>
+            <p class="hint" style="margin:0 2px">「${h(gf.name)}」がもう入っている品は変えません。</p>` : '')
+        + `<p class="hint" style="margin-top:18px">移したあとで元に戻す仕組みはありません。心配なときは、先に写真つきのバックアップを取ってください。</p>`;
+      const gb = $('#mv-grp', sh.body);
+      if (gb) gb.onclick = ev => {
+        const b = ev.target.closest('[data-gv],[data-gvn]'); if (!b) return;
+        gv = b.hasAttribute('data-gvn') ? null : b.dataset.gv;
+        $$('[data-gv],[data-gvn]', gb).forEach(x => x.classList.toggle('on', x === b));
+      };
+      sh.foot.innerHTML = `<button class="btn primary" id="mv-go">移す</button>`;
+      $('#mv-go', sh.foot).onclick = async ev => {
+        const btn = ev.target; btn.disabled = true;
+        const m2 = prepareMove(srcId, dstId, ids);   // 移す直前に作り直す
+        if (!m2 || !m2.its.length) { btn.disabled = false; return alert('移す品が見つかりません。'); }
+        if (await executeMove(m2, m2.gf ? gv : null)) finish(m2, m2.its.length);
+        else btn.disabled = false;
+      };
+    }}));
+  };
+  /* ---- 2. 移す先を選ぶ ---- */
+  const openTarget = ids => {
+    flow.push(openSheet({title:'移す先を選ぶ', build(sh){
+      const others = genresSorted().filter(g => g.id !== srcId);
+      sh.body.innerHTML = `<p class="hint" style="margin-top:0">${ids.length}点を移すジャンルを選んでください。</p>`
+        + (others.length ? `<div class="chips wrap" id="mv-dst">${others.map(g => `<button class="chip g" data-g="${g.id}" style="--gc:${h(g.color)}">${h(g.emoji)} ${h(g.name)}</button>`).join('')}</div>` : '')
+        + `<button class="tadd" id="mv-new" style="margin-top:14px">＋ 新しいジャンルを作って移す</button>`;
+      sh.body.onclick = ev => {
+        const b = ev.target.closest('[data-g]'); if (b) return openConfirm(b.dataset.g, ids);
+        // 新しく作る：「ジャンルを足す」の画面（もとにするジャンルは移す元）→ 作り終わったら、そのジャンルを移す先にして次へ
+        if (ev.target.closest('#mv-new')) openGenreForm(null, {base:srcId, onAdded: gid => openConfirm(gid, ids)});
+      };
+    }}));
+  };
+  /* ---- 1. 品を選ぶ ---- */
+  flow.push(openSheet({title:'移す品を選ぶ', build(sh){
+    const g = S.genres.get(srcId);
+    if (!g || g.deleted) { sh.body.innerHTML = `<div class="empty">ジャンルが見つかりません。</div>`; return; }
+    sh.titleEl.textContent = `移す品を選ぶ：${g.name}`;
+    sh.body.style.setProperty('--gc', g.color);
+    const cg = chapterGroups(srcId);   // 章と同じ並び（区切りが効いていれば区切りごと）
+    const alive = new Set(cg.items.map(i => i.id)); [...sel].forEach(id => { if (!alive.has(id)) sel.delete(id); });
+    const groups = cg.groups || [{label:null, items:cg.items}];
+    const row = it => `<button class="mvr ${sel.has(it.id) ? 'on' : ''}" data-mi="${it.id}" aria-pressed="${sel.has(it.id)}"><span class="mck">${sel.has(it.id) ? '✓' : ''}</span><span class="t38">${coverImgHTML(it, g)}</span><span class="tin">${h(it.name)}</span>${isPri(it) && prioOn() ? '<span class="star">★</span>' : ''}</button>`;
+    sh.body.innerHTML = `<p class="hint" style="margin-top:0">「${h(g.emoji)} ${h(g.name)}」の品から、ほかのジャンルへ移す品を選んでください。</p>
+      <div class="row-btns"><button class="btn small" id="mv-all">ぜんぶ選ぶ</button><button class="btn small" id="mv-none">ぜんぶ外す</button></div>`
+      + groups.map((gr, k) => {
+        const allOn = gr.items.every(i => sel.has(i.id));
+        return (gr.label != null ? `<div class="mvgh">${h(gr.label)}<small>${gr.items.length}点</small><button class="btn small" data-mg="${k}">${allOn ? 'この種類をぜんぶ外す' : 'この種類をぜんぶ選ぶ'}</button></div>` : '')
+          + gr.items.map(row).join('');
+      }).join('');
+    sh.foot.innerHTML = `<button class="btn primary" id="mv-next" ${sel.size ? '' : 'disabled'}>次へ（${sel.size}点）</button>`;
+    sh.body.onclick = ev => {
+      if (ev.target.closest('#mv-all')) { cg.items.forEach(i => sel.add(i.id)); return sh.refresh(); }
+      if (ev.target.closest('#mv-none')) { sel.clear(); return sh.refresh(); }
+      const mg = ev.target.closest('[data-mg]');
+      if (mg) { const gr = groups[+mg.dataset.mg]; const allOn = gr.items.every(i => sel.has(i.id)); gr.items.forEach(i => allOn ? sel.delete(i.id) : sel.add(i.id)); return sh.refresh(); }
+      const r = ev.target.closest('[data-mi]');
+      if (r) { const id = r.dataset.mi; sel.has(id) ? sel.delete(id) : sel.add(id); sh.refresh(); }
+    };
+    $('#mv-next', sh.foot).onclick = () => { if (sel.size) openTarget(cg.items.map(i => i.id).filter(id => sel.has(id))); };
+  }}));
 }
 async function moveGenre(id, d){
   const gs = genresSorted(), i = gs.findIndex(g => g.id === id), j = i + d;
