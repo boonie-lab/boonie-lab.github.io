@@ -419,6 +419,27 @@ input[type=range]{width:100%;min-height:40px;accent-color:var(--accent)}
 /* 日付の欄の下の小さな知らせ（できごとの日付の自動） */
 .ldnote{font-size:13px;color:var(--ink2);margin:6px 2px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .ldnote .chip{min-height:36px;font-size:14px}
+
+/* ===== ステップ3c-2a ===== */
+/* 品のページのラベル：左にジャンル（・種類）、右に小さく登録日 */
+.ilabel .gr{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 10px}
+.ilabel .grg{flex:1 1 auto;min-width:0}
+.ilabel .regd{flex:0 0 auto;margin-left:auto;border:0;background:none;padding:2px 0;font-size:12px;color:var(--ink3);white-space:nowrap}
+.ilabel.flash{animation:flash 1.6s}
+/* 章・目次のリストの区切りの見出し */
+.ghd{grid-column:1/-1;display:flex;align-items:baseline;gap:8px;margin:8px 0 0;padding:3px 8px;background:var(--paper2);border-left:4px solid var(--gc);
+  font-family:var(--serif);font-weight:700;font-size:14px;border-radius:2px}
+.ghd:first-child{margin-top:0}
+.ghd small,.tgh small{font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-weight:400;font-size:12px;color:var(--ink2)}
+.tgh{font-family:var(--serif);font-weight:700;font-size:12px;color:var(--ink2);padding:6px 0 0;border-bottom:1px dotted var(--line)}
+/* よく使う項目 */
+.cfch .chip:disabled{opacity:.5}
+/* 選択肢をその場で足す */
+.optadd{display:flex;gap:6px;align-items:center;margin:6px 0 0}
+.optadd input{flex:1;min-width:0}
+.optadd .btn{flex:0 0 auto}
+.chip.addopt{color:var(--accent);border-style:dashed}
+.fedit{margin-top:12px}
 </style>
 </head>
 <body>
@@ -437,10 +458,10 @@ input[type=range]{width:100%;min-height:40px;accent-color:var(--accent)}
 <script>
 'use strict';
 /* ============================================================
-   コレクション図鑑 (my-collection-book) ステップ3c-1
+   コレクション図鑑 (my-collection-book) ステップ3c-2a
    なんでも図鑑 my-field-guide.html v1.2 の部品を流用（写真を切る画面は openCrop を参考に作り直し）
    ============================================================ */
-const APP_VERSION = '0.6';
+const APP_VERSION = '0.7';
 const SCHEMA_VERSION = 1;
 /* ---- 写真の大きさ・バックアップを分ける枚数（実機で重ければ、ここの数字だけ下げる） ---- */
 const PHOTO_SIZE = {max:1024, q:0.75, thumbMax:320, thumbQ:0.7};   // 大きい写真 長辺1024px・品質0.75／サムネイル 320px・品質0.7
@@ -603,6 +624,19 @@ const fieldsOf = g => ((g && g.fields) || []).filter(f => !f.hidden);
 const FIELD_TYPES = [['text','短い文字'],['longtext','長い文字'],['number','数字'],['date','日付'],['check','チェック'],['select','選ぶ（選択肢）'],['url','URL'],['era','年代']];
 const typeName = t => t === 'days' ? 'かかった日数' : ((FIELD_TYPES.find(x => x[0] === t) || [])[1] || t);
 const SORTABLE_TYPES = ['text','number','date','era'];
+/**
+ * よく使う項目の一覧（v0.7）。id は今ある型（GENRE_DEFS）と同じにする（どのジャンルで足しても同じ id ＝ ジャンルを付け替えても値がそのまま見える）。
+ * 持ち主と決めて、始めた日・完成した日・仕上がりサイズは一覧から外した（「自分で作る」で作れる）。かかった日数は自分では作れないので残す
+ * （押すと、始めた日・完成した日がなければ一緒に足す）。「材料・レシピ」は名前を「レシピ」にした（id は f-recipe のまま）。
+ */
+const COMMON_FIELDS = [
+  F('f-maker','メーカー','text',{sort:1}), F('f-brand','ブランド','text',{sort:1}), F('f-model','モデル','text'), F('f-era','年代','era',{sort:1}),
+  F('f-size','サイズ','text'), F('f-color','色','text'), F('f-cond','状態','select',{options:['新品','美品','使用感あり','要修理']}),
+  GOT, SHOP, PRICE, F('f-made','作った日','date',{sort:1}),
+  F('f-days','かかった日数','days',{from:'f-start', to:'f-done'}), F('f-materials','材料','longtext'), F('f-recipe','レシピ','longtext'),
+  F('f-refurl','参照URL','url'), F('f-kind','種類','select',{options:[]}), F('f-memo','メモ','longtext')];
+/** かかった日数と一緒に足す日付の項目 */
+const DAYS_PARTS = [F('f-start','始めた日','date',{sort:1}), F('f-done','完成した日','date',{sort:1})];
 
 /* ---------------- 状態 ---------------- */
 const S = {
@@ -689,7 +723,27 @@ function chapterItems(key){
     }
     return all.sort((a, b) => s.dir === 'desc' ? byCreated(b, a) : byCreated(a, b));
   }
-  const its = all.filter(i => itemGkey(i) === key);
+  return chapterGroups(key).items;
+}
+/** 区切りの項目（v0.7）。見える「選ぶ」の項目で、ひみつを隠している間のひみつの項目は除く。章の区切りのスイッチは見ない */
+function groupFieldOf(g){
+  if (!g || !g.groupFieldId) return null;
+  const f = fieldsOf(g).find(x => x.id === g.groupFieldId && x.type === 'select');
+  return f && !(f.secret && hideSecret()) ? f : null;
+}
+const groupOffOf = key => !!(S.bmeta && S.bmeta.groupOff && S.bmeta.groupOff[key]);
+/** その章で区切りが効いているときの区切りの項目（ぜんぶ・ジャンルなし・スイッチを切った章は null） */
+const activeGroupField = key => key === ALL || key === NONE ? null : groupOffOf(key) ? null : groupFieldOf(genreOf(key));
+/** 品の区切りの値：選択肢の順で1つ目（いくつも選んである品も1か所だけに出す）。空なら '' */
+const groupValOf = (f, it) => selOrdered(f, (it.values || {})[f.id])[0] || '';
+const NOGROUP = '（なし）';
+/**
+ * 章の並び（ジャンルの章）。{items, groups:[{label, items}] | null}
+ * 区切りが効いていれば「区切りの順（選択肢の順 → 選択肢にない値の名前順 → 空）→ その中で優先 → 今の並べ方」
+ */
+function chapterGroups(key){
+  const s = sortOf(key);
+  const its = live(S.items).filter(i => itemGkey(i) === key);
   const g = key === NONE ? NOGENRE : genreOf(key);
   let cmp;
   if (s.key === 'reg') cmp = (a, b) => s.dir === 'desc' ? byCreated(b, a) : byCreated(a, b);
@@ -699,9 +753,19 @@ function chapterItems(key){
     const memo = new Map(its.map(i => [i.id, sortVal(f, (i.values || {})[f.id])]));
     cmp = fieldCmp(f, s.dir, it => memo.get(it.id));
   }
-  if (!prioOn()) return its.sort(cmp);
-  const pri = its.filter(isPri).sort((a, b) => a.priorityRank - b.priorityRank);
-  return [...pri, ...its.filter(i => !isPri(i)).sort(cmp)];
+  const order = list => {
+    if (!prioOn()) return list.sort(cmp);
+    const pri = list.filter(isPri).sort((a, b) => a.priorityRank - b.priorityRank);
+    return [...pri, ...list.filter(i => !isPri(i)).sort(cmp)];
+  };
+  const gf = activeGroupField(key);
+  if (!gf) return {items:order(its), groups:null};
+  const by = new Map();
+  for (const it of its) { const v = groupValOf(gf, it); if (!by.has(v)) by.set(v, []); by.get(v).push(it); }
+  const opts = gf.options || [];
+  const keys = [...opts.filter(o => by.has(o)), ...[...by.keys()].filter(k => k && !opts.includes(k)).sort(jaCmp), ...(by.has('') ? [''] : [])];
+  const groups = keys.map(k => ({label:k || NOGROUP, items:order(by.get(k))}));
+  return {items:groups.flatMap(x => x.items), groups, field:gf};
 }
 const chapterIds = key => chapterItems(key).map(i => i.id);
 const chapterCount = key => key === ALL ? live(S.items).length : live(S.items).filter(i => itemGkey(i) === key).length;
@@ -1744,10 +1808,17 @@ function tocRow(k){
   return `<div class="trow ${n ? '' : 'dim'} ${open ? 'open' : ''}" style="--gc:${h(w.color)}">
       <button class="ttw" data-tw="${k}" ${n ? '' : 'disabled'} aria-expanded="${open}" aria-label="${h(w.name)}の品を${open ? '閉じる' : '開く'}">${open ? '∨' : '＞'}</button>
       <button class="tname" data-ch="${k}"><span>${h(w.emoji)}</span><span class="tn">${h(w.name)}</span></button><span class="tc">${n}点</span></div>`
-    + (open ? `<div class="tlist">${chapterItems(k).map(it => {
+    + (open ? `<div class="tlist">${groupedHTML(k, it => {
         const g = genreOf(it.genreId);
         return `<button class="tli" data-item="${it.id}" data-key="${k}"><span class="t38">${coverImgHTML(it, g)}</span><span class="tin">${h(it.name)}</span>${star && isPri(it) ? '<span class="star">★</span>' : ''}</button>`;
-      }).join('')}</div>` : '');
+      }, gr => `<div class="tgh">${h(gr.label)}　<small>${gr.items.length}点</small></div>`)}</div>` : '');
+}
+/** 章の品を並べた HTML。区切りが効いていれば、区切りが変わる所に見出し（v0.7） */
+function groupedHTML(k, one, head){
+  if (k === ALL) return chapterItems(k).map(one).join('');
+  const cg = chapterGroups(k);
+  if (!cg.groups) return cg.items.map(one).join('');
+  return cg.groups.map(gr => head(gr) + gr.items.map(one).join('')).join('');
 }
 function openChapter(k){ S.chapter = k; S.chPop = false; window.scrollTo(0, 0); render(); }
 /** 章：そのジャンルの品を写真カードで */
@@ -1756,6 +1827,7 @@ function renderChapter(v){
   const o = sortOptions(k).find(x => x.key === s.key) || sortOptions(k)[0];
   const star = k !== ALL && prioOn();
   const priN = star ? its.filter(isPri).length : 0;
+  const gf = activeGroupField(k);
   v.innerHTML = bookBar()
     + `<div class="chbar" style="--gc:${h(w.color)}"><button class="chback" id="chBack">‹ 目次</button>
         <button class="chsel" id="chSel" aria-expanded="${S.chPop}">${h(w.emoji)} ${h(w.name)} <span class="cv">▾</span></button>
@@ -1763,8 +1835,9 @@ function renderChapter(v){
         ${S.chPop ? `<div class="chpop">${tocKeys().map(x => { const ww = whereOf(x);
           const n = chapterCount(x);
           return `<button data-go="${x}" class="${x === k ? 'on' : ''} ${n ? '' : 'dim'}" style="--gc:${h(ww.color)}"><span class="mn">${h(ww.emoji)} ${h(ww.name)}</span><span class="n">${n}点</span>${x === k ? '<span class="ck">✓</span>' : ''}</button>`; }).join('')}</div>` : ''}</div>`
-    + `<p class="chinfo">${its.length}点・${h(o.label)}（${dirWord(o.kind, s.dir)}）${priN ? `・★優先 ${priN}点が先頭` : ''}</p>`
-    + (its.length ? `<div class="igrid">${its.map(i => itemCard(i, genreOf(i.genreId), {star: star && isPri(i), emoji: k === ALL})).join('')}</div>`
+    + `<p class="chinfo">${its.length}点・${h(o.label)}（${dirWord(o.kind, s.dir)}）${priN ? `・★優先 ${priN}点が${gf ? '区切りごとの先頭' : '先頭'}` : ''}${gf ? `・「${h(gf.name)}」で区切り` : ''}</p>`
+    + (its.length ? `<div class="igrid" style="--gc:${h(w.color)}">${groupedHTML(k, i => itemCard(i, genreOf(i.genreId), {star: star && isPri(i), emoji: k === ALL}),
+        gr => `<div class="ghd">${h(gr.label)}<small>${gr.items.length}点</small></div>`)}</div>`
       : `<div class="empty">このジャンルには、まだ品がありません。<br>下の「＋ 登録」から入れられます。</div>`);
   bindBookBar(v);
   $('#chBack', v).onclick = () => { S.chapter = null; S.chPop = false; window.scrollTo(0, 0); render(); };
@@ -1798,12 +1871,14 @@ function openSortPanel(k){
     const draw = () => {
       const s = sortOf(k), opts = sortOptions(k);
       const isGenre = k !== ALL;
+      const gfx = isGenre && k !== NONE ? groupFieldOf(genreOf(k)) : null;   // 区切りの項目（スイッチの名前）
       box.innerHTML = `<h3>並べ方</h3>`
         + (k === ALL ? `<p class="hint" style="margin:0 4px 6px">ぜんぶの章では優先は効きません。${hasEraGenre() ? '年代の項目がないジャンルの品・不明・空欄は最後です。' : ''}</p>` : '')
         + opts.map(o => { const on = o.key === s.key;
           const dirs = DIR_WORDS[o.kind];
           return `<button class="sopt ${on ? 'on' : ''}" data-sk="${h(o.key)}"><span class="ck">${on ? '✓' : ''}</span>${h(o.label)}<span class="dir">${on ? `${dirWord(o.kind, s.dir)} ⇅` : dirs[0]}</span></button>`; }).join('')
         + `<p class="hint" style="margin:6px 4px 0">選んでいる並べ方をもう一度押すと、向きが逆になります。</p>`
+        + (gfx ? `<label class="sw" style="margin:10px 4px 0"><input type="checkbox" id="sp-grp" ${groupOffOf(k) ? '' : 'checked'}>「${h(gfx.name)}」で区切る</label>` : '')
         + (isGenre ? `<label class="sw" style="margin:10px 4px 0"><input type="checkbox" id="sp-pri" ${prioOn() ? 'checked' : ''}>優先を先頭に出す</label>
           <button class="btn block" id="sp-order" style="margin-top:8px">★ 優先の順番を決める</button>` : '')
         + `<button class="btn block" id="sp-close" style="margin-top:10px">閉じる</button>`;
@@ -1822,6 +1897,11 @@ function openSortPanel(k){
     };
     box.onchange = async ev => {
       if (ev.target.id === 'sp-pri') { await saveBmeta({priorityOn:ev.target.checked}); render(); }
+      if (ev.target.id === 'sp-grp') {   // 切る ＝ groupOff に入れる（v0.7）
+        const off = {...((S.bmeta && S.bmeta.groupOff) || {})};
+        if (ev.target.checked) delete off[k]; else off[k] = true;
+        await saveBmeta({groupOff:off}); render();
+      }
     };
   });
 }
@@ -1903,15 +1983,21 @@ function scrollToLog(body, lid){
   if (!el) {
     const sh = sheets.find(s => s.body === body); if (!sh) return;
     sh.logsAll = sh.pager ? sh.pager.cur : true; sh.refresh();
-    body = sh.body; el = $(`.lg[data-log="${lid}"]`, body); if (!el) return;
+    body = sh.body; el = $(`.lg[data-log="${lid}"]`, body);
+    if (!el) {   // 中身が空の「登録」はできごとの章に出ない（v0.7）→ ラベルの登録日を光らせる
+      const lb = $('.ilabel', body); if (!lb) return;
+      body.scrollTop = 0; lb.classList.remove('flash'); void lb.offsetWidth; lb.classList.add('flash'); return;
+    }
   }
   const top = el.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop - 70;
   body.scrollTop = Math.max(0, top);
   el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
 }
 /** 品のページの「できごと」の章 */
+/** できごとの章に出すか（v0.7）：中身（メモ・写真）が空の「登録」は出さない */
+const logShown = l => l.type !== '登録' || !!((l.memo || '').trim() || (l.photoIds || []).length);
 function logSectionHTML(it, sh){
-  const ls = logsOf(it.id), all = sh.logsAll === it.id || ls.length <= 5, shown = all ? ls : ls.slice(0, 5);
+  const ls = logsOf(it.id).filter(logShown), all = sh.logsAll === it.id || ls.length <= 5, shown = all ? ls : ls.slice(0, 5);
   return `<div class="sec">できごと</div><div class="lgadd"><button class="btn small" data-addlog>＋ できごとを足す</button></div>`
     + shown.map(l => `<div class="lg" data-log="${l.id}"><button class="lgb" data-editlog="${l.id}"><span class="lgd">${h(fmtYMD(l.date))}</span><span class="lgt">${h(l.type)}</span>${l.memo ? `<div class="lgm">${h(l.memo)}</div>` : ''}</button>`
       + ((l.photoIds || []).length ? `<div class="lgp">${l.photoIds.map((p, k) => `<button data-lgph="${l.id}" data-k="${k}" aria-label="写真を大きく"><img data-photo="${p}" alt=""></button>`).join('')}</div>` : '')
@@ -1951,12 +2037,16 @@ function openItem(id0, list, where, opt = {}){
     const g = genreOf(it.genreId);
     sh.titleEl.textContent = it.name;
     sh.body.style.setProperty('--gc', g.color);
-    const rows = shownFields(g).map(f => { const d = fieldDisplay(f, it.values || {}); return d ? `<dt>${h(f.name)}${f.secret ? '<span class="lock" title="ひみつ">🔒</span>' : ''}</dt><dd>${d}</dd>` : ''; }).join('');
+    const gfi = groupFieldOf(g), gval = gfi ? selText(gfi, (it.values || {})[gfi.id]) : '';   // 区切りの項目はラベルに出して、表からは外す（v0.7）
+    const rl = regLogOf(it), rd = regDateOf(it);
+    const rows = shownFields(g).filter(f => f !== gfi).map(f => { const d = fieldDisplay(f, it.values || {}); return d ? `<dt>${h(f.name)}${f.secret ? '<span class="lock" title="ひみつ">🔒</span>' : ''}</dt><dd>${d}</dd>` : ''; }).join('');
     const notes = (it.notes || []).filter(n => (n.text || '').trim());
     const ph = topPhotos(it), pri = isPri(it), coverOnly = !(it.photoIds || []).length;
     const logs = logSectionHTML(it, sh), top = g.logPosition === 'top';
     sh.body.innerHTML = (ph.length ? galleryHTML(ph, coverOnly ? g.emoji : null, it.id) : `<div class="nophoto">${h(g.emoji)}</div>`)
-      + `<div class="ilabel"><h2>${h(it.name)}${pri && prioOn() ? ' <span class="star" title="優先">★</span>' : ''}</h2><div class="gr">${h(g.emoji)} ${h(g.name)}</div></div>`
+      + `<div class="ilabel"><h2>${h(it.name)}${pri && prioOn() ? ' <span class="star" title="優先">★</span>' : ''}</h2><div class="gr"><span class="grg">${h(g.emoji)} ${h(g.name)}${gval ? ` ・ ${h(gval)}` : ''}</span>`
+        + (rd ? (rl ? `<button class="regd" data-reglog="${rl.id}" aria-label="登録のできごとを開く">登録 ${h(fmtYMD(rd))}</button>` : `<span class="regd">登録 ${h(fmtYMD(rd))}</span>`) : '')
+        + `</div></div>`
       + (it.oneLine ? `<p class="oneline">${h(it.oneLine)}</p>` : '')
       + (top ? logs : '')
       + (rows ? `<dl class="flds">${rows}</dl>` : '')
@@ -1973,6 +2063,7 @@ function openItem(id0, list, where, opt = {}){
     sh.body.onclick = ev => {
       if (ev.target.closest('[data-addlog]')) return openLogEditor(id, null);
       const e = ev.target.closest('[data-editlog]'); if (e) return openLogEditor(id, e.dataset.editlog);
+      const rg = ev.target.closest('[data-reglog]'); if (rg) return openLogEditor(id, rg.dataset.reglog);   // 登録日 → 登録のできごと（v0.7）
       const p = ev.target.closest('[data-lgph]');
       if (p) { const l = S.logs.get(p.dataset.lgph); if (l) { const lids = [...l.photoIds]; openViewer(lids, +p.dataset.k, null, i => viewerCaption(lids[i], l.id), {itemId:id}); } return; }
       if (ev.target.closest('[data-logall]')) { sh.logsAll = id; sh.refresh(); return; }
@@ -2640,6 +2731,8 @@ function photosHTML(st, head = true){
       <div class="epc"><button data-pm="-1" ${i === 0 ? 'disabled' : ''} aria-label="左へ">‹</button><button data-px aria-label="外す">✕</button><button data-pm="1" ${i === n - 1 ? 'disabled' : ''} aria-label="右へ">›</button></div></div>`;
   }).join('') + `<button class="addph" id="e-add"><span class="big">＋</span><br>写真</button>`;
 }
+/** 選ぶメニューの「＋ 選択肢を足す…」の値（選択肢の名前とぶつからないように） */
+const ADD_OPT = '__addopt__';
 function fieldInputHTML(f, v){
   const lab = `<label class="fl">${h(f.name)}${f.secret ? '<span class="lock" title="ひみつ">🔒</span>' : ''}</label>`;
   const val = v == null ? '' : v;
@@ -2654,11 +2747,12 @@ function fieldInputHTML(f, v){
       const cur = selVals(v), opts = [...(f.options || [])];
       if (f.multi) {   // いくつでも選べる：チップを押すたびに選ぶ・外す
         for (const x of cur) if (!opts.includes(x)) opts.push(x);
-        return lab + `<div class="chips wrap msel" data-ms="${f.id}">${opts.map(o => `<button type="button" class="chip ${cur.includes(o) ? 'on' : ''}" data-mv="${h(o)}">${h(o)}</button>`).join('') || '<span class="hint">選択肢がありません</span>'}</div>`;
+        return lab + `<div class="chips wrap msel" data-ms="${f.id}">${opts.map(o => `<button type="button" class="chip ${cur.includes(o) ? 'on' : ''}" data-mv="${h(o)}">${h(o)}</button>`).join('')}<button type="button" class="chip addopt" data-addopt="${f.id}">＋ 足す</button></div><div data-optadd="${f.id}"></div>`;
       }
       const one = selOrdered(f, v)[0] || '';   // いくつも入っている品（スイッチを切ったあと）は1つ目（品のページに出る順の1つ目）
       if (one && !opts.includes(one)) opts.push(one);
-      return lab + `<select data-f="${f.id}"><option value="">（空欄）</option>${opts.map(o => `<option ${o === one ? 'selected' : ''}>${h(o)}</option>`).join('')}</select>`;
+      // いちばん下に「＋ 選択肢を足す…」（v0.7）
+      return lab + `<select data-f="${f.id}"><option value="">（空欄）</option>${opts.map(o => `<option ${o === one ? 'selected' : ''}>${h(o)}</option>`).join('')}<option value="${ADD_OPT}">＋ 選択肢を足す…</option></select><div data-optadd="${f.id}"></div>`;
     }
     case 'check': return `<label class="sw"><input type="checkbox" data-f="${f.id}" ${v === true ? 'checked' : ''}>${h(f.name)}${f.secret ? '<span class="lock">🔒</span>' : ''}</label>`;
     case 'url': return lab + `<input type="url" data-f="${f.id}" value="${h(val)}" placeholder="https://" autocomplete="off">`;
@@ -2690,6 +2784,7 @@ function editorHTML(st, isNew){
       <button class="btn small" id="e-addnote" style="margin-top:4px">＋ 能書きを足す</button>`;
   const more = `<label class="fl">ひとこと</label><input id="e-one" value="${h(st.oneLine)}" placeholder="短い一文" autocomplete="off">
       <div id="e-fields">${fieldsHTML(g, st.values)}</div>
+      ${g.id ? `<button type="button" class="btn small fedit" id="e-fedit">⚙ 項目を直す</button>` : ''}
       <div class="sec">能書き</div><p class="hint" style="margin:0 0 4px">長い文章。いくつでも書けます。</p>${notes}`;
   return `<label class="fl" style="margin-top:2px">写真 <span class="hint">（見出しの写真は「表紙を変える」で選べます。なくても登録できます。足したばかりの写真は、タップすると切れます）</span></label>
     <div class="ephotos noswipe" id="e-photos">${photosHTML(st)}</div>
@@ -2785,7 +2880,39 @@ function openEditor(opt = {}){
       paintDateChips(fb, st);
       if (isNew && fillFields(genreOf(st.genreId), 'regAuto').some(f => st.values[f.id])) { const more = $('#e-more', body); if (more) more.open = true; }
       if (!sh.preview && st.photos.some(p => p.pid)) preloadShots(st).then(paintChips);   // 保存ずみの写真の撮影日（チップのため）
+      /** 項目の欄だけ描き直す（v0.7。入力中の値は st.values にあるので消えない） */
+      const repaintFields = () => {
+        if (!live_() || !fb.isConnected) return;
+        const g = genreOf(st.genreId);
+        fb.innerHTML = fieldsHTML(g, st.values); paintDays(fb, g, st.values); paintDateChips(fb, st); growAll(fb);
+      };
+      /** 選択肢をその場で足す小さな入力（v0.7） */
+      const showOptAdd = fid => {
+        const box = $(`[data-optadd="${fid}"]`, fb); if (!box) return;
+        box.innerHTML = `<div class="optadd"><input type="text" data-oa-in placeholder="新しい選択肢" autocomplete="off" enterkeyhint="done"><button type="button" class="btn small primary" data-oa-ok>足す</button><button type="button" class="btn small" data-oa-no>やめる</button></div>`;
+        $('[data-oa-in]', box).focus();
+      };
+      const doOptAdd = async box => {
+        const fid = box.dataset.optadd, inp = $('[data-oa-in]', box), name = inp ? inp.value.trim() : '';
+        if (!name) { inp && inp.focus(); return; }
+        const g2 = S.genres.get(st.genreId), f = g2 && g2.fields.find(x => x.id === fid); if (!f) return;
+        if (!(f.options || []).includes(name)) {   // 同じ名前がもうあれば、足さずにそれを選ぶ
+          f.options = [...(f.options || []), name];
+          if (!(await putGenre(g2))) return;
+          pinToast(`「${name}」を足しました`);
+        }
+        if (!live_()) return;
+        if (f.multi) { const a = selVals(st.values[fid]); if (!a.includes(name)) st.values[fid] = [...a, name]; }
+        else st.values[fid] = name;
+        repaintFields();
+      };
+      fb.addEventListener('keydown', ev => { const b = ev.target.closest('[data-optadd]'); if (b && ev.key === 'Enter' && !ev.isComposing) { ev.preventDefault(); doOptAdd(b); } });
+      const fe = $('#e-fedit', body);
+      if (fe) fe.onclick = () => { if (!sh.preview) openFieldList(st.genreId, repaintFields); };   // その場で直す入口（v0.7）
       fb.addEventListener('click', ev => {
+        const ao = ev.target.closest('[data-addopt]'); if (ao) { showOptAdd(ao.dataset.addopt); return; }
+        const ok = ev.target.closest('[data-oa-ok]'); if (ok) { doOptAdd(ok.closest('[data-optadd]')); return; }
+        const no = ev.target.closest('[data-oa-no]'); if (no) { no.closest('[data-optadd]').innerHTML = ''; return; }
         const mv = ev.target.closest('[data-mv]');
         if (mv) {   // いくつでも選べる：押すたびに選ぶ・外す
           const fid = mv.closest('[data-ms]').dataset.ms, a = selVals(st.values[fid]), x = mv.dataset.mv;
@@ -2805,6 +2932,7 @@ function openEditor(opt = {}){
         if (era) { syncEraInput(era, t.classList.contains('era-y') ? 'year' : 'decade'); st.values[era.dataset.era] = readEraInput(era); return; }
         const fid = t.dataset.f; if (!fid) return;
         const g = genreOf(st.genreId), f = fieldsOf(g).find(x => x.id === fid); if (!f) return;
+        if (f.type === 'select' && t.value === ADD_OPT) { t.value = selOrdered(f, st.values[fid])[0] || ''; showOptAdd(fid); return; }   // ＋ 選択肢を足す…
         st.values[fid] = f.type === 'check' ? t.checked : f.type === 'number' ? parseNum(t.value) : t.value;
         if (t.tagName === 'TEXTAREA') grow(t);
         if (f.type === 'date') { paintDays(fb, g, st.values); paintDateChips(fb, st); }
@@ -2937,9 +3065,15 @@ function openLogEditor(itemId, logId){
   const g = genreOf(it.genreId);
   const old = logId ? S.logs.get(logId) : null;
   const isReg = !!(old && old.type === '登録');
-  const types = (g.logTypes || []).filter(t => t !== '登録');
-  if (!types.length) types.push('そのほか');
-  if (old && !isReg && !types.includes(old.type)) types.push(old.type);   // ジャンルを変えて無くなった種類も出す
+  /** 種類のチップに出す種類（「⚙ 種類を直す」から戻ったら作り直す。v0.7） */
+  const typesNow = cur => {
+    const ts = (genreOf(it.genreId).logTypes || []).filter(t => t !== '登録');
+    if (!ts.length) ts.push('そのほか');
+    if (old && !isReg && !ts.includes(old.type)) ts.push(old.type);   // ジャンルを変えて無くなった種類も出す
+    if (cur && !ts.includes(cur)) ts.push(cur);                       // 選んでいた種類を消しても、選んだまま
+    return ts;
+  };
+  const types = typesNow();
   const st = {date: old ? old.date : localYMD(), type: old ? old.type : types[0], memo: old ? old.memo || '' : '',
     photos: (old ? old.photoIds || [] : []).map(pid => ({pid})), dateTouched:false,
     autoOff: !!old, autoDate:null};   // 日付の自動（v0.6）：新しく足すときだけ。autoDate＝自動で入れた日付（その間だけ知らせを出す）
@@ -2974,6 +3108,8 @@ function openLogEditor(itemId, logId){
     const dIn = shRef && $('#l-date', shRef.body); if (dIn) dIn.value = d;
     paintChip();
   };
+  const typeChips = () => typesNow(st.type).map(t => `<button class="chip ${t === st.type ? 'on' : ''}" data-t="${h(t)}">${h(t)}</button>`).join('')
+    + (g.id ? `<button type="button" class="chip addopt" data-tedit>⚙ 種類を直す</button>` : '');
   const save = async btn => {
     const r = await saveLog(itemId, old, st, isReg, btn);
     if (r) { orig = key(); }
@@ -2993,7 +3129,7 @@ function openLogEditor(itemId, logId){
       sh.body.innerHTML = `<p class="hint" style="margin-top:0">${h(g.emoji)} ${h(it.name)}</p>
         <label class="fl">日付</label><input type="date" id="l-date" value="${h(st.date)}"><div id="l-dchip"></div>
         <label class="fl">種類</label>${isReg ? `<div class="days">登録（種類は変えられません）</div>`
-          : `<div class="chips wrap" id="l-type">${types.map(t => `<button class="chip ${t === st.type ? 'on' : ''}" data-t="${h(t)}">${h(t)}</button>`).join('')}</div>`}
+          : `<div class="chips wrap" id="l-type">${typeChips()}</div>`}
         <label class="fl">メモ</label><textarea class="grow" rows="3" id="l-memo">${h(st.memo)}</textarea>
         <label class="fl">写真 <span class="hint">（何枚でも。なくてもよい。足したばかりの写真は、タップすると切れます）</span></label>
         <div class="ephotos noswipe" id="e-photos">${photosHTML(st, false)}</div>
@@ -3020,7 +3156,9 @@ function openLogEditor(itemId, logId){
         st.date = d; dIn.value = d; st.dateTouched = true; paintChip();
       };
       const tb = $('#l-type', body);
-      if (tb) tb.onclick = ev => { const b = ev.target.closest('[data-t]'); if (!b) return; st.type = b.dataset.t; $$('[data-t]', tb).forEach(x => x.classList.toggle('on', x === b)); };
+      if (tb) tb.onclick = ev => {
+        if (ev.target.closest('[data-tedit]')) { openLogTypes(g.id, () => { if (tb.isConnected) tb.innerHTML = typeChips(); }); return; }   // その場で直す入口（v0.7）
+        const b = ev.target.closest('[data-t]'); if (!b) return; st.type = b.dataset.t; $$('[data-t]', tb).forEach(x => x.classList.toggle('on', x === b)); };
       $('#l-memo', body).oninput = ev => { st.memo = ev.target.value; grow(ev.target); };
       const del = $('#l-del', body);
       if (del) del.onclick = async () => {
@@ -3236,6 +3374,7 @@ async function saveGenre(old, st){
     rec = {id:'g-' + uuid(), name, emoji, color:st.color, order: Math.max(0, ...live(S.genres).map(g => g.order || 0)) + 1,
       fields:clone(b.fields || []), eraFieldId:b.eraFieldId || null, logTypes:clone(b.logTypes || ['登録','そのほか']), logPosition:b.logPosition || 'bottom'};
     if (b.nameLabel) rec.nameLabel = b.nameLabel;
+    if (b.groupFieldId) rec.groupFieldId = b.groupFieldId;   // 章の区切り（v0.7）も写す
   }
   if (!(await safeWrite(() => S.B.put('genres', rec)))) { await loadBook(); return false; }
   S.genres.set(rec.id, rec);
@@ -3294,13 +3433,21 @@ function openFieldForm(gid, fid){
   const old = fid ? g0.fields.find(f => f.id === fid) : null;
   const st = {name: old ? old.name : '', type: old ? old.type : 'text', options: old ? (old.options || []).join('\n') : '',
     sortable: old ? !!old.sortable : false, secret: old ? !!old.secret : false,
-    fill: old && old.type === 'date' ? old.fill || '' : '', multi: !!(old && old.type === 'select' && old.multi)};   // v0.6
+    fill: old && old.type === 'date' ? old.fill || '' : '', multi: !!(old && old.type === 'select' && old.multi),   // v0.6
+    group: !!(old && old.type === 'select' && g0.groupFieldId === old.id)};   // v0.7：章の区切りに使う
   openSheet({title: old ? '項目を直す' : '項目を足す', form:true, build(sh){
     const g = S.genres.get(gid);
     const types = FIELD_TYPES.filter(([t]) => t !== 'era' || !hasVisibleEra(g) || (old && old.type === 'era'));
     const body = sh.body;
-    body.innerHTML = `<p class="hint" style="margin-top:0">${h(g.emoji)} ${h(g.name)}</p>
-      <label class="fl">項目の名前</label><input id="ff-name" value="${h(st.name)}" autocomplete="off">
+    // よく使う項目から選ぶ（v0.7。足す画面だけ）
+    const cs = old ? [] : COMMON_FIELDS.map(cf => ({cf, s:commonState(g, cf)})).filter(x => x.s.state !== 'none');
+    const same = cs.filter(x => x.s.state === 'same');
+    body.innerHTML = `<p class="hint" style="margin-top:0">${h(g.emoji)} ${h(g.name)}</p>`
+      + (old ? '' : `<label class="fl">よく使う項目から選ぶ</label><div class="chips wrap cfch" id="ff-common">${cs.map(({cf, s}) =>
+          `<button type="button" class="chip" data-cf="${cf.id}" ${s.state === 'add' || s.state === 'restore' ? '' : 'disabled'}>${s.state === 'done' ? '✓ ' : ''}${h(cf.name)}</button>`).join('')}</div>`
+        + (same.length ? `<p class="hint" style="margin:0 2px">同じ名前の項目がもうあります：${same.map(x => `「${h(x.cf.name)}」${x.s.via ? `（${h(x.s.via)}）` : ''}`).join('')}</p>` : '')
+        + `<p class="hint" style="margin:2px 2px 0">押すと、すぐに足されます。名前などは、あとから「直す」で変えられます。</p><div class="sec">自分で作る</div>`)
+      + `<label class="fl">項目の名前</label><input id="ff-name" value="${h(st.name)}" autocomplete="off">
       <label class="fl">種類</label>${old ? `<div class="days">${h(typeName(st.type))}（種類はあとから変えられません）</div>`
         : `<div class="chips wrap" id="ff-type">${types.map(([t, l]) => `<button class="chip ${st.type === t ? 'on' : ''}" data-t="${t}">${h(l)}</button>`).join('')}</div>`}
       <div id="ff-more"></div>
@@ -3312,7 +3459,9 @@ function openFieldForm(gid, fid){
       box.innerHTML = (st.type === 'select' ? `<label class="fl">選択肢（1行に1つ）</label><textarea class="grow" rows="4" id="ff-opts">${h(st.options)}</textarea>
           ${old ? '<p class="hint" style="margin:4px 2px 0">選択肢を減らしても、品に入っている内容は消えません。</p>' : ''}
           <label class="sw"><input type="checkbox" id="ff-multi" ${st.multi ? 'checked' : ''}>いくつでも選べる</label>
-          ${old && old.multi && !st.multi ? '<p class="hint" style="margin:0 2px">いくつも選んである品は、次に直したとき1つになります。</p>' : ''}` : '')
+          ${old && old.multi && !st.multi ? '<p class="hint" style="margin:0 2px">いくつも選んである品は、次に直したとき1つになります。</p>' : ''}
+          <label class="sw"><input type="checkbox" id="ff-group" ${st.group ? 'checked' : ''}>章の区切りに使う</label>
+          <p class="hint" style="margin:0 2px">章と目次で、この項目の内容ごとに見出しをつけて並べます</p>` : '')
         + (st.type === 'date' ? `<label class="fl">入れ方</label><div class="chips wrap" id="ff-fill">${FILL_WAYS.map(([k, l]) => `<button type="button" class="chip ${st.fill === k ? 'on' : ''}" data-fill="${k}">${h(l)}</button>`).join('')}</div>
           ${fillNote ? `<p class="hint" style="margin:0 2px">${h(fillNote)}</p>` : ''}
           ${old && (saved === 'photoAuto' || saved === 'regAuto') && st.fill === saved ? `<button type="button" class="btn block" id="ff-bulk" style="margin-top:10px">空欄の品にまとめて入れる</button>
@@ -3326,7 +3475,7 @@ function openFieldForm(gid, fid){
     const tb = $('#ff-type', body);
     if (tb) tb.onclick = ev => { const b = ev.target.closest('[data-t]'); if (!b) return; st.type = b.dataset.t; st.sortable = st.type === 'era';
       if (st.type !== 'date') st.fill = '';   // 種類を日付以外にしたら入れ方は消す
-      if (st.type !== 'select') st.multi = false;
+      if (st.type !== 'select') { st.multi = false; st.group = false; }
       $$('[data-t]', tb).forEach(x => x.classList.toggle('on', x === b)); more(); };
     $('#ff-more', body).addEventListener('click', ev => {
       const fc = ev.target.closest('[data-fill]');
@@ -3340,7 +3489,15 @@ function openFieldForm(gid, fid){
       if (ev.target.id === 'ff-sort') st.sortable = ev.target.checked;
       if (ev.target.id === 'ff-secret') st.secret = ev.target.checked;
       if (ev.target.id === 'ff-multi') { st.multi = ev.target.checked; more(); }
+      if (ev.target.id === 'ff-group') st.group = ev.target.checked;
     });
+    const cbox = $('#ff-common', body);
+    if (cbox) cbox.onclick = async ev => {
+      const b = ev.target.closest('[data-cf]'); if (!b || b.disabled) return;
+      b.disabled = true;
+      await addCommonField(gid, b.dataset.cf);
+      sh.refresh();   // 画面は閉じない（続けて足せる）。下の「自分で作る」の入力はそのまま
+    };
     const hide = $('#ff-hide', body);
     if (hide) hide.onclick = async () => {
       const k = await ask3(`「${old.name}」をしまいますか？`, ['しまう', 'やめる'], '入れてある内容は消えません。あとで戻せます。');
@@ -3358,19 +3515,23 @@ function openFieldForm(gid, fid){
       if (!old && st.type === 'era' && hasVisibleEra(g2)) return alert('年代の項目は1つだけです。');
       const opts = [...new Set(st.options.split('\n').map(x => x.trim()).filter(Boolean))];
       const sortable = SORTABLE_TYPES.includes(st.type) && st.sortable;
+      let f;
       if (old) {
-        const f = g2.fields.find(x => x.id === old.id); if (!f) return;
+        f = g2.fields.find(x => x.id === old.id); if (!f) return;
         f.name = name; f.sortable = sortable;
         if (f.type !== 'days') f.secret = st.secret;
         if (f.type === 'select') f.options = opts;
         applyFieldWays(f, st);
       } else {
-        const f = {id:'f-' + uuid(), name, type:st.type, secret:st.secret, sortable};
+        f = {id:'f-' + uuid(), name, type:st.type, secret:st.secret, sortable};
         if (st.type === 'select') f.options = opts;
         applyFieldWays(f, st);
         g2.fields = [...(g2.fields || []), f];
         if (st.type === 'era') g2.eraFieldId = f.id;   // しまった年代の項目があっても、新しい方にする
       }
+      // 章の区切り（v0.7）：1つのジャンルに1つだけ。オンにすると前の区切りの項目からは外れる（確認は出さない）
+      if (f.type === 'select' && st.group) g2.groupFieldId = f.id;
+      else if (g2.groupFieldId === f.id) delete g2.groupFieldId;
       if (await putGenre(g2)) { closeSheet(sh, true); pinToast(old ? '保存しました' : '項目を足しました'); }
     };
   }});
@@ -3383,12 +3544,54 @@ function applyFieldWays(f, st){
   if (f.type === 'date' && st.fill) f.fill = st.fill; else delete f.fill;
   if (f.type === 'select' && st.multi) f.multi = true; else delete f.multi;
 }
-/** その品の「登録した日」（端末の日付）：品を作った日時。なければ「登録」のできごとの日付 */
+/**
+ * よく使う項目のチップの状態（v0.7）。state：'add'（押すと足す）・'restore'（しまってある → 押すと戻す）・'done'（✓ もう見えている）・
+ * 'same'（同じ名前でちがう id の見える項目がある → 押せない。via：かかった日数のとき、ぶつかった日付の項目の名前）・'none'（出さない）
+ */
+function commonState(g, cf){
+  const fs = (g && g.fields) || [], vis = fieldsOf(g);
+  const ex = fs.find(f => f.id === cf.id);
+  if (cf.type === 'era' && hasVisibleEra(g) && !(ex && !ex.hidden)) return {state:'none'};   // 年代は1つだけ
+  if (ex && !ex.hidden) return {state:'done'};
+  if (vis.some(f => f.name === cf.name && f.id !== cf.id)) return {state:'same'};
+  if (cf.type === 'days') for (const p of DAYS_PARTS) {
+    if (fs.some(f => f.id === p.id)) continue;
+    if (vis.some(f => f.name === p.name)) return {state:'same', via:p.name};
+  }
+  return {state: ex ? 'restore' : 'add'};
+}
+/** よく使う項目を足す（しまってあれば戻す）。その場で保存 */
+async function addCommonField(gid, cid){
+  const g2 = S.genres.get(gid), cf = COMMON_FIELDS.find(x => x.id === cid);
+  if (!g2 || !cf) return false;
+  const s = commonState(g2, cf).state; if (s !== 'add' && s !== 'restore') return false;
+  g2.fields = g2.fields || [];
+  const put = def => {   // しまってあれば戻す（見える項目のいちばん下へ）、なければ足す
+    let f = g2.fields.find(x => x.id === def.id);
+    if (f) { if (!f.hidden) return f; delete f.hidden; g2.fields = [...g2.fields.filter(x => x !== f), f]; }
+    else { f = clone(def); g2.fields = [...g2.fields, f]; }
+    if (f.type === 'era') g2.eraFieldId = f.id;
+    return f;
+  };
+  if (cf.type === 'days') DAYS_PARTS.forEach(put);   // かかった日数は、2つの日付と一緒に
+  const f = put(cf);
+  // 「種類」：ほかに区切りの項目がなければ、章の区切りに使う
+  if (cf.id === 'f-kind' && !(g2.groupFieldId && g2.fields.some(x => x.id === g2.groupFieldId))) g2.groupFieldId = f.id;
+  if (!(await putGenre(g2))) return false;
+  pinToast(`「${f.name}」を${s === 'restore' ? '戻しました' : '足しました'}`);
+  return true;
+}
+/** その品の「登録」のできごと（いくつもあれば、いちばん古いもの）。なければ null */
+function regLogOf(it){
+  const ls = live(S.logs).filter(x => x.itemId === it.id && x.type === '登録');
+  return ls.sort((a, b) => (a.date || '').localeCompare(b.date || '') || byCreated(a, b))[0] || null;
+}
+/** その品の「登録した日」（YYYY-MM-DD）。v0.7 で順を入れ替えた：「登録」のできごとの日付（本人が直せる）→ なければ品を作った日時（端末の日付）。どちらもなければ null */
 function regDateOf(it){
+  const l = regLogOf(it);
+  if (l && /^\d{4}-\d{2}-\d{2}$/.test(l.date || '')) return l.date;
   const d = it.createdAt ? new Date(it.createdAt) : null;
-  if (d && !isNaN(d)) return localYMD(d);
-  const l = live(S.logs).find(x => x.itemId === it.id && x.type === '登録');
-  return l && /^\d{4}-\d{2}-\d{2}$/.test(l.date || '') ? l.date : null;
+  return d && !isNaN(d) ? localYMD(d) : null;
 }
 /** 空欄の品にまとめて入れる（4-6）。入れ方が「撮影日を自動で」「登録した日を自動で」で保存ずみの項目だけ */
 async function bulkFillDates(gid, fid){
@@ -3417,8 +3620,8 @@ async function bulkFillDates(gid, fid){
   render();
   pinToast(`${recs.length}点に入れました`);
 }
-function openLogTypes(gid){
-  openSheet({title:'できごとの種類を直す', build(sh){
+function openLogTypes(gid, onDone){
+  openSheet({title:'できごとの種類を直す', onClose(){ onDone && onDone(); }, build(sh){
     const g = S.genres.get(gid);
     if (!g) { sh.body.innerHTML = `<div class="empty">ジャンルが見つかりません。</div>`; return; }
     sh.titleEl.textContent = `できごとの種類：${g.name}`;
