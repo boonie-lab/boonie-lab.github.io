@@ -389,6 +389,29 @@ input.emo-in{width:88px;text-align:center;font-size:26px;padding:4px}
 .sr .srs b{color:var(--ink);font-weight:700}
 .sr .sge{flex:0 0 auto;font-size:16px}
 .sr .srn,.sr .srs{display:block}
+
+/* ===== ステップ3b-2 ===== */
+/* 写真を切る画面（なんでも図鑑の openCrop と同じ見せ方：枠の外を暗く） */
+.fpi.crop{overflow:hidden}
+.fpi .frame{position:absolute;border:2px solid #fff;box-shadow:0 0 0 2px rgba(0,0,0,.35),0 0 0 9999px rgba(20,25,40,.5);pointer-events:none;border-radius:2px}
+input[type=range]{width:100%;min-height:40px;accent-color:var(--accent)}
+.cropnote{font-size:12px;color:var(--ink2);margin:6px 2px 0}
+/* 足したばかりの写真（タップで切れる）・切った印 */
+.ep.cuttable img{cursor:pointer}
+.ep .cut{position:absolute;right:4px;top:4px;background:rgba(255,254,250,.92);border-radius:10px;font-size:13px;line-height:20px;padding:0 6px;box-shadow:0 1px 3px rgba(0,0,0,.3);pointer-events:none}
+/* 待っている間の覆い（文字だけ） */
+.busy .bt.only{margin:6px 0}
+/* 拡大ビューアの道具（✂ 切る・💬 説明） */
+.viewer .vtools{position:absolute;top:calc(8px + var(--st));left:8px;display:flex;gap:6px;z-index:3}
+.viewer .vtools button{height:44px;border-radius:22px;border:0;background:rgba(255,255,255,.2);color:#fff;font-size:15px;padding:0 14px}
+.viewer.tools .vc{top:calc(66px + var(--st))}
+.viewer .vdc{display:block;font-family:var(--serif);font-size:16px;color:#fff;white-space:pre-wrap;word-break:break-word;max-height:28vh;overflow:hidden;margin-bottom:4px}
+.viewer .vedit{position:absolute;left:10px;right:10px;top:calc(62px + var(--st));z-index:4;background:var(--paper2);border-radius:12px;padding:10px;box-shadow:0 6px 24px rgba(0,0,0,.4);touch-action:auto;color:var(--ink)}
+.viewer .vedit textarea{min-height:88px}
+.viewer .vedit .row-btns{margin:8px 0 0}
+/* 品のページ：写真の説明 */
+.gcap .gcp{flex:0 0 100%;text-align:center;font-family:var(--serif);font-size:14px;color:var(--ink);white-space:pre-wrap;word-break:break-word;padding:2px 0}
+.at .acap{position:absolute;right:2px;bottom:2px;font-size:11px;line-height:1.4;background:rgba(255,254,250,.88);border-radius:6px;padding:0 3px;pointer-events:none}
 </style>
 </head>
 <body>
@@ -396,19 +419,20 @@ input.emo-in{width:88px;text-align:center;font-size:26px;padding:4px}
 <nav class="tabs"><div class="in">
   <button data-tab="toc"><span class="ic">📖</span>目次</button>
   <button data-tab="log"><span class="ic">🗓</span>ログ</button>
-  <button class="plus" id="plusBtn" aria-label="登録"><span class="circle">＋</span>登録</button>
   <button data-tab="settings"><span class="ic">⚙️</span>設定</button>
+  <button class="plus" id="plusBtn" aria-label="登録"><span class="circle">＋</span>登録</button>
 </div></nav>
 <input type="file" id="fileIn" accept="image/*" multiple hidden>
+<input type="file" id="oneIn" accept="image/*" hidden>
 <input type="file" id="importIn" accept=".json,application/json" multiple hidden>
 
 <script>
 'use strict';
 /* ============================================================
-   コレクション図鑑 (my-collection-book) ステップ3b-1
-   なんでも図鑑 my-field-guide.html v1.2 の部品を流用
+   コレクション図鑑 (my-collection-book) ステップ3b-2
+   なんでも図鑑 my-field-guide.html v1.2 の部品を流用（写真を切る画面は openCrop を参考に作り直し）
    ============================================================ */
-const APP_VERSION = '0.4';
+const APP_VERSION = '0.5';
 const SCHEMA_VERSION = 1;
 /* ---- 写真の大きさ・バックアップを分ける枚数（実機で重ければ、ここの数字だけ下げる） ---- */
 const PHOTO_SIZE = {max:1024, q:0.75, thumbMax:320, thumbQ:0.7};   // 大きい写真 長辺1024px・品質0.75／サムネイル 320px・品質0.7
@@ -420,7 +444,11 @@ const ALBUM_FOLD = 12;                                             // アルバ�
    2. 品の album[].pid（アルバムの写真。takenAt も一緒に持つ）
    3. できごとの photoIds（できごとの写真）
    4. 品の coverId（見出しの写真。1〜3 のどれか。null＝品の写真の1枚目）
-   5. 本棚の coverPhoto は写しを持つだけ（id は指さない） */
+   5. 本棚の coverPhoto は写しを持つだけ（id は指さない）
+   6. 品の captions（{写真の id: 説明文}。v0.5。品の写真・アルバム・できごとの写真の説明をまとめて品に持つ） */
+/* ---- 写真を切る（v0.5） ---- */
+const CROP_VIEW_MAX = 2000;   // 切る画面に出す写真の長辺（原本はこの大きさに縮めて見せる。元の大きさのキャンバスは作らない）
+const CAPTION_MAX = 300;      // 写真の説明の文字数の上限
 const SHELF_DB = 'my-collection-book';
 const bookDbName = id => `my-collection-book:${id}`;
 const $ = (s, el = document) => el.querySelector(s);
@@ -1043,12 +1071,12 @@ function resetZoom(){
   m.setAttribute('content', c + ',maximum-scale=1');
   requestAnimationFrame(() => setTimeout(() => m.setAttribute('content', c), 60));
 }
-/** ボタンを並べた確認。戻り値は押したボタンの番号。背景をタップするといちばん下と同じ。opt.danger：赤くするボタンの番号 */
+/** ボタンを並べた確認。戻り値は押したボタンの番号。背景をタップするといちばん下と同じ。opt.danger：赤くするボタンの番号。opt.notes：{番号: ボタンの下に出す小さなひとこと} */
 function ask3(msg, labels, sub, opt = {}){
   return new Promise(res => {
     const d = document.createElement('div'); d.className = 'ask';
     d.innerHTML = `<div class="box" role="alertdialog"><div class="msg">${h(msg)}</div>${sub ? `<div class="sub">${h(sub)}</div>` : ''}
-      ${labels.map((l, i) => `<button class="btn ${i === opt.danger ? 'danger fill' : i === 0 && opt.danger == null && !opt.plain ? 'primary' : ''}" data-k="${i}">${h(l)}</button>`).join('')}</div>`;
+      ${labels.map((l, i) => `<button class="btn ${i === opt.danger ? 'danger fill' : i === 0 && opt.danger == null && !opt.plain ? 'primary' : ''}" data-k="${i}">${h(l)}</button>${opt.notes && opt.notes[i] ? `<div class="sub" style="margin:4px 4px 0">${h(opt.notes[i])}</div>` : ''}`).join('')}</div>`;
     document.body.appendChild(d);
     d.addEventListener('click', ev => {
       const b = ev.target.closest('[data-k]');
@@ -1574,6 +1602,12 @@ function buildSearch(it, logsByItem){
   // 見える項目だけ。ひみつを隠している間は、ひみつの項目も探さない
   for (const f of shownFields(g)) { const v = (it.values || {})[f.id]; add('field', f.name, fieldText(f, it.values || {}), f.type === 'number' && typeof v === 'number' ? String(v) : ''); }
   for (const n of it.notes || []) add('note', '能書き', n.text);
+  // 写真の説明（v0.5）。今その品にある写真の分だけ
+  if (it.captions) {
+    const ok = new Set([...(it.photoIds || []), ...(it.album || []).map(a => a.pid)]);
+    for (const l of logsByItem.get(it.id) || []) (l.photoIds || []).forEach(x => ok.add(x));
+    for (const [pid, t] of Object.entries(it.captions)) if (ok.has(pid)) add('cap', '写真の説明', t);
+  }
   // できごとのメモと種類（新しい順）。自動でできる「登録」の種類の名前は探さない（どの品にもあるため）
   for (const l of logsByItem.get(it.id) || []) add('log', `できごと ${fmtYMD(l.date)}`, [l.type === '登録' ? '' : l.type, l.memo].filter(Boolean).join(' '), '', l.id);
   if (g.id) add('genre', 'ジャンル', g.name);
@@ -1773,21 +1807,22 @@ function openPriorityOrder(k){
 
 /* ---------- 品のページ ---------- */
 /** ids：いちばん上に出す写真（品の写真。なければ見出しの写真1枚）。写真の下に撮影日。fbe：写真が見つからないときに出す絵文字 */
-function galleryHTML(ids, fbe){
+function galleryHTML(ids, fbe, itemId){
   const many = ids.length > 1;
   const ind = !many ? '' : ids.length <= 8 ? `<div class="dots">${ids.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>` : `<div class="cnt">1 / ${ids.length}</div>`;
-  return `<div class="gal" data-ids="${ids.join(',')}" data-i="0"><div class="gi"><img data-full="${ids[0]}" ${fbe != null ? `data-fbe="${h(fbe)}"` : ''} alt="">`
+  return `<div class="gal" data-ids="${ids.join(',')}" data-i="0" ${itemId ? `data-item="${itemId}"` : ''}><div class="gi"><img data-full="${ids[0]}" ${fbe != null ? `data-fbe="${h(fbe)}"` : ''} alt="">`
     + (many ? `<button class="ga prev" data-ga="-1" aria-label="前の写真" hidden>‹</button><button class="ga next" data-ga="1" aria-label="次の写真">›</button>` : '')
     + ind + `</div><div class="gcap"></div></div>`;
 }
 const logLabel = l => `🗓 ${fmtYMD(l.date)} ${l.type || ''}`;
-/** 写真の下の行：撮影日（v0.4 から、できごとへ飛ぶ行はいちばん上には出さない。アルバムの章へ移した） */
+/** 写真の下の行：写真の説明（v0.5）と撮影日（v0.4 から、できごとへ飛ぶ行はいちばん上には出さない。アルバムの章へ移した） */
 async function paintGalCap(g){
   const i = +g.dataset.i, pid = g.dataset.ids.split(',')[i];
   const cap = $('.gcap', g); if (!cap) return;
   const t = await photoTaken(pid);
   if (+g.dataset.i !== i || !g.isConnected) return;
-  cap.innerHTML = t ? `<span>撮影 ${h(fmtTaken(t))}</span>` : '';
+  const c = g.dataset.item ? captionOf(S.items.get(g.dataset.item), pid) : '';
+  cap.innerHTML = (c ? `<span class="gcp">${h(c)}</span>` : '') + (t ? `<span>撮影 ${h(fmtTaken(t))}</span>` : '');
 }
 /** 拡大ビューアの下に出す文字（できごとの写真なら「🗓 2026/11/3 作った記録」も） */
 async function viewerCaption(pid, lid){
@@ -1813,7 +1848,7 @@ document.addEventListener('click', ev => {
   if (b) { ev.stopPropagation(); const g = b.closest('.gal'); setGal(g, +g.dataset.i + (+b.dataset.ga)); return; }
   const im = ev.target.closest('.gal img');
   if (im) { const g = im.closest('.gal'), ids = g.dataset.ids.split(',');
-    openViewer(ids, +g.dataset.i, i => { if (g.isConnected) setGal(g, i); }, i => viewerCaption(ids[i], null)); }
+    openViewer(ids, +g.dataset.i, i => { if (g.isConnected) setGal(g, i); }, i => viewerCaption(ids[i], null), {itemId:g.dataset.item}); }
 }, true);
 /** 品のページの中で、そのできごとまでスクロールする（5件より後ろなら、ぜんぶ開いてから） */
 function scrollToLog(body, lid){
@@ -1850,7 +1885,7 @@ function albumSectionHTML(it, sh){
     + `<div class="row-btns abtns">${btns}</div>`
     + (sel ? `<p class="hint" style="margin:0 2px 4px">消す写真をタップしてください。できごとの写真（🗓）は、できごとを直す画面で外せます。</p>` : '')
     + (n ? `<div class="agrid">${shown.map((e, i) => { const on = !!(sel && e.album && sel.has(e.pid));
-        return `<button class="at${sel && !e.album ? ' dis' : ''}${on ? ' sel' : ''}" data-at="${i}" aria-label="${e.log ? 'できごとの写真' : 'アルバムの写真'}"><img data-photo="${e.pid}" alt="">${e.log ? '<span class="alog">🗓</span>' : ''}${on ? '<span class="ack">✓</span>' : ''}</button>`; }).join('')}</div>`
+        return `<button class="at${sel && !e.album ? ' dis' : ''}${on ? ' sel' : ''}" data-at="${i}" aria-label="${e.log ? 'できごとの写真' : 'アルバムの写真'}"><img data-photo="${e.pid}" alt="">${e.log ? '<span class="alog">🗓</span>' : ''}${captionOf(it, e.pid) ? '<span class="acap">💬</span>' : ''}${on ? '<span class="ack">✓</span>' : ''}</button>`; }).join('')}</div>`
       : `<p class="hint" style="margin:2px 2px 0">写真をたくさん並べられます。</p>`)
     + (all ? '' : `<button class="btn small block" data-aall style="margin-top:6px">ぜんぶ見る（${n}枚）</button>`);
 }
@@ -1874,7 +1909,7 @@ function openItem(id0, list, where, opt = {}){
     const notes = (it.notes || []).filter(n => (n.text || '').trim());
     const ph = topPhotos(it), pri = isPri(it), coverOnly = !(it.photoIds || []).length;
     const logs = logSectionHTML(it, sh), top = g.logPosition === 'top';
-    sh.body.innerHTML = (ph.length ? galleryHTML(ph, coverOnly ? g.emoji : null) : `<div class="nophoto">${h(g.emoji)}</div>`)
+    sh.body.innerHTML = (ph.length ? galleryHTML(ph, coverOnly ? g.emoji : null, it.id) : `<div class="nophoto">${h(g.emoji)}</div>`)
       + `<div class="ilabel"><h2>${h(it.name)}${pri && prioOn() ? ' <span class="star" title="優先">★</span>' : ''}</h2><div class="gr">${h(g.emoji)} ${h(g.name)}</div></div>`
       + (it.oneLine ? `<p class="oneline">${h(it.oneLine)}</p>` : '')
       + (top ? logs : '')
@@ -1893,7 +1928,7 @@ function openItem(id0, list, where, opt = {}){
       if (ev.target.closest('[data-addlog]')) return openLogEditor(id, null);
       const e = ev.target.closest('[data-editlog]'); if (e) return openLogEditor(id, e.dataset.editlog);
       const p = ev.target.closest('[data-lgph]');
-      if (p) { const l = S.logs.get(p.dataset.lgph); if (l) openViewer(l.photoIds, +p.dataset.k, null, i => viewerCaption(l.photoIds[i], l.id)); return; }
+      if (p) { const l = S.logs.get(p.dataset.lgph); if (l) { const lids = [...l.photoIds]; openViewer(lids, +p.dataset.k, null, i => viewerCaption(lids[i], l.id), {itemId:id}); } return; }
       if (ev.target.closest('[data-logall]')) { sh.logsAll = id; sh.refresh(); return; }
       // アルバム
       if (ev.target.closest('[data-aadd]')) return pickPhotos(fs => addAlbumPhotos(id, fs, sh));
@@ -1910,7 +1945,7 @@ function openItem(id0, list, where, opt = {}){
           const s = sh.albumSel.set; s.has(en.pid) ? s.delete(en.pid) : s.add(en.pid); sh.refresh(); return;
         }
         const ids = es.map(x => x.pid);
-        openViewer(ids, k, null, i => viewerCaption(ids[i], es[i] && es[i].log ? es[i].log.id : null));
+        openViewer(ids, k, null, i => viewerCaption(ids[i], es[i] && es[i].log ? es[i].log.id : null), {itemId:id});
       }
     };
   }});
@@ -1992,12 +2027,13 @@ async function deleteAlbumSelected(itemId, sh){
   if (k !== 0) return;
   const ops = [];
   for (const pid of sel) { const p = await S.B.get('photos', pid); if (p) ops.push({store:'photos', rec:markPhotoDeleted(p)}); }
-  const before = {album:it.album, coverId:it.coverId, updatedAt:it.updatedAt};
+  const before = {album:it.album, coverId:it.coverId, captions:it.captions, updatedAt:it.updatedAt};
   it.album = (it.album || []).filter(a => !sel.has(a.pid));
+  dropCaptions(it, [...sel]);
   if (it.coverId && sel.has(it.coverId)) it.coverId = null;   // 見出しの写真だったら1枚目に戻す
   ops.push({store:'items', rec:it});
-  if (!(await safeWrite(() => S.B.putMany(ops)))) { Object.assign(it, before); await loadBook(); sh.refresh(); return; }
-  sel.forEach(forgetPhoto);
+  if (!(await safeWrite(() => S.B.putMany(ops)))) { Object.assign(it, before); if (!before.captions) delete it.captions; await loadBook(); sh.refresh(); return; }
+  sel.forEach(forgetPhoto); searchDirty(itemId);
   sh.albumSel = null; sh.refresh();
   pinToast(`${n}枚消しました`);
 }
@@ -2067,16 +2103,22 @@ function openItemCover(id){
   loadFocus().then(() => { const top = sheets[sheets.length - 1]; if (top && top.opts.title === '表紙を変える') top.refresh(); });
 }
 /* ---------------- 写真の拡大ビューア（なんでも図鑑と同じ） ---------------- */
-/** capFn(i)：写真の下に出す文字（撮影日など）を返す Promise */
-function openViewer(ids, i0, onIndex, capFn){
+/**
+ * capFn(i)：写真の下に出す文字（撮影日など）を返す Promise
+ * opt.itemId：品のページから開いたとき。左上に「✂ 切る」「💬 説明」を出し、写真の説明も下に出す（v0.5）
+ */
+function openViewer(ids, i0, onIndex, capFn, opt = {}){
   if (document.querySelector('.viewer')) return;
   let i = Math.max(0, Math.min(ids.length - 1, i0 || 0));
-  const v = document.createElement('div'); v.className = 'viewer';
-  v.innerHTML = `<img alt=""><div class="vc"></div><div class="vd"></div><button class="vx" aria-label="閉じる">✕</button>`;
+  const tools = !!opt.itemId;
+  const v = document.createElement('div'); v.className = 'viewer' + (tools ? ' tools' : '');
+  v.innerHTML = `<img alt=""><div class="vc"></div><div class="vd"></div><button class="vx" aria-label="閉じる">✕</button>`
+    + (tools ? `<div class="vtools"><button data-vt="cut">✂ 切る</button><button data-vt="cap">💬 説明</button></div>` : '');
   document.body.appendChild(v);
   const img = $('img', v), vc = $('.vc', v), vd = $('.vd', v);
   let s = 1, tx = 0, ty = 0;
-  let closed = false;
+  let closed = false, changed = false, edit = null;
+  const capNow = () => tools ? captionOf(S.items.get(opt.itemId), ids[i]) : '';
   const draw = (anim) => { img.style.transition = anim ? 'transform .2s ease-out' : 'none'; img.style.transform = `translate(${tx}px,${ty}px) scale(${s})`; };
   const clamp = () => {
     const w = img.offsetWidth * s, hh = img.offsetHeight * s, W = v.clientWidth, H = v.clientHeight;
@@ -2092,16 +2134,23 @@ function openViewer(ids, i0, onIndex, capFn){
     if (s <= 1.001) { s = 1; tx = 0; ty = 0; }
     clamp();
   };
+  /** 下の文字：写真の説明（あれば）＋撮影日など */
+  const paintCap = info => {
+    const c = capNow();
+    vd.innerHTML = (c ? `<span class="vdc">${h(c)}</span>` : '') + (info ? h(info) : '');
+  };
+  let lastInfo = '';
   const show = async () => {
     vc.textContent = ids.length > 1 ? `${i + 1} / ${ids.length}` : '';
-    vd.textContent = '';
-    if (capFn) { const k = i; capFn(k).then(t => { if (!closed && k === i) vd.textContent = t || ''; }).catch(() => {}); }
+    lastInfo = ''; paintCap('');
+    if (capFn) { const k = i; capFn(k).then(t => { if (!closed && k === i) { lastInfo = t || ''; paintCap(lastInfo); } }).catch(() => {}); }
     s = 1; tx = 0; ty = 0; draw(false);
     const want = i, u = await fullURL(ids[i]);
     if (!closed && want === i && u) img.src = u;
     for (const d of [-1, 1]) if (ids[i + d]) fullURL(ids[i + d]);
   };
   const go = async d => {
+    if (edit) return;
     const j = i + d; if (j < 0 || j >= ids.length) { tx = 0; draw(true); return; }
     const W = v.clientWidth;
     tx = -d * W; draw(true);
@@ -2116,17 +2165,44 @@ function openViewer(ids, i0, onIndex, capFn){
     v.remove(); document.removeEventListener('keydown', onKey, true);
     window.removeEventListener('mousemove', mm); window.removeEventListener('mouseup', mu);
     onIndex && onIndex(i);
+    if (changed) refreshItemSheet();   // 説明を書いたら、品のページにも出す
   };
+  /* ---- 写真の説明を書く（ビューアの中の小さな欄。キーボードに隠れないように上に出す） ---- */
+  const closeEdit = () => { if (edit) { edit.remove(); edit = null; vc.style.visibility = ''; } };
+  const openEdit = () => {
+    if (edit) return;
+    const pid = ids[i];
+    edit = document.createElement('div'); edit.className = 'vedit';
+    edit.innerHTML = `<label class="fl" style="margin-top:0">写真の説明</label><textarea rows="3" maxlength="${CAPTION_MAX}" placeholder="例：1972年のカタログに載っていた色">${h(capNow())}</textarea>
+      <div class="row-btns"><button class="btn primary" data-ve="ok">保存</button><button class="btn" data-ve="no">やめる</button></div>`;
+    v.appendChild(edit); vc.style.visibility = 'hidden';
+    const ta = $('textarea', edit); ta.focus();
+    edit.addEventListener('click', async ev => {
+      const b = ev.target.closest('[data-ve]'); if (!b) return;
+      if (b.dataset.ve === 'no') { closeEdit(); return; }
+      b.disabled = true;
+      if (await setCaption(opt.itemId, pid, ta.value)) { changed = true; closeEdit(); if (ids[i] === pid) paintCap(lastInfo); pinToast('説明を保存しました'); }
+      else b.disabled = false;
+    });
+  };
+  if (tools) $('.vtools', v).addEventListener('click', ev => {
+    const b = ev.target.closest('[data-vt]'); if (!b) return;
+    ev.stopPropagation();
+    if (b.dataset.vt === 'cap') { openEdit(); return; }
+    const pid = ids[i]; closeEdit(); close();   // 拡大ビューアを閉じてから切る
+    cropSavedPhoto(opt.itemId, pid);
+  });
   const onKey = ev => {
-    if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); close(); }
+    if (edit && ev.target && ev.target.closest && ev.target.closest('.vedit')) { if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); closeEdit(); } return; }
+    if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); if (edit) closeEdit(); else close(); }
     else if (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight') { ev.preventDefault(); ev.stopPropagation(); if (s === 1) go(ev.key === 'ArrowRight' ? 1 : -1); }
   };
   document.addEventListener('keydown', onKey, true);
   $('.vx', v).addEventListener('click', ev => { ev.stopPropagation(); close(); });
   v.addEventListener('click', ev => ev.stopPropagation());
-  v.addEventListener('wheel', ev => { ev.preventDefault(); zoomAt(s * Math.exp(-ev.deltaY * 0.0025), ev.clientX, ev.clientY); draw(false); }, {passive:false});
+  v.addEventListener('wheel', ev => { if (ev.target.closest('.vedit')) return; ev.preventDefault(); zoomAt(s * Math.exp(-ev.deltaY * 0.0025), ev.clientX, ev.clientY); draw(false); }, {passive:false});
   v.addEventListener('dblclick', ev => {
-    if (performance.now() - lastTouch < 800) return;
+    if (performance.now() - lastTouch < 800 || ev.target.closest('.vtools,.vedit')) return;
     if (s > 1) { s = 1; tx = 0; ty = 0; } else zoomAt(2.5, ev.clientX, ev.clientY);
     draw(true);
   });
@@ -2141,7 +2217,7 @@ function openViewer(ids, i0, onIndex, capFn){
   const dist = ts => Math.hypot(ts[0].clientX - ts[1].clientX, ts[0].clientY - ts[1].clientY);
   v.addEventListener('touchstart', ev => {
     lastTouch = performance.now();
-    if (ev.target.closest('.vx')) return;
+    if (edit || ev.target.closest('.vx,.vtools,.vedit')) { t = null; return; }
     const ts = ev.touches;
     if (ts.length >= 2) t = {pinch:true, d0:dist(ts), m0:mid(ts), base:{s, tx, ty}, moved:true};
     else t = {pinch:false, x0:ts[0].clientX, y0:ts[0].clientY, base:{s, tx, ty}, moved:false, t0:ev.timeStamp, axis:null};
@@ -2190,6 +2266,245 @@ function openViewer(ids, i0, onIndex, capFn){
   show();
 }
 
+/* ================= 写真を切る（v0.5） ================= */
+/** 写真の説明（品の captions に、写真の id ごとに持つ） */
+const captionOf = (it, pid) => (it && it.captions && it.captions[pid]) || '';
+/** 待っている間、画面全体を覆う（文字だけ） */
+async function withWait(text, fn){
+  const d = document.createElement('div'); d.className = 'busy';
+  d.innerHTML = `<div class="box" role="alertdialog"><div class="bt only">${h(text)}</div></div>`;
+  for (const t of ['touchstart','touchmove','touchend','pointerdown','click']) d.addEventListener(t, ev => ev.stopPropagation(), {passive:true});
+  document.body.appendChild(d);
+  try { return await fn(); } finally { d.remove(); }
+}
+/** 写真を1枚だけ選ぶ（なんでも図鑑の pickOnePhoto と同じ。選ばずに閉じたら null） */
+function pickOnePhoto(){
+  return new Promise(res => {
+    const inp = $('#oneIn');
+    inp.onchange = () => { const f = inp.files[0]; inp.value = ''; res(f || null); };
+    inp.oncancel = () => res(null);
+    inp.click();
+  });
+}
+/** 切る画面に出す写真を作る。長辺が CROP_VIEW_MAX より大きければ縮める（元の大きさのキャンバスは作らない）。
+ *  戻り値 {url, w, h, revoke()}：w・h は元の写真の大きさ（ブラウザが向きを反映したあと） */
+async function viewImage(blob){
+  const {img, url} = await decodeImage(blob);
+  const w = img.naturalWidth, hh = img.naturalHeight;
+  if (!w || !hh) { URL.revokeObjectURL(url); throw new Error('size'); }
+  if (Math.max(w, hh) <= CROP_VIEW_MAX) return {url, w, h:hh, revoke(){ URL.revokeObjectURL(url); }};
+  try {
+    const sm = await shrink(img, CROP_VIEW_MAX, 0.85);
+    const u2 = URL.createObjectURL(sm.blob);
+    return {url:u2, w, h:hh, revoke(){ URL.revokeObjectURL(u2); }};
+  } finally { URL.revokeObjectURL(url); }
+}
+/** 枠の形。null＝元の写真と同じ比率 */
+const CROP_SHAPES = [['orig','元の形',null], ['sq','正方形',1], ['43','4:3（横長）',4/3], ['34','3:4（縦長）',3/4]];
+/** 枠（元の写真のピクセルで）。c = {shape, s(0.2〜1), cx, cy(枠の中心 0〜1)}。枠は写真からはみ出さない（c の中心も寄せる） */
+function cropRect(c, W, H){
+  const A = (CROP_SHAPES.find(x => x[0] === c.shape) || CROP_SHAPES[0])[2] || W / H;
+  let fw, fh;
+  if (W / H > A) { fh = H; fw = H * A; } else { fw = W; fh = W / A; }
+  fw *= c.s; fh *= c.s;
+  const x = Math.max(0, Math.min(W - fw, c.cx * W - fw / 2)), y = Math.max(0, Math.min(H - fh, c.cy * H - fh / 2));
+  c.cx = (x + fw / 2) / W; c.cy = (y + fh / 2) / H;
+  return {x, y, w:fw, h:fh};
+}
+/**
+ * 写真を切る画面（どこから切るときもこれ）。なんでも図鑑の openCrop を参考に、枠の形と大きさを選べるようにした。
+ * view：viewImage の戻り値、init：前に決めた枠（切り直し）か null、opt.mode：'new'（足したばかり）・'saved'（保存ずみ）
+ * onDone(res)：決定で {shape, s, cx, cy, rect:{x, y, w, h}（元の写真に対する割合）, full}、「‹ 戻る」で null
+ * full：枠が写真の全体と同じ（＝何も切っていない）
+ */
+function openCrop(view, init, opt, onDone){
+  const c = init ? {shape:init.shape, s:init.s, cx:init.cx, cy:init.cy} : {shape:'orig', s:1, cx:0.5, cy:0.5};
+  let done = false;
+  openSheet({title:'写真を切る', form:true, onClose(){ if (!done) { done = true; onDone(null); } }, build(sh){
+    sh.body.innerHTML = `<p class="hint" style="margin-top:0">残したい所を枠で囲んでください。枠は指で動かせます。</p>
+      <div class="chips wrap" id="cr-shape">${CROP_SHAPES.map(([k, l]) => `<button class="chip ${c.shape === k ? 'on' : ''}" data-shape="${k}">${h(l)}</button>`).join('')}</div>
+      <div class="fpick"><div class="fpi crop" id="cr-box"><img src="${view.url}" alt="" draggable="false"><span class="frame"></span></div></div>
+      <label class="fl">枠の大きさ</label><input type="range" id="cr-size" min="20" max="100" step="1" value="${Math.round(c.s * 100)}">
+      <p class="cropnote">${opt.mode === 'new' ? '保存するまでは、写真をもう一度タップすると、元の写真から切り直せます。' : '切ると元には戻せません（カメラロールの元の写真はそのままです）。'}</p>`;
+    sh.foot.innerHTML = `<button class="btn primary" id="cr-ok">決定</button>`;
+    const box = $('#cr-box', sh.body), img = $('img', box), fr = $('.frame', box);
+    const paint = () => {
+      const dw = img.clientWidth, dh = img.clientHeight; if (!dw || !dh) return;
+      const r = cropRect(c, view.w, view.h), k = dw / view.w, kh = dh / view.h;
+      Object.assign(fr.style, {left:(r.x * k) + 'px', top:(r.y * kh) + 'px', width:(r.w * k) + 'px', height:(r.h * kh) + 'px'});
+    };
+    if (img.complete && img.naturalWidth) paint(); else img.onload = paint;
+    sh.paintCrop = paint;
+    let drag = null;
+    const at = ev => { const r = img.getBoundingClientRect(); return r.width ? {x:(ev.clientX - r.left) / r.width, y:(ev.clientY - r.top) / r.height} : null; };
+    box.addEventListener('pointerdown', ev => {
+      const q = at(ev); if (!q) return;
+      box.setPointerCapture(ev.pointerId);
+      const fb = fr.getBoundingClientRect();
+      if (ev.clientX >= fb.left && ev.clientX <= fb.right && ev.clientY >= fb.top && ev.clientY <= fb.bottom) { drag = {dx:c.cx - q.x, dy:c.cy - q.y}; return; }   // 枠の中：つかんで動かす
+      c.cx = q.x; c.cy = q.y; drag = {dx:0, dy:0}; paint();   // 枠の外：そこを中心に
+    });
+    box.addEventListener('pointermove', ev => { if (!drag) return; const q = at(ev); if (!q) return; c.cx = q.x + drag.dx; c.cy = q.y + drag.dy; paint(); });
+    const up = () => { drag = null; };
+    box.addEventListener('pointerup', up); box.addEventListener('pointercancel', up);
+    $('#cr-size', sh.body).oninput = ev => { c.s = Math.max(0.2, Math.min(1, ev.target.value / 100)); paint(); };
+    $('#cr-shape', sh.body).onclick = ev => {
+      const b = ev.target.closest('[data-shape]'); if (!b) return;
+      c.shape = b.dataset.shape; c.s = 1; c.cx = 0.5; c.cy = 0.5;   // 選んだ形で入るいちばん大きい枠を、真ん中に
+      $$('[data-shape]', sh.body).forEach(x => x.classList.toggle('on', x === b));
+      $('#cr-size', sh.body).value = 100; paint();
+    };
+    $('#cr-ok', sh.foot).onclick = () => {
+      const r = cropRect(c, view.w, view.h);
+      const full = r.w >= view.w * 0.998 && r.h >= view.h * 0.998;
+      const res = {shape:c.shape, s:+c.s.toFixed(3), cx:+c.cx.toFixed(5), cy:+c.cy.toFixed(5), full,
+        rect:{x:r.x / view.w, y:r.y / view.h, w:r.w / view.w, h:r.h / view.h}};
+      done = true; closeSheet(sh, true); onDone(res);
+    };
+  }});
+}
+window.addEventListener('resize', () => { const top = sheets[sheets.length - 1]; if (top && top.paintCrop) top.paintCrop(); });
+/**
+ * 写真の枠の部分を切り出して縮める（PHOTO_SIZE。小さければ引き伸ばさない）。rect は元の写真に対する割合。
+ * 元の大きさのキャンバスは作らない：元の画像の「枠の部分」だけを、保存する大きさのキャンバスへ直接描く
+ */
+async function cropBlob(blob, rect){
+  const {img, url} = await decodeImage(blob);
+  try {
+    const W = img.naturalWidth, H = img.naturalHeight;
+    if (!W || !H) throw new Error('size');
+    const sx = rect.x * W, sy = rect.y * H, sw = Math.max(1, rect.w * W), sh = Math.max(1, rect.h * H);
+    const enc = async (max, q) => {
+      const k = Math.min(1, max / Math.max(sw, sh));
+      const cv = document.createElement('canvas'); cv.width = Math.max(1, Math.round(sw * k)); cv.height = Math.max(1, Math.round(sh * k));
+      cv.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, cv.width, cv.height);
+      const b = await new Promise(r => cv.toBlob(r, 'image/jpeg', q));
+      const dim = {width:cv.width, height:cv.height}; cv.width = cv.height = 0;
+      if (!b) throw new Error('encode');
+      return {b, ...dim};
+    };
+    const big = await enc(PHOTO_SIZE.max, PHOTO_SIZE.q), th = await enc(PHOTO_SIZE.thumbMax, PHOTO_SIZE.thumbQ);
+    return {blob:big.b, width:big.width, height:big.height, thumbBlob:th.b};
+  } finally { URL.revokeObjectURL(url); }
+}
+/** 足したばかり（まだ保存していない）の写真を切る。カメラロールのファイル（p.file）から切る。切り直しも元のファイルから */
+async function cropNewPhoto(p, redraw){
+  if (!p || p.pid || p.loading || p.err || !p.file) return;
+  let view;
+  try { view = await withWait('写真を準備しています…', () => viewImage(p.file)); }
+  catch(e) { alert('この写真は切れませんでした。'); return; }
+  openCrop(view, p.crop || null, {mode:'new'}, res => {
+    view.revoke();
+    if (!res) return;   // 戻る：切らない
+    if (res.full) {     // 何も切っていない：元のファイルのまま使う。✂ の印を外す
+      if (p.crop && p.orig) { const cur = p.thumbUrl; Object.assign(p, p.orig); if (cur && cur !== p.orig.thumbUrl) URL.revokeObjectURL(cur); }
+      delete p.crop; redraw(); return;
+    }
+    p.loading = true; redraw();
+    p.promise = cropBlob(p.file, res.rect).then(r => {
+      const cur = p.thumbUrl;
+      Object.assign(p, {blob:r.blob, thumbBlob:r.thumbBlob, width:r.width, height:r.height, thumbUrl:URL.createObjectURL(r.thumbBlob)});
+      if (cur && (!p.orig || cur !== p.orig.thumbUrl)) URL.revokeObjectURL(cur);
+      p.crop = res;
+    }, () => { alert('この写真は切れませんでした。'); }).then(() => { p.loading = false; redraw(); });
+  });
+}
+/** 品のページを描き直す。いちばん上の写真は同じ枚目のまま */
+function refreshItemSheet(){
+  const top = sheets[sheets.length - 1]; if (!top) return;
+  const g0 = $('.gal', top.body), i = g0 ? +g0.dataset.i : 0;
+  top.refresh();
+  const g1 = $('.gal', top.body); if (g1 && i > 0) setGal(g1, i);
+}
+/** 保存ずみの写真を、あとから切る（拡大ビューアの「✂ 切る」） */
+async function cropSavedPhoto(itemId, pid){
+  if (!itemAlive(itemId)) return;
+  const k = await ask3('写真を切る', ['カメラロールから選び直す（きれい）', 'この写真のまま切る', 'やめる'], null,
+    {plain:true, notes:{1:'小さく切ると、少しぼやけることがあります'}});
+  if (k === 2) return;
+  let file = null;
+  if (k === 0) { file = await pickOnePhoto(); if (!file) return; }   // 選ぶ画面はタップの直後に開く（ほかの処理を先にしない）
+  const old = await S.B.get('photos', pid).catch(() => null);
+  if (!old || old.deleted || !(old.data || old.thumb)) { alert('この写真は見つかりませんでした。'); return; }
+  if (file) {
+    const t = (await readExifDate(file)) || new Date(file.lastModified || Date.now()).toISOString();
+    if (old.takenAt && localYMD(new Date(t)) !== localYMD(new Date(old.takenAt))) {
+      const c = await ask3('撮影日がちがう写真です。このまま使いますか？', ['このまま使う', 'やめる'], `元の写真：${fmtTaken(old.takenAt)}　選んだ写真：${fmtTaken(t)}`);
+      if (c !== 0) return;
+    }
+  }
+  const src = file || new Blob([old.data || old.thumb], {type:'image/jpeg'});
+  let view;
+  try { view = await withWait('写真を準備しています…', () => viewImage(src)); }
+  catch(e) { alert('この写真は切れませんでした。'); return; }
+  openCrop(view, null, {mode:'saved'}, async res => {
+    view.revoke();
+    if (!res) return;
+    if (res.full) { pinToast('切っていません'); return; }   // 何も切っていない：写真は変えない
+    let r;
+    try { r = await withWait('切っています…', () => cropBlob(src, res.rect)); }
+    catch(e) { alert('この写真は切れませんでした。'); return; }
+    if (await replacePhoto(itemId, pid, r)) { refreshItemSheet(); pinToast('切りました'); }
+  });
+}
+/**
+ * 切った写真で元の写真を置き換える。新しい id の写真のレコードにして、元の写真には削除の印。
+ * 元の写真を指していた所（品の photoIds・album・できごとの photoIds・coverId・captions）を、同じ場所のまま新しい id に書き換える。
+ * 全部を1回の書き込みで。失敗したら何も変えない
+ */
+async function replacePhoto(itemId, oldPid, r){
+  const it = S.items.get(itemId); if (!it || it.deleted) return false;
+  const old = await S.B.get('photos', oldPid).catch(() => null);
+  if (!old || old.deleted) { alert('この写真は見つかりませんでした。'); return false; }
+  const rec = {id:uuid(), itemId:old.itemId || itemId, logId:old.logId || null, kind:old.kind || 'photo',
+    data:await r.blob.arrayBuffer(), thumb:await r.thumbBlob.arrayBuffer(), width:r.width, height:r.height,
+    takenAt:old.takenAt || null, originalName:old.originalName || null, croppedFrom:oldPid};   // 撮影日は元の写真のまま。主役の位置は写さない
+  const sw = a => a.map(x => x === oldPid ? rec.id : x);
+  const it2 = {...it};
+  let itChanged = false, found = false;
+  if ((it.photoIds || []).includes(oldPid)) { it2.photoIds = sw(it.photoIds); itChanged = found = true; }
+  if ((it.album || []).some(a => a.pid === oldPid)) { it2.album = it.album.map(a => a.pid === oldPid ? {...a, pid:rec.id} : a); itChanged = found = true; }
+  if (it.coverId === oldPid) { it2.coverId = rec.id; itChanged = true; }
+  if (it.captions && it.captions[oldPid] != null) {
+    const cp = {}; for (const [k, v] of Object.entries(it.captions)) cp[k === oldPid ? rec.id : k] = v;   // 説明も引き継ぐ
+    it2.captions = cp; itChanged = true;
+  }
+  const ls = live(S.logs).filter(l => l.itemId === itemId && (l.photoIds || []).includes(oldPid)).map(l => ({...l, photoIds:sw(l.photoIds)}));
+  if (!found && !ls.length) { alert('この写真は見つかりませんでした。'); return false; }
+  const ops = [{store:'photos', rec}, {store:'photos', rec:markPhotoDeleted({...old})}, ...ls.map(l => ({store:'logs', rec:l}))];
+  if (itChanged) ops.push({store:'items', rec:it2});
+  if (!(await safeWrite(() => S.B.putMany(ops)))) return false;
+  if (itChanged) S.items.set(it2.id, it2);
+  ls.forEach(l => S.logs.set(l.id, l));
+  forgetPhoto(oldPid);
+  thumbCache.set(rec.id, URL.createObjectURL(r.thumbBlob)); takenCache.set(rec.id, rec.takenAt || null);
+  searchDirty(itemId);
+  return true;
+}
+/** 外した・消した写真の説明を品から消す（品を書き換えたら true） */
+function dropCaptions(it, pids){
+  if (!it.captions || !pids || !pids.length) return false;
+  let ch = false;
+  const cp = {...it.captions};
+  for (const x of pids) if (x in cp) { delete cp[x]; ch = true; }
+  if (!ch) return false;
+  if (Object.keys(cp).length) it.captions = cp; else delete it.captions;
+  return true;
+}
+/** 写真の説明を書く（空なら消す）。品のレコードを書く */
+async function setCaption(itemId, pid, text){
+  const it = S.items.get(itemId); if (!it || it.deleted) return false;
+  const t = String(text || '').replace(/\s+$/, '').replace(/^\s+/, '').slice(0, CAPTION_MAX);
+  if (t === captionOf(it, pid)) return true;
+  const it2 = {...it, captions:{...(it.captions || {})}};
+  if (t) it2.captions[pid] = t; else delete it2.captions[pid];
+  if (!Object.keys(it2.captions).length) delete it2.captions;
+  if (!(await safeWrite(() => S.B.putMany([{store:'items', rec:it2}])))) return false;
+  S.items.set(it2.id, it2);
+  searchDirty(itemId);
+  return true;
+}
+
 /* ================= 登録・編集 ================= */
 let pickCb = null;
 function pickPhotos(cb){ pickCb = cb; $('#fileIn').click(); }
@@ -2215,12 +2530,26 @@ function stateKey(st){
   return JSON.stringify({n:st.name, g:st.genreId, o:st.oneLine, v:Object.keys(vals).sort().map(k => [k, vals[k]]),
     t:st.notes.map(n => n.text).filter(t => t.trim()), p:st.photos.map(p => p.pid || p.key)});
 }
-function dropNewPhotos(st){ if (!st) return; st.photos.forEach(p => { if (!p.pid && p.thumbUrl && !p.kept) URL.revokeObjectURL(p.thumbUrl); }); }
+/** 写真の読み込み（切り直しも）が終わるまで待つ。待つ間は保存ボタンに「写真を読み込み中…」と出す */
+async function waitPhotos(st, btn){
+  const busy = st.photos.filter(p => p.promise && p.loading);
+  if (btn && busy.length) btn.textContent = '写真を読み込み中…';
+  await Promise.all(st.photos.filter(p => p.promise).map(p => p.promise));
+  if (btn) btn.textContent = '保存中…';
+}
+/** 足したばかりの写真の小さな絵（URL）を捨てる。切る前の絵（p.orig）も */
+function dropNewPhoto(p){
+  if (!p || p.pid) return;
+  if (p.orig && p.orig.thumbUrl && p.orig.thumbUrl !== p.thumbUrl) URL.revokeObjectURL(p.orig.thumbUrl);
+  if (p.thumbUrl && !p.kept) URL.revokeObjectURL(p.thumbUrl);
+}
+function dropNewPhotos(st){ if (!st) return; st.photos.forEach(dropNewPhoto); }
 function addFilesTo(st, files, redraw){
   files = imageFiles(files);
   for (const f of files) {
-    const p = {key:uuid(), name:f.name, loading:true};
-    p.promise = processFile(f).then(r => Object.assign(p, r), () => { p.err = true; }).then(() => { p.loading = false; redraw(); });
+    const p = {key:uuid(), name:f.name, loading:true, file:f};   // file：切るときに使う（保存まで持っておく）
+    p.promise = processFile(f).then(r => { Object.assign(p, r); p.orig = {blob:r.blob, thumbBlob:r.thumbBlob, width:r.width, height:r.height, thumbUrl:r.thumbUrl}; },
+      () => { p.err = true; }).then(() => { p.loading = false; redraw(); });
     st.photos.push(p);
   }
   redraw();
@@ -2238,8 +2567,9 @@ function headIndex(st){
 function photosHTML(st, head = true){
   const n = st.photos.length, hi = head ? headIndex(st) : -1;
   return st.photos.map((p, i) => {
-    const img = p.pid ? `<img data-photo="${p.pid}" alt="">` : p.loading ? `<div class="ld">読み込み中…</div>` : p.err ? `<div class="ld">読み込めない写真です<br>${h(p.name)}</div>` : `<img src="${p.thumbUrl}" alt="">`;
-    return `<div class="ep" data-pi="${i}">${img}${i === hi && !p.err ? '<span class="hd">見出し</span>' : ''}
+    const img = p.pid ? `<img data-photo="${p.pid}" alt="">` : p.loading ? `<div class="ld">読み込み中…</div>` : p.err ? `<div class="ld">読み込めない写真です<br>${h(p.name)}</div>` : `<img src="${p.thumbUrl}" alt="" data-cutme>`;
+    const cut = !p.pid && !p.loading && !p.err && p.file;   // 足したばかりの写真は、タップで切れる
+    return `<div class="ep${cut ? ' cuttable' : ''}" data-pi="${i}">${img}${i === hi && !p.err ? '<span class="hd">見出し</span>' : ''}${cut && p.crop ? '<span class="cut">✂</span>' : ''}
       <div class="epc"><button data-pm="-1" ${i === 0 ? 'disabled' : ''} aria-label="左へ">‹</button><button data-px aria-label="外す">✕</button><button data-pm="1" ${i === n - 1 ? 'disabled' : ''} aria-label="右へ">›</button></div></div>`;
   }).join('') + `<button class="addph" id="e-add"><span class="big">＋</span><br>写真</button>`;
 }
@@ -2278,7 +2608,7 @@ function editorHTML(st, isNew){
   const more = `<label class="fl">ひとこと</label><input id="e-one" value="${h(st.oneLine)}" placeholder="短い一文" autocomplete="off">
       <div id="e-fields">${fieldsHTML(g, st.values)}</div>
       <div class="sec">能書き</div><p class="hint" style="margin:0 0 4px">長い文章。いくつでも書けます。</p>${notes}`;
-  return `<label class="fl" style="margin-top:2px">写真 <span class="hint">（見出しの写真は「表紙を変える」で選べます。なくても登録できます）</span></label>
+  return `<label class="fl" style="margin-top:2px">写真 <span class="hint">（見出しの写真は「表紙を変える」で選べます。なくても登録できます。足したばかりの写真は、タップすると切れます）</span></label>
     <div class="ephotos noswipe" id="e-photos">${photosHTML(st)}</div>
     <label class="fl">ジャンル</label><div class="chips wrap" id="e-genre">${genreChips(st.genreId)}</div>
     <label class="fl" id="e-nml">${h(g.nameLabel || '名前')}</label><input id="e-name" value="${h(st.name)}" autocomplete="off">
@@ -2339,7 +2669,8 @@ function openEditor(opt = {}){
         const tile = ev.target.closest('[data-pi]'); if (!tile) return;
         const i = +tile.dataset.pi, mv = ev.target.closest('[data-pm]');
         if (mv) { const j = i + (+mv.dataset.pm); if (j < 0 || j >= st.photos.length) return; [st.photos[i], st.photos[j]] = [st.photos[j], st.photos[i]]; redraw(); }
-        else if (ev.target.closest('[data-px]')) { const [p] = st.photos.splice(i, 1); if (p && !p.pid && p.thumbUrl && !p.kept) URL.revokeObjectURL(p.thumbUrl); redraw(); }
+        else if (ev.target.closest('[data-px]')) { const [p] = st.photos.splice(i, 1); dropNewPhoto(p); redraw(); }
+        else if (ev.target.closest('[data-cutme]')) cropNewPhoto(st.photos[i], redraw);   // 保存ずみの写真をタップしても何もしない
       });
       $('#e-name', body).oninput = ev => { st.name = ev.target.value; };
       $('#e-one', body).oninput = ev => { st.oneLine = ev.target.value; };
@@ -2388,9 +2719,9 @@ function openEditor(opt = {}){
       const saveBtn = `<button class="btn primary" id="e-save">保存</button>`;
       if (isNew) sh.foot.innerHTML = saveBtn; else pagerFoot(sh, saveBtn);
       $('#e-save', sh.foot).onclick = async ev => {
-        ev.target.disabled = true;
-        const ok = await saveItem(ed.id, st);
-        ev.target.disabled = false;
+        const btn = ev.target; btn.disabled = true;
+        const ok = await saveItem(ed.id, st, btn);
+        btn.disabled = false; btn.textContent = '保存';
         if (ok) { ed.st = null; closeSheet(sh, true); pinToast(isNew ? '登録しました' : '保存しました'); }
       };
     }});
@@ -2405,7 +2736,7 @@ async function startRegister(){
   openEditor();
 }
 /** 保存。うまくいけば品の id、だめなら false */
-async function saveItem(id, st){
+async function saveItem(id, st, btn){
   const name = st.name.trim();
   if (!name) { alert(`${genreOf(st.genreId).nameLabel || '名前'}を入れてください。`); return false; }
   const g = genreOf(st.genreId);
@@ -2414,7 +2745,7 @@ async function saveItem(id, st){
     if (f.type === 'era') { const m = eraProblem(f.name, v); if (m) { alert(m); return false; } }
     if (f.type === 'number' && typeof v === 'string') { alert(`「${f.name}」は数字で入れてください。`); return false; }
   }
-  await Promise.all(st.photos.filter(p => p.promise).map(p => p.promise));
+  await waitPhotos(st, btn);
   const isNew = !id;
   const it = isNew ? {id:uuid(), urls:[], materialIds:[], priorityRank:null, wikiQuery:null, summary:null} : S.items.get(id);
   const oldGenre = isNew ? null : it.genreId;
@@ -2439,6 +2770,7 @@ async function saveItem(id, st){
   Object.assign(it, {genreId:st.genreId, name, oneLine:st.oneLine.trim(), values,
     notes:st.notes.filter(n => n.text.trim()).map(n => ({id:n.id, text:n.text.replace(/\s+$/, ''), kind:'own', sourceUrl:null})), photoIds:pids});
   if (coverGone) it.coverId = null;
+  dropCaptions(it, removedPids);
   // ジャンルを変えたら優先から外す（元のジャンルの順位は詰め直す）
   if (!isNew && oldGenre !== st.genreId && isPri(it)) {
     it.priorityRank = null;
@@ -2450,7 +2782,7 @@ async function saveItem(id, st){
   if (!(await safeWrite(() => S.B.putMany(ops)))) { await loadBook(); return false; }
   S.items.set(it.id, it);
   if (regLog) S.logs.set(regLog.id, regLog);
-  for (const [pid, p] of fresh) { thumbCache.set(pid, p.thumbUrl); p.kept = true; }   // 作ったサムネイルはそのまま使う
+  for (const [pid, p] of fresh) { thumbCache.set(pid, p.thumbUrl); p.kept = true; dropNewPhoto(p); }   // 作ったサムネイルはそのまま使う（切る前の絵は捨てる）
   removedPids.forEach(forgetPhoto);
   searchDirty(it.id);
   if (isNew) {
@@ -2504,8 +2836,8 @@ function openLogEditor(itemId, logId){
     const d = st.dateTouched ? null : photoDate();
     box.innerHTML = d && d !== st.date ? `<button class="chip ldchip" id="l-usephoto">📷 写真の日付（${h(fmtYMD(d).replace(/^\d+\//, ''))}）にする</button>` : '';
   };
-  const save = async () => {
-    const r = await saveLog(itemId, old, st, isReg);
+  const save = async btn => {
+    const r = await saveLog(itemId, old, st, isReg, btn);
     if (r) { orig = key(); }
     return r;
   };
@@ -2525,7 +2857,7 @@ function openLogEditor(itemId, logId){
         <label class="fl">種類</label>${isReg ? `<div class="days">登録（種類は変えられません）</div>`
           : `<div class="chips wrap" id="l-type">${types.map(t => `<button class="chip ${t === st.type ? 'on' : ''}" data-t="${h(t)}">${h(t)}</button>`).join('')}</div>`}
         <label class="fl">メモ</label><textarea class="grow" rows="3" id="l-memo">${h(st.memo)}</textarea>
-        <label class="fl">写真 <span class="hint">（何枚でも。なくてもよい）</span></label>
+        <label class="fl">写真 <span class="hint">（何枚でも。なくてもよい。足したばかりの写真は、タップすると切れます）</span></label>
         <div class="ephotos noswipe" id="e-photos">${photosHTML(st, false)}</div>
         ${old && !isReg ? `<button class="btn danger block" id="l-del" style="margin-top:26px">このできごとを消す</button>` : ''}`;
       const body = sh.body;
@@ -2535,7 +2867,8 @@ function openLogEditor(itemId, logId){
         const tile = ev.target.closest('[data-pi]'); if (!tile) return;
         const i = +tile.dataset.pi, mv = ev.target.closest('[data-pm]');
         if (mv) { const j = i + (+mv.dataset.pm); if (j < 0 || j >= st.photos.length) return; [st.photos[i], st.photos[j]] = [st.photos[j], st.photos[i]]; redraw(); }
-        else if (ev.target.closest('[data-px]')) { const [p] = st.photos.splice(i, 1); if (p && !p.pid && p.thumbUrl && !p.kept) URL.revokeObjectURL(p.thumbUrl); redraw(); }
+        else if (ev.target.closest('[data-px]')) { const [p] = st.photos.splice(i, 1); dropNewPhoto(p); redraw(); }
+        else if (ev.target.closest('[data-cutme]')) cropNewPhoto(st.photos[i], redraw);   // 保存ずみの写真をタップしても何もしない
       });
       const dIn = $('#l-date', body);
       const onDate = () => { st.date = dIn.value; st.dateTouched = true; paintChip(); };
@@ -2556,9 +2889,9 @@ function openLogEditor(itemId, logId){
       };
       sh.foot.innerHTML = `<button class="btn primary" id="l-save">保存</button>`;
       $('#l-save', sh.foot).onclick = async ev => {
-        ev.target.disabled = true;
-        const ok = await save();
-        ev.target.disabled = false;
+        const btn = ev.target; btn.disabled = true;
+        const ok = await save(btn);
+        btn.disabled = false; btn.textContent = '保存';
         if (ok) { closeSheet(sh, true); pinToast(old ? '保存しました' : 'できごとを足しました'); }
       };
       paintChip();
@@ -2568,11 +2901,11 @@ function openLogEditor(itemId, logId){
   return shRef;
 }
 /** できごとの保存。うまくいけば true */
-async function saveLog(itemId, old, st, isReg){
+async function saveLog(itemId, old, st, isReg, btn){
   if (!/^\d{4}-\d{2}-\d{2}$/.test(st.date || '')) { alert('日付を入れてください。'); return false; }
   const memo = st.memo.replace(/\s+$/, '');
   if (!isReg && !memo.trim() && !st.photos.some(p => !p.err)) { alert('メモか写真を入れてください。'); return false; }
-  await Promise.all(st.photos.filter(p => p.promise).map(p => p.promise));
+  await waitPhotos(st, btn);
   const rec = old ? old : {id:uuid(), itemId};
   const ops = [], pids = [], fresh = [];
   let failed = 0;
@@ -2588,7 +2921,10 @@ async function saveLog(itemId, old, st, isReg){
   for (const o of removed) { const p = await S.B.get('photos', o); if (p) ops.push({store:'photos', rec:markPhotoDeleted(p)}); }
   // 見出しの写真をできごとから外したら、品の見出しを1枚目に戻す
   const it = S.items.get(itemId);
-  if (it && it.coverId && removed.includes(it.coverId)) { it.coverId = null; ops.push({store:'items', rec:it}); }
+  let itCh = false;
+  if (it && it.coverId && removed.includes(it.coverId)) { it.coverId = null; itCh = true; }
+  if (it && dropCaptions(it, removed)) itCh = true;   // 外した写真の説明も消す
+  if (itCh) ops.push({store:'items', rec:it});
   Object.assign(rec, {date:st.date, memo, photoIds:pids});
   if (!isReg) rec.type = st.type;
   ops.push({store:'logs', rec});
@@ -2597,7 +2933,7 @@ async function saveLog(itemId, old, st, isReg){
   removed.forEach(forgetPhoto);
   searchDirty(itemId);
   if (!old) { const bs = backupState(S.book.id); await setBackupState(S.book.id, {logsSince:(bs.logsSince || 0) + 1}); }   // 新しいできごとも催促に数える
-  for (const [pid, p] of fresh) { thumbCache.set(pid, p.thumbUrl); takenCache.set(pid, p.takenAt || null); p.kept = true; }
+  for (const [pid, p] of fresh) { thumbCache.set(pid, p.thumbUrl); takenCache.set(pid, p.takenAt || null); p.kept = true; dropNewPhoto(p); }
   if (failed) alert(`読み込めなかった写真 ${failed}枚は保存しませんでした。`);
   return true;
 }
@@ -2607,7 +2943,10 @@ async function deleteLog(id){
   for (const pid of l.photoIds || []) { const p = await S.B.get('photos', pid); if (p && !p.deleted) ops.push({store:'photos', rec:markPhotoDeleted(p)}); }
   // 見出しの写真がこのできごとの写真だったら、品の見出しを1枚目に戻す
   const it = S.items.get(l.itemId);
-  if (it && it.coverId && (l.photoIds || []).includes(it.coverId)) { it.coverId = null; ops.push({store:'items', rec:it}); }
+  let itCh = false;
+  if (it && it.coverId && (l.photoIds || []).includes(it.coverId)) { it.coverId = null; itCh = true; }
+  if (it && dropCaptions(it, l.photoIds || [])) itCh = true;
+  if (itCh) ops.push({store:'items', rec:it});
   l.deleted = true; ops.push({store:'logs', rec:l});
   const ok = await safeWrite(() => S.B.putMany(ops));
   if (!ok) await loadBook();
@@ -2634,7 +2973,7 @@ function renderLogs(v){
     const it = S.items.get(l.itemId), g = genreOf(it.genreId), ps = l.photoIds || [];
     html += `<button class="le" data-le="${l.id}"><div class="led">${h(fmtYMD(l.date).replace(/^\d+\//, ''))}</div>
       <span class="t38">${coverImgHTML(it, g)}</span>
-      <div class="lem"><div class="len">${h(it.name)} <span class="lgt">${h(l.type)}</span></div>${l.memo ? `<div class="lemm">${h(l.memo)}</div>` : ''}
+      <div class="lem"><div class="len">${h(g.emoji)} ${h(it.name)} <span class="lgt">${h(l.type)}</span></div>${l.memo ? `<div class="lemm">${h(l.memo)}</div>` : ''}
       ${ps.length ? `<div class="lep">${ps.slice(0, 4).map(p => `<img data-photo="${p}" alt="">`).join('')}${ps.length > 4 ? `<span class="more">＋${ps.length - 4}</span>` : ''}</div>` : ''}</div></button>`;
   }
   v.innerHTML = bookBar() + `<div class="vh"><h1>ログ</h1><span class="sub">できごと ${L.length}件</span></div>
