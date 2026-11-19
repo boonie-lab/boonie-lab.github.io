@@ -163,20 +163,26 @@ table.dy{border-collapse:collapse}
 var COLS=60,ROWS=40,CELL=10,W=COLS*CELL,H=ROWS*CELL,N=COLS*ROWS;
 var DAY=86400,LIFE=3*DAY,MATURE=12*3600,COOLDOWN=5*3600,MAXPOP=50;
 var GROW=0.0003,SPREAD=0.00012,BITE=0.02,GAIN=0.4,FLOOR=0.22,RICH=0.5,DRY=0.72,TREAT=1500;
-// 天気（Bの回）。時間はすべて秒。【仮決め】の数字もここにまとめる
+// 天気（V0.6：通り雨だけ）。時間はすべて秒。【仮決め】の数字もここにまとめる
+// 雨はひつじの過ごし方を変えない（見た目のぬれ・ブルブルだけ）
 var WXK={
-  clear:[3*3600,9*3600],   // 晴れ→次のくもりまで（1日に平均4回くらい）
-  cloud:[600,1500],        // くもり 10〜25分
-  noRain:0.3,              // くもりの3割は降らずに晴れる
-  rain:[900,2700],         // 雨 15〜45分
-  heavyP:0.4,heavy:[300,900], // 雨の4割に、本降りが5〜15分
-  shower:[300,600],showerP:0.15,showerHeavyP:0.5,showerMax:3,showerWait:[60,180], // 通り雨
-  dEnd:[900,2700],         // 日照りの終わり：本降り15分＋小雨45分
-  wetUp:[1800,600],        // しめり気が満ちるまで（小雨・本降り）
+  gap:[12*3600,36*3600],   // 自然に来る通り雨：次まで12〜36時間（1日1回くらい）【仮決め】
+  lightP:0.6,              // ぽつぽつ6割・ザーッ4割【仮決め】
+  light:[180,480],         // ぽつぽつ 3〜8分
+  zPre:[20,35],            // ザーッ：はじめの30秒ほどで暗くなる
+  zHeavy:[120,240],        // ザーッ：強めに2〜4分
+  zPost:[15,50],           // ザーッ：強いのがやんでから、すぐ明るくなるまで
+  zLen:[180,360],          // ザーッ：全部で3〜6分（いちばん長くても10分）
+  showerP:0.15,showerMax:3,showerWait:[60,180], // 開いたときのくじ（15%・1日3回まで・1〜3分後）
+  dEnd:1200,               // 日照りの終わりの雨：20分（ぽつぽつ中心）
+  dEndZ:[300,720],dEndZL:[90,150], // その途中（5〜12分め）に短いザーッ1.5〜2.5分【仮決め】
+  rbP:0.5,rb:[180,360],rbWait:[20,60], // 虹：昼の雨あがりの2回に1回、3〜6分（雨あがりの20〜60秒後に出る）【仮決め】
+  wetUp:[1800,600],        // しめり気が満ちるまで（ぽつぽつ・強い雨）
   wetDown:10800,           // 雨あがりから約3時間で元にもどる
-  wetGrow:0.25,            // しめり気があるときの草の育ち：最大×1.25【仮決め】
-  eatE:40,eatTo:60,        // 本降りでも食べる目安：おなか40%を切ったら、60%まで【仮決め】
-  lightRest:0.15           // 小雨のとき、ひとやすみを選びやすくする分（散歩が少なめ）
+  wetGrow:0.25,            // しめり気があるときの草の育ち：最大×1.25
+  pud:[6,8],pudR:[2,3],    // 水たまりのくぼ地 6〜8か所・いっぱいで半径2〜3マス
+  pudLight:0.5,pudHeavy:1, // ぽつぽつ1回でうっすら（半分）・ザーッ1回でいっぱい【仮決め】
+  pudDry:[3600,7200],pudDrought:3 // 1〜2時間で消える・日照りの間は3倍の速さ【仮決め】
 };
 var SYL='モコピルタンポナミクトリハユキソラマロチ'.split('');
 var WOOLS=[[45,25,93],[42,45,86],[220,6,72],[28,35,52],[260,8,36],[345,55,86],[150,35,82],[265,40,84],[52,70,80],[200,45,84]];
@@ -237,16 +243,31 @@ function mixTraits(a,b){
 function newHist(t){return{from:t,born:0,gone:0,imm:0,dr:0,rn:0,peak:0,day:Math.floor(t/DAY)+1,db:0,dx:0,dw:0,days:[],log:[]}}
 function hlog(o){var h=S.hist;o.t=Math.round(S.t);h.log.push(o);if(h.log.length>400)h.log.shift()}
 function newDrought(t){return{next:t+rnd(2.5,5)*DAY,until:0,warned:false}}
-// 天気：st＝clear(晴れ)/cloud(くもり)/rain(雨)。until＝今の天気が終わる時、hs〜he＝本降りの時間帯、next＝次のくもり、
-// k＝雨の種類(0ふつう/1通り雨/2日照りの終わり)、cr＝このくもりが雨になるか、rs＝雨の始まり、af＝雨があがった時、pend＝通り雨の予約
-function newWeather(t){return{st:'clear',until:0,hs:0,he:0,next:t+rnd(WXK.clear[0],WXK.clear[1]),k:0,cr:0,rs:0,af:-1e9,pend:0,hon:0}}
+// 天気（V0.6）：st＝clear(晴れ)/rain(通り雨)。until＝雨が終わる時、hs〜he＝ザーッの強い時間帯、next＝次に自然に来る通り雨、
+// k＝雨の種類(1通り雨/2日照りの終わり)、ty＝0ぽつぽつ/1ザーッ、rs＝雨の始まり、af＝雨があがった時、pend＝通り雨の予約（開いたときのくじ）、
+// add・fill＝この雨で水たまりに足す量・足した量、rbs〜rb＝虹の出ている時間、rbOn＝虹が出ているか、v＝6（V0.6の形）
+function newWeather(t){return{v:6,st:'clear',until:0,hs:0,he:0,next:t+rnd(WXK.gap[0],WXK.gap[1]),k:0,ty:0,rs:0,af:-1e9,pend:0,add:0,fill:0,rbs:0,rb:0,rbOn:0}}
 function wxRain(){return !!S.wx&&S.wx.st==='rain'}
 function wxHeavy(){var w=S.wx;return !!w&&w.st==='rain'&&S.t>=w.hs&&S.t<w.he}
+function wxBow(){var w=S.wx;return !!w&&w.rbs>0&&S.t>=w.rbs&&S.t<w.rb}
+// 水たまりのくぼ地：[x, y, 水の量0〜1, いっぱいの半径(マス), 満水から消えるまでの秒]。世界ごとに決まった場所
+function mkPuddles(){
+  var a=[],n=WXK.pud[0]+pick(WXK.pud[1]-WXK.pud[0]+1),tries=0,x,y,ok,i;
+  while(a.length<n&&tries<500){
+    tries++;x=rnd(6,COLS-6)*CELL;y=rnd(5,ROWS-5)*CELL;ok=true;
+    for(i=0;i<a.length;i++)if(Math.sqrt((a[i][0]-x)*(a[i][0]-x)+(a[i][1]-y)*(a[i][1]-y))<9*CELL){ok=false;break}
+    if(ok)a.push([Math.round(x),Math.round(y),0,Math.round(rnd(WXK.pudR[0],WXK.pudR[1])*10)/10,Math.round(rnd(WXK.pudDry[0],WXK.pudDry[1]))]);
+  }
+  return a;
+}
+function pudR(p){return p[2]>0.02?p[3]*CELL*Math.sqrt(p[2]):0} // 水の量に合わせた半径（面積が水の量に比例）
+// その日に来た通り雨の数（1日3回まで）
+function wxCount(){var h=S.hist,d=Math.floor(S.t/DAY)+1;if(h.shd!==d){h.shd=d;h.shn=0}return h.shn||0}
 function newWorld(){
   var now=new Date(),i,x,y,c;
   S={t:now.getHours()*3600+now.getMinutes()*60+now.getSeconds(),gacc:0,imm:0,nid:1,
-     g:new Float32Array(N),f:new Float32Array(N),cl:new Float32Array(N),cln:0,cr:[],gavg:0.6,poo:[],fl:[],dr:null,reg:[],wx:null,wet:0};
-  S.dr=newDrought(S.t);S.hist=newHist(S.t);S.wx=newWeather(S.t);
+     g:new Float32Array(N),f:new Float32Array(N),cl:new Float32Array(N),cln:0,cr:[],gavg:0.6,poo:[],fl:[],dr:null,reg:[],wx:null,wet:0,pd:null};
+  S.dr=newDrought(S.t);S.hist=newHist(S.t);S.wx=newWeather(S.t);S.pd=mkPuddles();
   var p1=rnd(0,6),p2=rnd(0,6),p3=rnd(0,6);
   for(y=0;y<ROWS;y++)for(x=0;x<COLS;x++){
     S.g[y*COLS+x]=clamp(0.62+0.25*Math.sin(x*0.31+p1)+0.25*Math.sin(y*0.23+p2)+0.15*Math.sin((x+y)*0.17+p3)+rnd(-0.06,0.06),0.15,1);
@@ -314,7 +335,7 @@ function tickBonds(dt){
   }
 }
 function eligible(c){
-  return !c.dead&&!c.held&&c.age>=MATURE&&c.age<c.life*0.9&&c.e>70&&c.cd<=0&&c.st!=='sleep'&&S.gavg>RICH&&S.cr.length<MAXPOP&&!wxHeavy();
+  return !c.dead&&!c.held&&c.age>=MATURE&&c.age<c.life*0.9&&c.e>70&&c.cd<=0&&c.st!=='sleep'&&S.gavg>RICH&&S.cr.length<MAXPOP;
 }
 function findMate(c){
   var best=null,bs=1e9,range=c.vis*CELL*2.5,i,o,d,s;
@@ -370,16 +391,8 @@ function wander(c,f){
   if(S.cr.length>1&&Math.random()<0.15){o=S.cr[pick(S.cr.length)];goNear(c,o,25);return}
   c.tx=clamp(c.x+rnd(-60,60),6,W-6);c.ty=clamp(c.y+rnd(-60,60),6,H-6);c.st='wander';
 }
-// 近くにいるほかの子（雨やどりの相手さがし）
-function nearOther(c,r){
-  var best=null,bd=r,i,o,d;
-  for(i=0;i<S.cr.length;i++){o=S.cr[i];if(o===c||o.dead||o.lost===1||o.held)continue;d=dist(c,o);if(d<bd){bd=d;best=o}}
-  return best;
-}
-// 本降り：その場の近くで仲よしのそばへ寄り、立ったままじっとする（雨やどり）
-function shelter(c,o){c.st='shelter';c.tid=o?o.id:-1;c.timer=rnd(15,80);if(o&&dist(c,o)>1)c.h=Math.atan2(o.y-c.y,o.x-c.x)}
 function decide(c,night){
-  var hv=!night&&wxHeavy(),hung=night?30:hv?WXK.eatE:c.hung,o,f,par=null,juv=c.age<MATURE,d;
+  var hung=night?30:c.hung,o,f,par=null,juv=c.age<MATURE,d;
   if(juv&&c.lost!==1){par=byId(c.ma)||byId(c.mb)}
   if(c.e<hung){
     if(par&&c.e>25&&dist(c,par)>32){c.st='follow';c.tid=par.id;return}
@@ -393,12 +406,6 @@ function decide(c,night){
     return;
   }
   f=byId(c.bf);
-  if(hv){
-    if(par){if(dist(c,par)>12){c.st='follow';c.tid=par.id;return}shelter(c,par);return}
-    o=f&&dist(c,f)<90?f:nearOther(c,60);
-    if(o&&dist(c,o)>14){goNear(c,o,7);return}
-    shelter(c,o);return;
-  }
   if(par&&Math.random()<1-0.6*c.age/MATURE){
     if(dist(c,par)>18){c.st='follow';c.tid=par.id;return}
     f=par;
@@ -414,7 +421,7 @@ function decide(c,night){
     if(d<16){c.st='groom';c.tid=f.id;c.timer=rnd(60,180);c.h=Math.atan2(f.y-c.y,f.x-c.x);return}
     if(d<70&&Math.random()<0.5){goNear(c,f,8);return}
   }
-  if(Math.random()<0.25+0.5*c.lazy+(wxRain()?WXK.lightRest:0)){c.st='rest';c.timer=rnd(60,240)*(0.6+c.lazy)}
+  if(Math.random()<0.25+0.5*c.lazy){c.st='rest';c.timer=rnd(60,240)*(0.6+c.lazy)}
   else wander(c,f);
 }
 function mate(a,b){
@@ -443,7 +450,7 @@ function updateCreature(c,dt,night){
   if(c.dead)return;
   c.age+=dt;if(c.cd>0)c.cd-=dt;
   var juv=c.age<MATURE,old=c.age>c.life*0.8,st=c.st;
-  var drain=st==='sleep'?0.001:(st==='rest'||st==='groom'||st==='shelter')?0.002:st==='eat'?0.003:0.004*(0.6+0.4*c.sp/6);
+  var drain=st==='sleep'?0.001:(st==='rest'||st==='groom')?0.002:st==='eat'?0.003:0.004*(0.6+0.4*c.sp/6);
   if(juv)drain*=0.8;
   if(c.held){c.e=Math.max(1,c.e-drain*dt);return}
   c.e-=drain*dt;
@@ -465,7 +472,7 @@ function updateCreature(c,dt,night){
       if(S.poo.length>220)S.poo.shift();
       fertAt(c.x,c.y,0.4,0.1);
     }
-    if(c.e>=92||(c.e>=WXK.eatTo&&!night&&wxHeavy()))decide(c,night);
+    if(c.e>=92)decide(c,night);
     else if(trt){if(S.cl[i]<=0.05)seekFood(c,true)}
     else if(S.g[i]<FLOOR+0.03){if(!seekFood(c))roam(c)}
     return;
@@ -477,12 +484,6 @@ function updateCreature(c,dt,night){
     return;
   }
   if(st==='sleep'){if(!night||c.e<28)decide(c,night);return}
-  if(st==='shelter'){
-    o=byId(c.tid);
-    if(night||c.e<WXK.eatE||(o&&dist(c,o)>24)){decide(c,night);return}
-    if(!wxHeavy()){c.timer-=dt;if(c.timer<=0)decide(c,night)} // 本降りがやんだら、少しずつ散っていく
-    return;
-  }
   var tx=c.tx,ty=c.ty;
   if(st==='court'){
     o=byId(c.tid);
@@ -521,67 +522,59 @@ function tickDrought(){
   if(D.until>0){
     if(S.t>=D.until){
       D.until=0;D.next=S.t+rnd(3,6)*DAY;D.warned=false;hlog({k:'e'});
-      startRain(WXK.dEnd[0]+WXK.dEnd[1],WXK.dEnd[0],2); // しっかりした雨で日照りがおわる
+      startRain(2,0); // 短めの雨（20分）で日照りがおわる
       hooks.event('droughtEnd',{});
     }
   }else{
     if(!D.warned&&S.t>=D.next-0.4*DAY){D.warned=true;hooks.event('droughtSoon',{})}
-    // 日照りは晴れているときに始まる（くもり・雨の間は待つ）
-    if(S.t>=D.next&&w.st==='clear'){D.until=S.t+rnd(0.7,1)*DAY;w.pend=0;S.hist.dr++;hlog({k:'s'});hooks.event('droughtStart',{})}
+    // 日照りは晴れているときに始まる（雨の間は待つ）。日照りのあとまで、自然の通り雨はお休み
+    if(S.t>=D.next&&w.st==='clear'){D.until=S.t+rnd(0.7,1)*DAY;w.pend=0;w.next=Math.max(w.next,D.until+rnd(WXK.gap[0],WXK.gap[1])*0.5);S.hist.dr++;hlog({k:'s'});hooks.event('droughtStart',{})}
   }
 }
-// 雨を降らせる（dur＝長さ、hv＝本降りの長さ、k＝種類）
-function startRain(dur,hv,k){
-  var w=S.wx,a;
-  w.st='rain';w.k=k;w.rs=S.t;w.until=S.t+dur;w.hs=w.he=0;w.hon=0;w.cr=0;
-  if(hv>0){
-    if(k===2)a=S.t;                                    // 日照りの終わり：はじめに本降り
-    else if(k===1)a=S.t+Math.min(60,dur*0.15);           // 通り雨：ざっと降って、さっと上がる
-    else a=S.t+rnd(0.1,0.9)*Math.max(0,dur-hv);          // ふつう：雨の途中のどこかで強まる
-    w.hs=a;w.he=Math.min(w.until,a+hv);
-  }
+// 雨を降らせる（k＝1通り雨/2日照りの終わり、ty＝0ぽつぽつ/1ザーッ）
+function startRain(k,ty){
+  var w=S.wx,dur,a;
+  w.st='rain';w.k=k;w.ty=ty;w.rs=S.t;w.hs=w.he=0;w.fill=0;w.rbs=w.rb=0;w.rbOn=0;
+  if(k===2){
+    dur=WXK.dEnd;a=S.t+rnd(WXK.dEndZ[0],WXK.dEndZ[1]);w.hs=a;w.he=a+rnd(WXK.dEndZL[0],WXK.dEndZL[1]);w.add=WXK.pudHeavy;
+  }else if(ty===1){
+    a=S.t+rnd(WXK.zPre[0],WXK.zPre[1]);w.hs=a;w.he=a+rnd(WXK.zHeavy[0],WXK.zHeavy[1]);
+    dur=clamp(w.he-S.t+rnd(WXK.zPost[0],WXK.zPost[1]),WXK.zLen[0],WXK.zLen[1]);w.he=Math.min(w.he,S.t+dur-10);w.add=WXK.pudHeavy;
+  }else{dur=rnd(WXK.light[0],WXK.light[1]);w.add=WXK.pudLight}
+  w.until=S.t+dur;
   S.hist.rn=(S.hist.rn||0)+1;S.hist.dw=(S.hist.dw||0)+1;
-  if(k!==2)hlog({k:'w',m:Math.round(dur/60),sh:k===1?1:0,hv:hv>0?1:0});
-  hooks.event('rainStart',{k:k});
+  if(k===1){wxCount();S.hist.shn=(S.hist.shn||0)+1;hlog({k:'w',sh:1,m:Math.round(dur/60),hv:ty})}
+  hooks.event('rainStart',{k:k,ty:ty});
 }
+function startShower(){startRain(1,Math.random()<WXK.lightP?0:1)}
 // 天気の係（30秒ごと）。留守の計算でも同じように進む
 function tickWeather(dt){
-  var w=S.wx,D=S.dr,night=darkness(S.t)>0.6,i,c,hv;
+  var w=S.wx,D=S.dr,i,p,f,pd=S.pd||[];
   if(w.st==='rain'){
     S.wet=Math.min(1,(S.wet||0)+dt/WXK.wetUp[wxHeavy()?1:0]);
-    hv=wxHeavy();
-    if(hv&&!w.hon){
-      w.hon=1;
-      // 本降りになったら、みんな過ごし方を考えなおす（ねむっている子・食べているはらぺこの子・あとをついていく子はそのまま）
-      for(i=0;i<S.cr.length;i++){
-        c=S.cr[i];
-        if(c.dead||c.held||c.play||c.lost===1||c.st==='sleep'||c.st==='follow'||(c.st==='eat'&&c.e<WXK.eatTo))continue;
-        decide(c,night);
-      }
-      hooks.event('heavyStart',{});
-    }else if(!hv&&w.hon){w.hon=0;hooks.event('heavyEnd',{})}
+    // 水たまり：この雨で足す量を、降っている間に少しずつ
+    f=w.add*clamp((S.t-w.rs)/Math.max(1,w.until-w.rs),0,1);
+    for(i=0;i<pd.length;i++)pd[i][2]=Math.min(1,pd[i][2]+f-w.fill);
+    w.fill=f;
     if(S.t>=w.until){
-      w.st='clear';w.af=S.t;w.hon=0;
-      if(w.k===1)w.next=Math.max(w.next,S.t+rnd(3600,3*3600));
-      else w.next=S.t+rnd(WXK.clear[0],WXK.clear[1]);
+      w.st='clear';w.af=S.t;w.hs=w.he=0;
+      w.next=Math.max(w.next,S.t+3600);
+      // 虹：昼の雨あがりの2回に1回（日照りの終わりの雨のあとは必ず）。夜は虹のかわりに星空がもどる
+      if(darkness(S.t)<0.15&&(w.k===2||Math.random()<WXK.rbP)){w.rbs=S.t+rnd(WXK.rbWait[0],WXK.rbWait[1]);w.rb=w.rbs+rnd(WXK.rb[0],WXK.rb[1])}
       hooks.event('rainEnd',{k:w.k});
     }
     return;
   }
   S.wet=Math.max(0,(S.wet||0)-dt/WXK.wetDown);
-  if(D.until>0){w.pend=0;if(w.st==='cloud'){w.st='clear'}return} // 日照りの間は、くもり・雨・通り雨が来ない
-  if(w.st==='cloud'){
-    if(S.t>=w.until){
-      if(w.cr)startRain(rnd(WXK.rain[0],WXK.rain[1]),Math.random()<WXK.heavyP?rnd(WXK.heavy[0],WXK.heavy[1]):0,0);
-      else{w.st='clear';w.next=S.t+rnd(WXK.clear[0],WXK.clear[1]);hooks.event('cloudGone',{})}
-    }
-    return;
+  for(i=0;i<pd.length;i++){p=pd[i];if(p[2]>0){p[2]-=dt/p[4]*(D.until>0?WXK.pudDrought:1);if(p[2]<0.01)p[2]=0}}
+  if(w.rbs>0&&!w.rbOn&&S.t>=w.rbs&&S.t<w.rb){w.rbOn=1;S.hist.rbn=(S.hist.rbn||0)+1;hlog({k:'rb'});hooks.event('rainbow',{})}
+  if(w.rbs>0&&S.t>=w.rb){w.rbOn=0;w.rbs=w.rb=0}
+  if(D.until>0){w.pend=0;return} // 日照りの間は、通り雨が来ない
+  if(w.pend&&S.t>=w.pend){w.pend=0;if(wxCount()<WXK.showerMax){startShower();return}}
+  if(S.t>=w.next){
+    w.next=S.t+rnd(WXK.gap[0],WXK.gap[1]);
+    if(wxCount()<WXK.showerMax)startShower();
   }
-  if(w.pend&&S.t>=w.pend){
-    w.pend=0;i=rnd(WXK.shower[0],WXK.shower[1]);
-    startRain(i,Math.random()<WXK.showerHeavyP?i*rnd(0.4,0.6):0,1);return;
-  }
-  if(S.t>=w.next){w.st='cloud';w.until=S.t+rnd(WXK.cloud[0],WXK.cloud[1]);w.cr=Math.random()>=WXK.noRain?1:0;hooks.event('cloud',{})}
 }
 function step(dt){
   S.t+=dt;S.gacc+=dt;
@@ -612,7 +605,7 @@ var gctx=gc.getContext('2d'),img=gctx.createImageData(COLS,ROWS);
 var tex=new Float32Array(N),hsh=new Float32Array(N);
 (function(){for(var i=0;i<N;i++){tex[i]=0.94+Math.random()*0.12;hsh[i]=Math.random()}})();
 var scale=1,dpr=1,speed=1,busy=false,selId=null,memorial='',sowing=false,dryVis=0;
-var VER='V0.5';
+var VER='V0.6';
 // 天気の見た目（画面側だけ・保存しない）：wxVis＝0晴れ〜0.55くもり〜1雨、hvVis＝本降り、woolWet＝ぬれた毛、wetVis＝地面のしめり（草の色）、woolDl＝毛の色の暗さ
 var wxVis=0,hvVis=0,rainVis=0,woolWet=0,wetVis=0,woolDl=0,wxRoll=false,frozen=false;
 var scw=300,sch=170,scx=W/2,scy=H/2,hits=[];
@@ -656,7 +649,8 @@ function mkSnap(){
   for(i=0;i<N;i++){s+=Math.min(35,Math.floor(S.g[i]*36)).toString(36);sum+=S.g[i]}
   for(i=0;i<S.cr.length;i++){c=S.cr[i];if(c.lost===1)continue;cr.push([Math.round(c.x),Math.round(c.y),c.wh,c.ws,Math.round(c.wl),Math.round(ageScale(c)*c.size*10),c.bell?1:0])}
   for(i=0;i<S.fl.length;i++){f=S.fl[i];fl.push([f[0],f[1],f[3]])}
-  return{t:Math.round(S.t),n:S.cr.length,ga:Math.round(sum/N*100),dry:S.dr.until>0?1:0,wx:wxRain()?2:S.wx.st==='cloud'?1:0,s:s,c:cr,f:fl};
+  return{t:Math.round(S.t),n:S.cr.length,ga:Math.round(sum/N*100),dry:S.dr.until>0?1:0,wx:wxRain()?2:0,s:s,c:cr,f:fl,
+    p:(S.pd||[]).filter(function(q){return q[2]>0.02}).map(function(q){return[q[0],q[1],Math.round(pudR(q))]})};
 }
 function saveSnaps(){if(frozen)return;try{localStorage.setItem(KEY+'-snaps',JSON.stringify(SNAPS))}catch(e){}}
 function loadSnaps(){try{var a=JSON.parse(localStorage.getItem(KEY+'-snaps')||'[]');if(a&&a.length)SNAPS=a.filter(function(q){return q&&q.s&&q.s.length===N&&q.t<=S.t+60})}catch(e){}}
@@ -679,7 +673,18 @@ function fmtDur(s){
 }
 function wool(c,dl){return 'hsl('+c.wh+','+c.ws+'%,'+clamp(c.wl+(dl||0)+woolDl,8,97)+'%)'}
 // ===== 天気（画面側）=====
-function wxMark(){var w=S.wx;if(!w)return '';if(w.st==='rain')return w.k===1?'🌦':'🌧';if(w.st==='cloud')return '☁️';return darkness(S.t)>0.6?'🌙':'☀️'}
+function wxMark(){var w=S.wx;if(!w)return '';if(w.st==='rain')return '🌦';if(wxBow())return '🌈';return darkness(S.t)>0.6?'🌙':'☀️'}
+// 見た目の目標（空の暗さ・雨つぶ・強い雨）。ぽつぽつは明るいまま。ザーッははじめの30秒で暗くなり、強くふって、すぐ明るくなる
+function wxGoal(){
+  var w=S.wx,b;
+  if(!w||w.st!=='rain')return[0,0,0];
+  if(wxHeavy())return[1,1,1];
+  if(w.hs&&S.t<w.hs&&w.hs-S.t<35){b=1-(w.hs-S.t)/35;return[0.42+0.5*b,0.5+0.2*b,0]}
+  if(w.ty===1)return S.t<w.hs?[0.42,0.5,0]:[0.25,0.3,0]; // ザーッのあと：小ぶりになって、すぐやむ
+  return[0.4,0.5,0];
+}
+// 雨あがり：空がいつもより少し澄む（10分ほどかけて元にもどる）
+function clearVis(){var w=S.wx;if(!w||w.st==='rain'||w.af<0)return 0;return clamp(1-(S.t-w.af)/600,0,1)}
 // 雨あがり：1分ほどの間に、1匹ずつ順番にブルブルッ
 function shakeAll(){
   var T=nowT(),a=S.cr.filter(function(c){return !c.held&&c.st!=='sleep'&&c.lost!==1}),i,j,t;
@@ -688,19 +693,18 @@ function shakeAll(){
 }
 // 通り雨のくじ（起動時と、3分以上の留守から戻ったとき）
 function rollShower(){
-  var w=S.wx,hs=S.hist,day=dayOf(S.t);
+  var w=S.wx;
   if(!w||busy||speed>=10||w.st!=='clear'||w.pend||S.dr.until>0)return false;
-  if(hs.shd!==day){hs.shd=day;hs.shn=0}
-  if(hs.shn>=WXK.showerMax||Math.random()>=WXK.showerP)return false;
-  hs.shn++;w.pend=S.t+rnd(WXK.showerWait[0],WXK.showerWait[1]);
+  if(wxCount()>=WXK.showerMax||Math.random()>=WXK.showerP)return false;
+  w.pend=S.t+rnd(WXK.showerWait[0],WXK.showerWait[1]);
   return true;
 }
 function wxTick(rdt){
-  var w=S.wx,rn=w.st==='rain',hv=wxHeavy(),k=speed>20||busy||wxVis<0?1:Math.min(1,rdt*1.2),sdt=rdt*speed;
+  var w=S.wx,rn=w.st==='rain',hv=wxHeavy(),G=wxGoal(),k=speed>20||busy||wxVis<0?1:Math.min(1,rdt*1.5),sdt=rdt*speed;
   if(wxVis<0)woolWet=rn?(hv?1:0.6):0;
-  wxVis+=((rn?1:w.st==='cloud'?0.55:0)-wxVis)*k;
-  hvVis+=((hv?1:0)-hvVis)*k;
-  rainVis+=((rn?1:0)-rainVis)*k;
+  wxVis+=(G[0]-wxVis)*k;
+  hvVis+=(G[2]-hvVis)*k;
+  rainVis+=(G[1]-rainVis)*k;
   if(rn)woolWet+=((hv?1:0.6)-woolWet)*Math.min(1,sdt/90);
   else woolWet=Math.max(0,woolWet-sdt/1200); // 毛は20分ほどで元の色に
   wetVis=S.wet||0;
@@ -738,9 +742,9 @@ hooks.event=function(type,d){
   }else if(type==='droughtSoon'){msg='空気が乾いてきました。もうすぐ日照りかもしれません'}
   else if(type==='droughtStart'){msg='日照りがはじまりました。草の育ちがわるくなります';if(rep)rep.dr++}
   else if(type==='droughtEnd'){msg='雨がふって、日照りがおわりました'}
-  else if(type==='cloud'){msg='☁️ くもってきました'}
-  else if(type==='rainStart'){if(rep)rep.rain++;msg=d.k===1?'🌦 通り雨です':d.k===0?'🌧 雨がふってきました':''}
+  else if(type==='rainStart'){if(rep)rep.rain++;msg=d.k===1?'🌦 通り雨です':''}
   else if(type==='rainEnd'){msg='🌤 雨があがりました';if(!rep)shakeAll()}
+  else if(type==='rainbow'){msg='🌈 虹が出ています';if(rep)rep.rb++}
   if(!rep&&msg)toast(msg,evt);
 };
 elToast.onclick=function(){
@@ -756,6 +760,7 @@ function save(){
   try{
     var cls=[],ci;for(ci=0;ci<N;ci++)if(S.cl[ci]>0.02)cls.push([ci,Math.round(S.cl[ci]*100)]);
     var o={v:2,ver:VER,cl:cls,t:S.t,gacc:S.gacc,imm:S.imm,nid:S.nid,sel:selId,real:Date.now(),poo:S.poo,fl:S.fl,dr:S.dr,hist:S.hist,reg:S.reg,wx:S.wx,wet:Math.round((S.wet||0)*1000)/1000,
+      pd:(S.pd||[]).map(function(p){return[p[0],p[1],Math.round(p[2]*1000)/1000,p[3],p[4]]}),
       g:Array.prototype.map.call(S.g,function(v){return Math.round(v*100)}),
       f:Array.prototype.map.call(S.f,function(v){return Math.round(v*100)}),
       cr:S.cr.map(function(c){
@@ -781,7 +786,11 @@ function load(){
     if(o.v===1)flipOld(o);
     S={t:o.t,gacc:o.gacc||0,imm:o.imm||0,nid:o.nid,g:new Float32Array(N),f:new Float32Array(N),cl:new Float32Array(N),cln:0,cr:o.cr,gavg:0.5,
        poo:o.poo||[],fl:o.fl||[],dr:o.dr||newDrought(o.t),hist:o.hist||newHist(o.t),reg:Array.isArray(o.reg)?o.reg:null,
-       wx:o.wx&&o.wx.st?o.wx:newWeather(o.t),wet:+o.wet||0};
+       wx:o.wx&&o.wx.v===6&&(o.wx.st==='clear'||o.wx.st==='rain')?o.wx:null,wet:+o.wet||0,
+       pd:Array.isArray(o.pd)&&o.pd.length?o.pd:null};
+    // V0.5までの天気（くもり・長い雨・本降り）は晴れに直す。くぼ地がなければ足す（最初は水なし）
+    if(!S.wx){S.wx=newWeather(o.t);if(o.wx&&o.wx.af>0)S.wx.af=o.wx.af}
+    if(!S.pd)S.pd=mkPuddles();
     if(S.hist.rn==null)S.hist.rn=0;if(S.hist.dw==null)S.hist.dw=0;
     for(i=0;i<N;i++){S.g[i]=o.g[i]/100;S.f[i]=(o.f?o.f[i]:0)/100}
     if(o.cl)o.cl.forEach(function(p){S.cl[p[0]]=p[1]/100;S.cln++});
@@ -793,6 +802,7 @@ function load(){
       else{if(!(c.ws>=0&&c.ws<=70))c.ws=L[1];if(!(c.wl>=25&&c.wl<=95))c.wl=L[2]}
       if(!c.b)c.b={};if(c.ma===undefined){c.ma=-1;c.mb=-1}
       if(c.bf===undefined)c.bf=-1;if(!c.poo)c.poo=0;if(!c.kl)c.kl=[];
+      if(c.st==='shelter'){c.st='rest';c.timer=rnd(10,60);c.tid=-1} // 雨やどりはなくなった
     }
     S.cr.forEach(function(ch){[ch.ma,ch.mb].forEach(function(pid){var p=byId(pid);if(p&&!p.kl.some(function(k){return k[0]===ch.id}))p.kl.push([ch.id,ch.name])})});
     regSeed();
@@ -839,7 +849,7 @@ function catchUp(sec,showReport){
   dropNow();endLost();
   var total=Math.min(sec,7*DAY),rem=total;
   busy=true;
-  rep={born:[],aged:0,starved:0,imm:0,dr:0,rain:0,watched:'',bells:[]};
+  rep={born:[],aged:0,starved:0,imm:0,dr:0,rain:0,rb:0,watched:'',bells:[]};
   var watchedBefore=selId;
   if(showReport){closePage();elModal.style.display='flex';elBox.innerHTML='<h2>おかえりなさい</h2>留守の間のできごとを計算しています… <span id="pct">0</span>%'}
   function chunk(){
@@ -862,10 +872,11 @@ function report(r,sec,total,watchedBefore){
   if(r.aged){any=true;h+='<li>'+r.aged+'匹が寿命で旅立ちました</li>'}
   if(r.starved){any=true;h+='<li>'+r.starved+'匹がおなかをすかせて旅立ちました</li>'}
   if(r.imm){any=true;h+='<li>旅の者が'+r.imm+'匹やってきました</li>'}
-  if(r.rain){any=true;h+='<li>雨が'+r.rain+'回ふりました</li>'}
+  if(r.rain){any=true;h+='<li>通り雨が'+r.rain+'回ふりました</li>'}
+  if(r.rb){any=true;h+='<li>虹が'+r.rb+'回出ました</li>'}
   if(r.dr){any=true;h+='<li>日照りが'+r.dr+'回ありました</li>'}
   if(!any)h+='<li>草原はしずかでした</li>';
-  h+='<li>いまは'+S.cr.length+'匹が暮らしています（'+dayOf(S.t)+'日め）'+(S.dr.until>0?'。いまは日照りです':wxRain()?'。いまは雨がふっています':S.wx.st==='cloud'?'。いまはくもりです':'')+'</li></ul>';
+  h+='<li>いまは'+S.cr.length+'匹が暮らしています（'+dayOf(S.t)+'日め）'+(S.dr.until>0?'。いまは日照りです':wxRain()?'。いまは通り雨がふっています':wxBow()?'。いま虹が出ています':'')+'</li></ul>';
   if(watchedBefore!=null){
     var c=byId(watchedBefore);
     if(c)h+='見守っていた '+c.name+' は元気です（おなか'+Math.round(c.e)+'%）。';
@@ -966,6 +977,7 @@ function drawMap(T,cvs,big){
   ctx.setTransform(cvs.width/W,0,0,cvs.height/H,0,0);
   ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
   ctx.drawImage(gc,0,0,W,H);
+  for(i=0;i<S.pd.length;i++){a=pudR(S.pd[i]);if(a>0){ctx.fillStyle='rgba(126,186,226,'+(0.55+0.35*Math.min(1,S.pd[i][2]*2))+')';ell(ctx,S.pd[i][0],S.pd[i][1],a,a)}}
   if(S.cln>0){
     ctx.fillStyle='rgba(255,255,255,.9)';
     for(i=0;i<N;i++)if(S.cl[i]>0.15)ell(ctx,(i%COLS+0.5)*CELL,(Math.floor(i/COLS)+0.5)*CELL,1.5*mapK,1.5*mapK);
@@ -1028,6 +1040,7 @@ function drawSheep(g,px,py,u,c,T,sel,showName){
   if(c.held||fun)st='idle';
   if(fun&&c.hop)dir=c.hop.dir;
   else if(c.lost===1&&st==='rest'){st='idle';if(Math.floor(T/0.9+c.id)%3===0)dir=-dir}
+  else if(drinking(c,T)){st='eat';dir=Math.cos(c.dk.h)>=0?1:-1} // 水を飲む：水のほうを向いて、頭を下げる
   var mv=isMoving(st),lying=st==='sleep'||st==='rest';
   if(hd)air=Math.max(0,hd.lift)*u;
   else if((hq=hopQ(c,T)))air=hq.lift*HOPK.h*HOPK.bodyH*u;
@@ -1052,7 +1065,7 @@ function drawSheep(g,px,py,u,c,T,sel,showName){
   // 跳ねる：跳ぶ前にぐっとかがむ・前後の傾き（上がるとき鼻が上）・背中の丸め
   var ar=hq?hq.arch:0,eb=hq?hq.ear*1.1*(c.ear===1?1.6:1)-hq.flop*0.6:0;
   // 雨：本降りの中では耳が下がり、頭を少し下げる。ぬれた毛は少しぺたっと
-  var drip=hd||hq||st==='sleep'?0:st==='shelter'?1:hvVis>0.5&&!lying?hvVis*0.8:0,pf=1-0.08*woolWet;
+  var drip=hd||hq||st==='sleep'?0:hvVis>0.5&&!lying?hvVis*0.8:0,pf=1-0.08*woolWet;
   if(drip)eb-=0.55*drip;
   function bd(x){if(!ar)return 0;var t=x/(1.3*u);return t>=1||t<=-1?0:-ar*u*0.66*(1-t*t)}
   if(hq&&hq.prep)g.translate(0,u*0.16*hq.prep);
@@ -1244,8 +1257,91 @@ function drawRain(g,w,h,hor,T,dk){
     x=((hsh[(i*11+1)%N]*1.2*w+T*sp*0.22)%(w*1.2))-w*0.1;
     if(y+len<0)continue;
     al=(0.18+0.42*d)*rainVis*(1-dk*0.4);
-    g.strokeStyle='rgba('+(d<0.4?'235,240,248':'205,215,232')+','+al+')';g.lineWidth=0.6+1.1*d;
+    g.strokeStyle='rgba('+(d<0.4?'235,240,248':'205,215,232')+','+al+')';g.lineWidth=(0.6+1.1*d)*(0.65+0.35*hvVis); // ぽつぽつは細く
     g.beginPath();g.moveTo(x,y);g.lineTo(x+len*0.22,y+len);g.stroke();
+  }
+}
+// 虹：ズーム画面の空に、うすい7色の半円（中心は地平線の下）。遠くの景色なので、横に散歩してもほぼ同じ位置
+var RBC=['255,90,90','255,160,70','255,226,90','120,210,110','90,170,240','100,110,220','170,110,210'];
+function drawRainbow(g,w,hor,dk){
+  var W0=S.wx,a,R,cx,cy,i,bw;
+  if(!W0||!(W0.rbs>0)||S.t<W0.rbs||S.t>=W0.rb)return;
+  a=Math.min(1,(S.t-W0.rbs)/40,(W0.rb-S.t)/60)*(1-dk);if(a<=0.01)return; // ふわっと出て、ふわっと消える
+  R=Math.max(hor*1.3,w*0.28);cx=w*0.4-(scx-W/2)*0.04;cy=hor+R*0.3;bw=R*0.022;
+  g.save();g.beginPath();g.rect(0,0,w,hor+1);g.clip();g.lineWidth=bw*1.15;
+  for(i=0;i<7;i++){g.strokeStyle='rgba('+RBC[i]+','+(0.26*a)+')';g.beginPath();g.arc(cx,cy,R-i*bw,3.1416,6.2832);g.stroke()}
+  g.lineWidth=bw*9;g.strokeStyle='rgba(255,255,255,'+(0.06*a)+')';g.beginPath();g.arc(cx,cy,R-bw*3,3.1416,6.2832);g.stroke();
+  g.restore();
+}
+// 水たまり：空の色をうつした水色。雨の間は波紋。遠近法に合わせて横長
+var PM=new Uint8Array(N),PP={x:0,y:0,s:0};
+function drawPuddles(g,w,h,T,day,dk){
+  var pd=S.pd,i,j,p,r,x0,y0,x1,y1,cx,cy,rx,ry,sx2,ph,rr,k,col,cyc;
+  PM.fill(0);
+  for(i=0;i<pd.length;i++){
+    p=pd[i];r=pudR(p);if(r<=0)continue;
+    // 水の下になったマス（草の葉を描かない）
+    for(y0=Math.max(0,Math.floor((p[1]-r)/CELL));y0<=Math.min(ROWS-1,Math.floor((p[1]+r)/CELL));y0++)
+      for(x0=Math.max(0,Math.floor((p[0]-r)/CELL));x0<=Math.min(COLS-1,Math.floor((p[0]+r)/CELL));x0++)
+        if(Math.pow((x0+0.5)*CELL-p[0],2)+Math.pow((y0+0.5)*CELL-p[1],2)<r*r*0.8)PM[y0*COLS+x0]=1;
+    if(!proj(p[0],p[1]-r,PP))continue;y0=PP.y;
+    if(!proj(p[0],p[1],PP))continue;cx=PP.x;sx2=PP.s;
+    y1=proj(p[0],p[1]+r,PP)?PP.y:h+50;
+    rx=r*scZ*sx2;cy=(y0+y1)/2;ry=Math.max(0.5,(y1-y0)/2);
+    if(cx+rx<-10||cx-rx>w+10||y0>h+5)continue;
+    g.fillStyle='rgba(62,74,40,'+(0.35*Math.min(1,p[2]*3))+')';ell(g,cx,cy,rx*1.06+1,ry*1.1+0.8); // ぬれた土のふち
+    col=mixa(mixa(day,[150,196,226],0.35),[22,30,58],dk*0.9);
+    g.fillStyle='rgba('+Math.round(col[0])+','+Math.round(col[1])+','+Math.round(col[2])+','+(0.82*Math.min(1,0.4+p[2]*2))+')';ell(g,cx,cy,rx,ry);
+    g.strokeStyle='rgba(255,255,255,'+(0.18*(1-dk*0.7))+')';g.lineWidth=1;g.beginPath();g.ellipse(cx-rx*0.15,cy-ry*0.35,rx*0.55,ry*0.25,0,3.5,5.6);g.stroke();
+    // 雨の間の波紋
+    if(rainVis>0.05&&speed<10&&!busy){
+      k=Math.round((3+6*hvVis)*rainVis*Math.min(1,p[2]*2+0.2));
+      g.lineWidth=0.8;
+      for(j=0;j<k;j++){
+        cyc=T*(0.9+0.6*hvVis)+hsh[(i*31+j*7)%N]*3;ph=cyc%1;
+        var q=hsh[(i*13+j*17+Math.floor(cyc)*29)%N]*6.2832,qd=Math.sqrt(hsh[(i*7+j*23+Math.floor(cyc)*11)%N])*0.8;
+        rr=(2+rx*0.12)*ph+1;
+        g.strokeStyle='rgba(235,242,250,'+(0.55*(1-ph)*rainVis)+')';
+        g.beginPath();g.ellipse(cx+Math.cos(q)*rx*qd,cy+Math.sin(q)*ry*qd,rr,rr*ry/rx,0,0,6.2832);g.stroke();
+      }
+    }
+  }
+}
+// 歩くと足もとに小さな水しぶき・水を飲むと口もとに小さな波紋（画面側だけ）
+function waterFx(g,px,py,u,o,T){
+  var k,ph,dr,mv=!o.held&&(o.play?!!(o.hop&&o.hop.lp):isMoving(o.st));
+  if(drinking(o,T)){
+    dr=Math.cos(o.dk.h)>=0?1:-1;
+    for(k=0;k<2;k++){ph=(T*0.9+k*0.5)%1;g.strokeStyle='rgba(235,244,252,'+(0.7*(1-ph))+')';g.lineWidth=1;g.beginPath();g.ellipse(px+dr*u*1.75,py+u*0.05,u*(0.1+0.5*ph),u*(0.04+0.16*ph),0,0,6.2832);g.stroke()}
+    return;
+  }
+  if(!mv||!inPuddle(o))return;
+  g.fillStyle='rgba(225,238,250,.85)';
+  for(k=0;k<4;k++){
+    ph=(T*2.4+o.id*0.37+k*0.25)%1;
+    ell(g,px+(k-1.5)*u*0.55+Math.sin(k*2.1)*u*0.2*ph,py-Math.sin(ph*3.1416)*u*0.45,Math.max(0.6,u*0.06*(1-ph*0.5)),Math.max(0.6,u*0.06*(1-ph*0.5)));
+  }
+  ph=(T*1.6+o.id*0.21)%1;g.strokeStyle='rgba(235,244,252,'+(0.5*(1-ph))+')';g.lineWidth=1;g.beginPath();g.ellipse(px,py,u*(0.6+0.8*ph),u*(0.15+0.2*ph),0,0,6.2832);g.stroke();
+}
+// その子がいる水たまり（水の中なら）
+function inPuddle(c){var i,p,r;for(i=0;i<S.pd.length;i++){p=S.pd[i];r=pudR(p);if(r>0&&p[2]>0.15&&Math.abs(c.x-p[0])<r&&Math.abs(c.y-p[1])<r&&dist(c,{x:p[0],y:p[1]})<r)return p}return null}
+// 水たまりのふち（水から1マス以内）
+function pudEdge(c){var i,p,r,d;for(i=0;i<S.pd.length;i++){p=S.pd[i];if(p[2]<0.1)continue;r=pudR(p);d=dist(c,{x:p[0],y:p[1]});if(d>r-CELL*0.5&&d<=r+CELL)return p}return null}
+function drinking(c,T){return !!(c.dk&&T<c.dk.end&&!c.held&&!c.play&&c.st==='rest')}
+// 水を飲むしぐさ（見た目だけ・保存しない）：ふちで休む・歩く子が、ときどき水のほうを向いて3〜5秒
+var DRINK={every:180,len:[3,5]}; // 数分に1回くらい【仮決め】
+function drinkTick(rdt,T){
+  var i,c,p,any=false,d;
+  for(i=0;i<S.pd.length;i++)if(S.pd[i][2]>=0.1)any=true;
+  for(i=0;i<S.cr.length;i++){
+    c=S.cr[i];
+    if(c.dk){if(T>=c.dk.end||c.held||c.play||c.st!=='rest')c.dk=null;continue}
+    if(!any||speed>=10||c.held||c.play||c.lost===1||(c.st!=='rest'&&c.st!=='wander')||Math.random()>rdt/DRINK.every)continue;
+    p=pudEdge(c);if(!p)continue;
+    d=rnd(DRINK.len[0],DRINK.len[1]);
+    if(c.st==='wander'){c.st='rest';c.tx=c.x;c.ty=c.y;c.timer=0}
+    c.timer=Math.max(c.timer||0,d+rnd(1,4));
+    c.dk={end:T+d,h:Math.atan2(p[1]-c.y,p[0]-c.x)};
   }
 }
 function calcZ(z){return Math.min(scw/z,sch/(z*0.85))}
@@ -1297,10 +1393,13 @@ function drawScope(T){
   var day=dryVis>0?[222+10*dryVis,232-6*dryVis,236-50*dryVis]:[196,226,244],sky;
   // くもりで灰色がかり、雨で暗めの灰色に（夜の暗さ・日照りの色と重ねる）
   if(wxVis>0.005){var g1=[176,184,194],g2=[126,134,148],gg=wxVis<=0.55?g1:mixa(g1,g2,(wxVis-0.55)/0.45);day=mixa(day,gg,Math.min(1,wxVis/0.55)*0.85)}
+  var cvz=clearVis()*(1-dk);
+  if(cvz>0)day=mixa(day,[166,212,250],0.45*cvz); // 雨あがり：少し明るく澄んだ青
   sky=mixc(day,[24,32,66],dk);
   g.fillStyle=sky;g.fillRect(0,0,w,h);
   if(dk>0.5&&wxVis<0.5){g.fillStyle='rgba(255,255,240,'+(dk-0.5)*1.6*(1-wxVis*2)+')';for(i=0;i<14;i++)g.fillRect((hsh[i]*w*3.7)%w,hsh[i+20]*hor*0.9,1.5,1.5)}
   if(wxVis>0.02)drawClouds(g,w,hor,T,dk);
+  drawRainbow(g,w,hor,dk);
   g.fillStyle=mixc(mixa([104,150,92],[92,112,96],wxVis*0.6),[20,40,40],dk*0.7);
   ell(g,w*0.25,hor+8,w*0.45,20);ell(g,w*0.8,hor+10,w*0.4,16);
   g.fillStyle='#456b3c';g.fillRect(0,hor,w,h-hor);
@@ -1320,9 +1419,10 @@ function drawScope(T){
     g.fillStyle=eg;g.fillRect(0,pe-0.5,w,h-pe+1);
   }
   var hz=g.createLinearGradient(0,hor,0,hor+gh*0.32);
-  hz.addColorStop(0,mixc(day,[40,52,84],dk).replace('rgb','rgba').replace(')',',.7)'));
+  hz.addColorStop(0,mixc(day,[40,52,84],dk).replace('rgb','rgba').replace(')',','+(0.7-0.25*cvz).toFixed(3)+')'));
   hz.addColorStop(1,mixc(day,[40,52,84],dk).replace('rgb','rgba').replace(')',',0)'));
   g.fillStyle=hz;g.fillRect(0,hor,w,gh*0.32);
+  drawPuddles(g,w,h,T,day,dk);
   var gs=[];
   for(i=gusts.length-1;i>=0;i--){
     q=gusts[i];a=T-q.t;
@@ -1352,7 +1452,7 @@ function drawScope(T){
     s=D/q;if(Z*s*2.1<2.2)continue;
     hwc=w/2/(Z*s)+CELL;x0=Math.max(0,Math.floor((scx-hwc)/CELL));x1=Math.min(COLS-1,Math.floor((scx+hwc)/CELL));
     for(x=x0;x<=x1;x++){
-      i=y*COLS+x;v=S.g[i];if(v<=0.3)continue;
+      i=y*COLS+x;v=S.g[i];if(v<=0.3||PM[i])continue; // 水の下の草の葉は描かない（草そのものはそのまま）
       for(k=0;k<2;k++){
         wx=(x+hsh[(i+k*3)%N])*CELL;wy=(y+hsh[(i+7+k*4)%N])*CELL;
         q=D+scy-wy;if(q<D*0.3)continue;
@@ -1435,6 +1535,7 @@ function drawScope(T){
         }
       }else{
         drawSheep(g,px,py,u,o,T,isSel,u>11||isSel||o.bell);
+        if(speed<10&&!busy)waterFx(g,px,py,u,o,T);
         if(o.e<20&&o.st!=='sleep'&&u>6){
           var wyv=py-u*2.5+Math.sin(T*3+o.id)*2,wxv=px-(Math.cos(o.h)>=0?1:-1)*u*0.4;u=Math.min(u,24);
           g.fillStyle='rgba(120,190,255,.9)';g.beginPath();g.moveTo(wxv,wyv-u*0.42);g.quadraticCurveTo(wxv+u*0.3,wyv,wxv,wyv+u*0.16);g.quadraticCurveTo(wxv-u*0.3,wyv,wxv,wyv-u*0.42);g.fill();
@@ -1553,8 +1654,7 @@ function statusText(c){
   if(c.play)return 'ぴょんぴょん跳ねている';
   if(c.lost===1)return '迷子になっている';
   if(c.lost===2)return (o?o.name+'の所へ走っている':'親の所へ走っている');
-  if(st==='shelter')return o&&dist(c,o)<20?o.name+'と雨やどりしている':'雨やどりしている';
-  if(st==='eat'&&wxHeavy())return 'ぬれながら草を食べている';
+  if(drinking(c,nowT()))return '水を飲んでいる';
   if(st==='eat')return S.cl[cellOf(c)]>0.05?'おいしい草を食べている':'草を食べている';
   if(st==='seek')return c.tr?'おいしい草のほうへ歩いている':'草のほうへ歩いている';
   if(st==='roam')return '草をさがしている';
@@ -1900,7 +2000,7 @@ function hopFollow(o,pl){return pl&&hopFits(o.x,o.y,pl.h,pl.lp,pl.bl)?pl:null}
 function startHop(c,T,n,delay,pl){
   var hh=pl?pl.h:c.h,cs=Math.cos(hh);
   c.play=1;c.zm=null;
-  c.hop={t:T+(delay||0),n:n,lp:pl?pl.lp:null,h:hh,bl:pl?pl.bl:0,ox:c.x,oy:c.y,dir:Math.abs(cs)>0.3?(cs>0?1:-1):(Math.cos(c.h)>=0?1:-1)};
+  c.hop={t:T+(delay||0),n:n,vq:1,lp:pl?pl.lp:null,h:hh,bl:pl?pl.bl:0,ox:c.x,oy:c.y,dir:Math.abs(cs)>0.3?(cs>0?1:-1):(Math.cos(c.h)>=0?1:-1)};
 }
 // 1回の跳ねの中での進み具合（空中は一定の速さ）
 function hopFwd(p){return p<0.12?0.04*p/0.12:p<0.88?0.04+0.92*(p-0.12)/0.76:0.96+0.04*(p-0.88)/0.12}
@@ -1927,6 +2027,7 @@ function playTick(rdt,T){
       hp=c.hop;
       if(!hp||speed!==1||c.held){c.play=0;c.hop=null;continue}
       el=T-hp.t;if(el<0)continue;
+      if(hp.vq){hp.vq=0;hopVoice(c)} // 跳ね始めに一声（つられた子も、その子が跳ね始める時に）
       n=hp.n*K.stride;
       if(el>=hp.n*K.T){
         if(hp.lp){a=hopAt(hp,n);b=hopAt(hp,n-0.08);c.x=a[0];c.y=a[1];if(a[0]!==b[0]||a[1]!==b[1])c.h=Math.atan2(a[1]-b[1],a[0]-b[0])}
@@ -1950,6 +2051,12 @@ function playTick(rdt,T){
       startHop(o,T,n,rnd(K.followDelay[0],K.followDelay[1]),hopFollow(o,pl));
     }
   }
+}
+// 跳ね始めの一声：画面に映っている子だけ。迷子がいる間は鳴かない【仮決め】
+function hopVoice(c){
+  var lc=lost?byId(lost.id):null;
+  if(pageOpen||(lc&&lc.lost===1)||!sndPlace(c).on)return;
+  sndVoice(c,'hop');
 }
 function lostPar(c){return byId(c.ma)||byId(c.mb)}
 function endLost(){
@@ -2009,7 +2116,7 @@ function lostTick(rdt,T){
     if(!c||!par||c.age>=MATURE){if(c)c.lost=0;lost=null;delete S.hist.lost;return}
     if(c.held)return;
     if(c.lost===1){
-      if(T>L.until||darkness(S.t)>0.5||speed!==1||wxHeavy()){c.lost=3;c.st='follow';c.tid=par.id} // 本降りになったら自分で帰る
+      if(T>L.until||darkness(S.t)>0.5||speed!==1){c.lost=3;c.st='follow';c.tid=par.id}
       else if(T>L.baa){L.baaT=T;L.baa=T+rnd(30,50);sndVoice(c,'lost')}
     }else if(dist(c,par)<14||c.st!=='follow')finishHome(c,par,T,c.lost===2);
     return;
@@ -2245,6 +2352,7 @@ function logText(e){
   if(e.k==='s')return '☀️ 日照りがはじまった';
   if(e.k==='e')return '🌧 雨がふって、日照りがおわった';
   if(e.k==='w')return e.sh?'🌦 通り雨がふった':'🌧 雨がふった（'+e.m+'分）';
+  if(e.k==='rb')return '🌈 虹が出た';
   if(e.k==='l')return '🐑 '+e.n+' が迷子になった'+(e.p?'（'+e.p+'の子）':'');
   if(e.k==='f')return '💗 '+e.n+' を見つけた'+(e.p?'（'+e.p+'の元へ）':'');
   if(e.k==='r')return '🐑 '+e.n+' は自分で帰ってきた';
@@ -2256,7 +2364,7 @@ function renderLog(){
     e=L[i];bl=evBell(e);
     if(bellOnly&&!bl)continue;
     d=dayOf(e.t);if(d!==lastD){lastD=d;h+='<div class="dh">'+d+'日め</div>'}
-    plain=e.k==='s'||e.k==='e'||e.k==='w';tg=plain?null:evTarget(e);
+    plain=e.k==='s'||e.k==='e'||e.k==='w'||e.k==='rb';tg=plain?null:evTarget(e);
     h+='<button class="ev'+(plain?' plain':tg?'':' gone')+'" data-i="'+i+'"><span class="et">'+hm(e.t)+'</span><span class="ex">'+logText(e)+(bl?' 🔔':'')+'</span>'+(tg?'<span class="ar">›</span>':'')+'</button>';
     n++;
   }
@@ -2273,6 +2381,7 @@ function drawSnap(cvs,sn){
   for(i=0;i<N;i++){v=parseInt(sn.s.charAt(i),36)/35;grassColor(clamp(v*tex[i],0,1),i*4,d)}
   dryVis=dv;wetVis=wv;cvs._gx.putImageData(cvs._im,0,0);
   g.setTransform(k,0,0,k,0,0);g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';g.drawImage(cvs._gc,0,0,W,H);
+  if(sn.p){g.fillStyle='rgba(126,186,226,.85)';for(i=0;i<sn.p.length;i++)ell(g,sn.p[i][0],sn.p[i][1],sn.p[i][2],sn.p[i][2])}
   for(i=0;i<sn.f.length;i++){f=sn.f[i];g.fillStyle=FLOWER[f[2]];ell(g,f[0],f[1],fr,fr);g.fillStyle='#f0b030';ell(g,f[0],f[1],fr*0.4,fr*0.4)}
   for(i=0;i<sn.c.length;i++){
     c=sn.c[i];r=5.4*mk*c[5]/10;
@@ -2283,7 +2392,7 @@ function drawSnap(cvs,sn){
   }
 }
 function sizeCmp(cvs,cw){var ch=Math.round(cw*H/W);cvs.style.width=cw+'px';cvs.style.height=ch+'px';cvs.width=Math.floor(cw*dpr);cvs.height=Math.floor(ch*dpr)}
-function snapCap(sn,head){return head+'　'+sn.n+'匹・草'+sn.ga+'%'+(sn.dry?'・日照り':'')+(sn.wx===2?'・雨':sn.wx===1?'・くもり':'')}
+function snapCap(sn,head){return head+'　'+sn.n+'匹・草'+sn.ga+'%'+(sn.dry?'・日照り':'')+(sn.wx===2?'・雨':sn.wx===1?'・くもり':'')+(sn.p&&sn.p.length?'・水たまり':'')}
 function drawNow(){
   var B=document.getElementById('cmpB'),sn,o,g,i,d,aa,bb;if(!B)return;
   sn=mkSnap();drawSnap(B,sn);
@@ -2327,15 +2436,15 @@ function sg(a,cur,att){return '<div class="seg">'+a.map(function(v){return '<but
 function renderSum(){
   var hs=S.hist,cr=S.cr,juv=0,old=0,i,c,eld=null,kid=null,bells=[],h,d;
   function tr(a,b){return '<tr><td>'+a+'</td><td>'+b+'</td></tr>'}
-  function dr(a,n,g,b,x,w){return '<tr><td>'+a+'</td><td>'+n+'匹</td><td>'+g+'%</td><td>'+(b?'+'+b:'−')+'</td><td>'+(x?x:'−')+'</td><td>'+(w?'🌧'+(w>1?'×'+w:''):'−')+'</td></tr>'}
+  function dr(a,n,g,b,x,w){return '<tr><td>'+a+'</td><td>'+n+'匹</td><td>'+g+'%</td><td>'+(b?'+'+b:'−')+'</td><td>'+(x?x:'−')+'</td><td>'+(w?'🌦'+(w>1?'×'+w:''):'−')+'</td></tr>'}
   for(i=0;i<cr.length;i++){
     c=cr[i];if(c.age<MATURE)juv++;else if(c.age>c.life*0.8)old++;
     if(!eld||c.age>eld.age)eld=c;if(c.kids>0&&(!kid||c.kids>kid.kids))kid=c;if(c.bell)bells.push(nm(c.id,c.name));
   }
-  h='<div class="big">'+dayOf(S.t)+'日め <span style="font-size:14px;font-weight:400">'+hm(S.t)+' '+wxMark()+(S.dr.until>0?'　日照り中':wxRain()?'　雨':S.wx.st==='cloud'?'　くもり':'')+'</span></div><table class="st">'+
+  h='<div class="big">'+dayOf(S.t)+'日め <span style="font-size:14px;font-weight:400">'+hm(S.t)+' '+wxMark()+(S.dr.until>0?'　日照り中':wxRain()?'　通り雨':wxBow()?'　虹':'')+'</span></div><table class="st">'+
     tr('いま',cr.length+'匹（こども'+juv+'・おとな'+(cr.length-juv-old)+'・お年より'+old+'）')+
     tr('草の育ち',Math.round(S.gavg*100)+'%')+
-    tr('生まれた',hs.born+'匹')+tr('旅立った',hs.gone+'匹')+tr('やってきた旅の者',hs.imm+'匹')+tr('雨',(hs.rn||0)+'回')+tr('日照り',hs.dr+'回')+tr('見つけた迷子',(hs.found||0)+'匹')+
+    tr('生まれた',hs.born+'匹')+tr('旅立った',hs.gone+'匹')+tr('やってきた旅の者',hs.imm+'匹')+tr('雨',(hs.rn||0)+'回')+tr('虹',(hs.rbn||0)+'回')+tr('日照り',hs.dr+'回')+tr('見つけた迷子',(hs.found||0)+'匹')+
     tr('いちばん多かった時',Math.max(hs.peak,cr.length)+'匹')+
     (eld?tr('最年長',nm(eld.id,eld.name)+'（'+ageDays(eld)+'日め）'):'')+
     (kid?tr('子だくさん',nm(kid.id,kid.name)+'（'+kid.kids+'匹）'):'')+
@@ -2343,7 +2452,7 @@ function renderSum(){
     tr('数え始めた日',dayOf(hs.from)+'日め')+'</table>';
   h+='<h3>日ごとの記録</h3><table class="dy"><tr><th>日</th><th>ひつじ</th><th>草</th><th>生まれた</th><th>旅立った</th><th>雨</th></tr>'+dr('きょう',cr.length,Math.round(S.gavg*100),hs.db,hs.dx,hs.dw);
   for(i=hs.days.length-1;i>=Math.max(0,hs.days.length-14);i--){d=hs.days[i];h+=dr(d.d+'日め',d.n,d.g,d.b,d.x,d.w)}
-  h+='</table><div class="note">ひつじと草は、その日の終わりの数です。雨は、その日にふった回数（通り雨もふくむ）。雨の数え始めは V0.5 からです。</div>';
+  h+='</table><div class="note">ひつじと草は、その日の終わりの数です。雨は、その日にふった回数（日照りの終わりの雨もふくむ）。雨の数え始めは V0.5、虹は V0.6 からです。</div>';
   h+='<h3>時間の速さ</h3><div class="seg">'+[1,10,100,1000].map(function(v){return '<button data-v="'+v+'"'+(speed===v?' class="on"':'')+'>×'+v+'</button>'}).join('')+'</div><div class="note">ふだんは ×1（本物の時間と同じ）。早送り中は、時計の横に倍率が出ます。</div>';
   h+='<h3>音</h3><div class="fitr"><span style="min-width:3em;text-align:left">鳴き声</span>'+sg([[1,'入'],[0,'切']],UI.sv?1:0,'data-sv')+'</div>'+
     '<div class="fitr"><span style="min-width:3em;text-align:left">鈴</span>'+sg([[1,'入'],[0,'切']],UI.sb?1:0,'data-sb')+'</div>'+
@@ -2604,7 +2713,7 @@ function sndClip(name,P,gm){
   last.connect(AU.out);s.start(ac.currentTime+0.02);
   return s;
 }
-// 一声鳴く（why: idle＝ふだん／lost＝迷子／grab＝つまむ）
+// 一声鳴く（why: idle＝ふだん／lost＝迷子／grab＝つまむ／hop＝跳ね始め）
 function sndVoice(c,why){
   if(!c||!sndAllowed())return false;
   var T=nowT(),k=c.age<MATURE?'lamb':'adult',P=sndPlace(c),live=auLive('voice'),q;
@@ -2614,7 +2723,7 @@ function sndVoice(c,why){
   q={end:T+(k==='lamb'?1.3:1.07),src:null};
   if(live){try{q.src=sndClip(k,P,SNDK.vVoice)}catch(e){live=false}}
   AU.voices.push(q);
-  if(why==='idle'&&UI.sv)c.vm=T;
+  if((why==='idle'||why==='hop')&&UI.sv)c.vm=T;
   if(why==='grab'&&c.bell)sndBellPlay(c,'grab');
   sndPush({k:k,id:c.id,n:c.name,why:why,vol:r2(P.vol*SNDK.vVoice),pan:r2(P.pan),lp:Math.round(P.lp),on:P.on,played:live});
   return true;
@@ -2736,7 +2845,7 @@ function frame(now){
   dryVis+=((S.dr.until>0?1:0)-dryVis)*0.03;if(dryVis<0.01)dryVis=0;
   var T=nowT(),fi;
   for(fi=fx.length-1;fi>=0;fi--)if(T-fx[fi].t>4)fx.splice(fi,1);
-  wxTick(rdt);windTick(rdt,T);if(!busy){holdTick(rdt,T);playTick(rdt,T);lostTick(rdt,T)}camTick(rdt);sndTick(T);
+  wxTick(rdt);windTick(rdt,T);if(!busy){holdTick(rdt,T);playTick(rdt,T);lostTick(rdt,T);drinkTick(rdt,T)}camTick(rdt);sndTick(T);
   if(pageOpen){
     if(pageTab==='map'&&bigCv)drawBig(T);
     else if(pageTab==='cmp'){pageAcc+=rdt;if(pageAcc>3){pageAcc=0;drawNow()}}
