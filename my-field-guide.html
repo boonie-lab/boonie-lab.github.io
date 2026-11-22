@@ -285,8 +285,11 @@ h4.nzh{font-family:var(--serif);font-size:14px;color:var(--ink2);margin:14px 2px
 .fpi.crop{overflow:hidden}
 .fpi .frame{position:absolute;border:2px solid #fff;box-shadow:0 0 0 2px rgba(0,0,0,.35),0 0 0 9999px rgba(20,12,4,.45);pointer-events:none;border-radius:2px}
 input[type=range]{width:100%;min-height:40px;accent-color:var(--accent)}
-.uprow{display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 6px}
-.uprow .btn{flex:1 1 auto}
+/* 写真の操作：「写真」の札のあとに4つを1行で。削除は赤い字だけ（枠は他と同じ） */
+.uprow{display:flex;gap:6px;flex-wrap:nowrap;align-items:center;margin:2px 0 6px}
+.uprow .ul{flex:0 0 auto;font-family:var(--serif);font-size:13px;color:var(--ink2);letter-spacing:.05em;padding-right:2px}
+.uprow .btn{flex:1 1 0;min-width:0;padding:4px 4px;font-size:13px;white-space:nowrap}
+.uprow .btn.danger{border-color:var(--ink2);background:var(--paper2)}
 .ptime{font-family:var(--serif);font-size:13px;color:var(--ink2);text-align:center;min-height:20px;margin:0 0 4px}
 .placebox{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0 2px}
 #f-pc{margin-top:4px}
@@ -426,9 +429,9 @@ ul.cands{margin:4px 0;padding-left:1.3em;font-family:var(--serif)}
 <script>
 'use strict';
 /* ============================================================
-   なんでも図鑑 (my-field-guide) v1.2.3
+   なんでも図鑑 (my-field-guide) v1.2.4
    ============================================================ */
-const APP_VERSION = '1.2.3';
+const APP_VERSION = '1.2.4';
 const SCHEMA_VERSION = 1;
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -1971,7 +1974,7 @@ function openReorder(entryId, curPid, onSaved){
     if (await safeWrite(() => Store.put('entries', e2))) return true;
     await loadAll(); return false;
   };
-  openSheet({title:'写真の並べ替え', form:true,
+  openSheet({title:'写真の並び順', form:true,
     beforeClose: async () => {
       if (!dirty()) return true;
       const k = await ask3('変更があります', ['保存して戻る', '保存しないで戻る', '並べ替えを続ける']);
@@ -2463,7 +2466,7 @@ function openEntry(id0, list, where){
     sh.titleEl.textContent = '出会いの記録';
     sh.body.innerHTML = `${galleryHTML(e.photoIds, {eid:id})}
       <div class="ptime" id="f-ptime"></div>
-      <div class="uprow"><button class="btn small" id="f-padd">＋ 写真を足す</button><button class="btn small" id="f-pedit">✏️ この写真を編集</button><button class="btn small danger" id="f-pdel" ${e.photoIds.length < 2 ? 'disabled' : ''}>🗑 この写真を削除</button>${e.photoIds.length > 1 ? '<button class="btn small" id="f-pord">⇄ 並べ替え</button>' : ''}</div>
+      <div class="uprow"><span class="ul">写真</span><button class="btn small" id="f-padd" aria-label="写真を追加">＋追加</button><button class="btn small" id="f-pedit" aria-label="この写真を編集">✏️編集</button><button class="btn small danger" id="f-pdel" aria-label="この写真を削除" ${e.photoIds.length < 2 ? 'disabled' : ''}>🗑削除</button>${e.photoIds.length > 1 ? '<button class="btn small" id="f-pord" aria-label="写真の並び順">⇄並び順</button>' : ''}</div>
       <label class="fl">名前</label><div class="sg-wrap"><input id="f-name" value="${h(st.name)}" placeholder="わからなければ空欄（なぞ）" autocomplete="off"></div>
       <div class="seg" id="f-conf">${confSeg(st.confidence)}</div>
       ${e.speciesId ? `<button class="btn" id="f-sp" style="margin:6px 0 0">📖 種のページを見る</button>` : ''}
