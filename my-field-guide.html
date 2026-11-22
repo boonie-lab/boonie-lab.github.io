@@ -136,12 +136,15 @@ h4.nzh{font-family:var(--serif);font-size:14px;color:var(--ink2);margin:14px 2px
 .toc2{margin-top:4px;border-top:1px solid var(--line)}
 .trow{display:flex;align-items:center;border-bottom:1px solid var(--line);background:var(--paper2);border-left:6px solid var(--gc)}
 .trow.dim{opacity:.45}
-.trow .tg{flex:0 0 48px;min-height:52px;background:none;border:0;font-size:17px;color:var(--ink2);font-family:var(--serif)}
-.trow .tn{flex:1;min-height:52px;background:none;border:0;text-align:left;font-family:var(--serif);font-weight:700;font-size:18px;padding:0 4px;
+/* ＞：行の高さいっぱい・横60px。ここを押すと開閉（ジャンル名は図鑑へ）。名前との間に薄い縦線と余白 */
+.trow .tg{flex:0 0 60px;align-self:stretch;min-height:56px;background:none;border:0;border-right:1px solid var(--line);
+  font-size:24px;line-height:1;color:var(--ink2);font-family:var(--serif);padding:0}
+.trow .tg:active:not(:disabled){background:rgba(120,95,60,.10)}
+.trow .tn{flex:1;min-height:56px;background:none;border:0;text-align:left;font-family:var(--serif);font-weight:700;font-size:18px;padding:0 4px 0 14px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.trow .tc{flex:0 0 auto;font-size:13px;color:var(--ink2);padding-right:12px}
+.trow .tc{flex:0 0 auto;font-size:13px;color:var(--ink2);padding-right:12px;white-space:nowrap}
 .trow .tcz{color:var(--red)}
-.tl2{border-bottom:1px solid var(--line);padding:2px 0 6px 54px;background:var(--paper)}
+.tl2{border-bottom:1px solid var(--line);padding:2px 0 6px 80px;background:var(--paper)}
 .tl2 .ts,.tl2 .tz{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;background:none;border:0;border-bottom:1px dotted var(--line);
   text-align:left;padding:4px 10px 4px 0;font-family:var(--serif);font-size:16px}
 .tl2 .ts.zero{opacity:.55}
@@ -370,7 +373,8 @@ ul.cands{margin:4px 0;padding-left:1.3em;font-family:var(--serif)}
 /* effects */
 .pin-toast{position:fixed;left:50%;bottom:calc(var(--nav-h) + var(--sb) + 30px);transform:translateX(-50%);z-index:90;pointer-events:none;
   background:var(--paper2);border:1px solid var(--line);border-radius:10px;padding:8px 16px 8px 12px;box-shadow:0 4px 14px rgba(0,0,0,.18);
-  font-family:var(--serif);font-weight:700;display:flex;align-items:center;gap:8px;animation:tfade .9s ease-out forwards}
+  font-family:var(--serif);font-weight:700;display:flex;align-items:center;gap:8px;animation:tfade .9s ease-out forwards;
+  width:max-content;max-width:calc(100vw - 32px)}
 .pin-toast .p{display:inline-block;font-size:22px;animation:pin .35s cubic-bezier(.3,1.6,.5,1)}
 @keyframes pin{from{transform:translateY(-26px) rotate(-30deg);opacity:0}to{transform:none;opacity:1}}
 @keyframes tfade{0%,70%{opacity:1}100%{opacity:0}}
@@ -404,9 +408,9 @@ ul.cands{margin:4px 0;padding-left:1.3em;font-family:var(--serif)}
 <script>
 'use strict';
 /* ============================================================
-   なんでも図鑑 (my-field-guide) v1.2
+   なんでも図鑑 (my-field-guide) v1.2.1
    ============================================================ */
-const APP_VERSION = '1.2';
+const APP_VERSION = '1.2.1';
 const SCHEMA_VERSION = 1;
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -741,10 +745,11 @@ function attachSuggest(input, onPick){
     onPick && onPick(sp);
   });
 }
-function pinToast(text){
+function pinToast(text, ms = 950){
   const d = document.createElement('div'); d.className = 'pin-toast';
+  if (ms !== 950) d.style.animationDuration = (ms / 1000) + 's';   // 長めの文はゆっくり消す
   d.innerHTML = `<span class="p">📌</span><span>${h(text)}</span>`;
-  document.body.appendChild(d); setTimeout(() => d.remove(), 950);
+  document.body.appendChild(d); setTimeout(() => d.remove(), ms);
 }
 async function safeWrite(fn){
   try { await fn(); return true; }
@@ -1234,13 +1239,19 @@ function chKeys(){
   if (live(S.species).some(s => spInCh(s, '_none')) || nazoList().some(e => nzInCh(e, '_none'))) keys.push('_none');
   return keys;
 }
+/** 並べ替えの部品（目次と章で共通。設定 S.zSort／S.zRev は1つ）。extra：右に足すボタン */
+function sortBarHTML(extra){
+  const so = ZSORT[S.zSort] || ZSORT.no;
+  return `<div class="zsort"><span class="hint">並び：</span><select id="zsort">${Object.entries(ZSORT).map(([k, o]) => `<option value="${k}" ${k === S.zSort ? 'selected' : ''}>${o.label}</option>`).join('')}</select>
+    <button class="btn small" id="zdir">${so.dir[S.zRev ? 1 : 0]} ⇅</button>${extra || ''}</div>`;
+}
 /** 目次：＞ で開くと種の名前（小さな写真つき）となぞの件数。ジャンル名をタップするとその図鑑（章）へ */
 function drawToc(){
   const idx = buildIndex(), sps = live(S.species), nz = nazoList();
   const enc = n => n.reduce((a, s) => a + (idx.get(s.id)?.count || 0), 0);
   $('#zBand').className = 'vh'; $('#zBand').removeAttribute('style');
   $('#zBand').innerHTML = `<h1>図鑑</h1><span class="sub">${sps.length}種・出会い ${enc(sps)}回${nz.length ? `・なぞ ${nz.length}件` : ''}</span>`;
-  $('#zSort').innerHTML = '';
+  $('#zSort').innerHTML = sps.length ? sortBarHTML() : '';   // 並べ替えは章と共通（目次で変えると開いたリスト・章・めくる順が同じになる）
   if (!sps.length && !nz.length) { $('#zBody').innerHTML = `<div class="empty">まだ種のページがありません。<br>名前を付けて登録するか、「なぞ」で名前がわかると、ここにページが増えていきます。</div>`; return; }
   $('#zBody').innerHTML = `<div class="toc2">` + chKeys().map(key => {
     const m = chMeta(key), d = chapterData(key, ''), empty = !d.total.sps && !d.total.nz, open = S.zOpen.has(key) && !empty;
@@ -1262,11 +1273,8 @@ function drawChapter(){
   band.className = 'zband'; band.style.setProperty('--gc', m.color || 'var(--paper3)');
   band.innerHTML = `<button id="zback">‹ 目次</button><button class="bn" id="zpick" aria-haspopup="listbox">${h(m.emoji)} ${h(m.name)} <span class="cv">▾</span></button>
     <span class="bs">${total.sps}種・出会い${total.enc}回${total.nz ? `・なぞ${total.nz}` : ''}</span>`;
-  // 並べ替え
-  const so = ZSORT[S.zSort] || ZSORT.no;
-  $('#zSort').innerHTML = `<div class="zsort"><select id="zsort">${Object.entries(ZSORT).map(([k, o]) => `<option value="${k}" ${k === S.zSort ? 'selected' : ''}>${o.label}</option>`).join('')}</select>
-    <button class="btn small" id="zdir">${so.dir[S.zRev ? 1 : 0]} ⇅</button>
-    ${key === 'all' && !q ? `<button class="chip toggle2 ${S.zSplit ? 'on' : ''}" id="zsplit">ジャンルで区切る</button>` : ''}</div>`;
+  // 並べ替え（目次と共通の部品）
+  $('#zSort').innerHTML = sortBarHTML(key === 'all' && !q ? `<button class="chip toggle2 ${S.zSplit ? 'on' : ''}" id="zsplit">ジャンルで区切る</button>` : '');
   S.zKeys = d.keys;
   const box = $('#zBody');
   if (!live(S.species).length && !nazoList().length) { box.innerHTML = `<div class="empty">まだ種のページがありません。<br>名前を付けて登録するか、「なぞ」で名前がわかると、ここにページが増えていきます。</div>`; return; }
@@ -1919,14 +1927,30 @@ function entryState(id){
   return {name: sp ? sp.name : '', confidence:e.confidence || 'unknown', genreId:e.genreId, takenAt:e.takenAt,
     place:e.place || '', place0:e.place || '', pick:null, pickSrc:null, candidates:(e.candidates || []).join('\n'), note:e.note || ''};
 }
-async function saveEntryState(id, st){
+/** info（省略可）：種のジャンルも変えたとき info.genreMsg に一言が入る */
+async function saveEntryState(id, st, info){
   const ops = [];
   const ok = await safeWrite(async () => {
     const e2 = S.entries.get(id);
+    const prevG = e2.genreId;
+    let spHere = null;
+    const pre = st.name.trim() ? findSpeciesByName(st.name) : null;   // すでにある種なら、変える前のジャンルを覚えておく
+    const preG = pre ? pre.genreId : null;
     if (st.name.trim()) {
       const {sp} = resolveSpecies(st.name, st.genreId, ops);
+      spHere = sp;
       e2.speciesId = sp.id; e2.confidence = st.confidence === 'unknown' ? 'sure' : st.confidence;
     } else { e2.speciesId = null; e2.confidence = 'unknown'; }
+    // 名前つきの出会いのジャンルを変えたら、種のジャンルも同じにする（図鑑の章は種のジャンル基準）。なぞ（名前なし）は出会いだけ。新しく作る種は最初から同じジャンル
+    const ng = st.genreId && liveGenre(st.genreId);
+    if (pre && ng && st.genreId !== prevG && preG !== st.genreId) {
+      const oldSpG = preG;
+      spHere.genreId = st.genreId;
+      if (!ops.some(o => o.rec === spHere)) ops.push({store:'species', rec:spHere});
+      // 同じ種のほかの出会いは、種ページでジャンルを変えたときと同じ決まり：ジャンル未定か元のジャンルのものだけ連動
+      for (const x of entriesLive()) if (x.id !== id && x.speciesId === spHere.id && (!x.genreId || x.genreId === oldSpG)) { x.genreId = st.genreId; ops.push({store:'entries', rec:x}); }
+      if (info) info.genreMsg = `図鑑のジャンルも${ng.emoji}${ng.name}にしました`;
+    }
     // 場所：書き換えたときだけ。候補から選んだまま → 'osm'（自分の場所名なら 'mine'）、自分で書いた → 'hand'、空 → 出どころも消す
     if (st.place !== st.place0) {
       const t = st.place.trim();
@@ -1941,7 +1965,8 @@ async function saveEntryState(id, st){
   if (!ok) await loadAll();
   return ok;
 }
-/** list：めくる順番（開いたときの一覧の id の並び） */
+/** 保存のあとの一言。種のジャンルも変えたときは、それも伝える */
+function savedToast(info){ info && info.genreMsg ? pinToast('保存しました。' + info.genreMsg, 2400) : pinToast('保存しました'); }
 /** list：めくる順番。where：{label, color}（見出しの下の帯） */
 function openEntry(id0, list, where){
   const e0 = S.entries.get(id0); if (!e0 || e0.deleted) return;
@@ -1953,8 +1978,9 @@ function openEntry(id0, list, where){
     const k = await ask3('変更があります', [`保存して${verb}`, `保存しないで${verb}`, '編集を続ける']);
     if (k === 2) return false;
     if (k === 1) { ed.st = null; return true; }
-    const ok = await saveEntryState(ed.id, ed.st);
-    if (ok) { ed.st = null; pinToast('保存しました'); }
+    const info = {};
+    const ok = await saveEntryState(ed.id, ed.st, info);
+    if (ok) { ed.st = null; savedToast(info); }
     return ok;
   };
   const pager = {ids: list && list.includes(id0) ? list : [id0], cur:id0, alive:entryAlive, where,
@@ -1975,6 +2001,7 @@ function openEntry(id0, list, where){
       <div class="uprow"><button class="btn small" id="f-up">🔍 アップを足す</button><button class="btn small danger" id="f-updel" hidden>このアップを消す</button></div>
       <label class="fl">名前</label><div class="sg-wrap"><input id="f-name" value="${h(st.name)}" placeholder="わからなければ空欄（なぞ）" autocomplete="off"></div>
       <div class="seg" id="f-conf">${confSeg(st.confidence)}</div>
+      ${e.speciesId ? `<button class="btn" id="f-sp" style="margin:6px 0 0">📖 種のページを見る</button>` : ''}
       <label class="fl">ジャンル</label><div class="chips wrap" id="f-genre">${genreChips(st.genreId, true)}</div>
       <label class="fl">出会った日時</label><input type="datetime-local" id="f-when" value="${toLocalInput(st.takenAt)}">
       <label class="fl">場所</label><input id="f-place" value="${h(st.place)}" placeholder="例：近所の公園の池">
@@ -1982,19 +2009,26 @@ function openEntry(id0, list, where){
       <label class="fl">名前の候補メモ（1行に1つ）</label><textarea id="f-cand" rows="3" placeholder="例：シジュウカラかヤマガラ&#10;決め手：お腹の色">${h(st.candidates)}</textarea>
       <label class="fl">ひとこと</label><textarea id="f-note" rows="3">${h(st.note)}</textarea>
       <p class="hint">元の写真：${e.photoIds.length}枚 <span id="f-orig"></span></p>
-      ${e.speciesId ? `<button class="btn block" id="f-sp" style="margin:8px 0">📖 種のページを見る</button>` : ''}
       <button class="btn danger block" id="f-del" style="margin-top:18px">この出会いを削除</button>`;
     Promise.all(e.photoIds.map(p => Store.get('photos', p))).then(ps => { const o = $('#f-orig', body); if (o) o.textContent = ps.filter(Boolean).map(p => p.originalName).join('、'); });
+    /** 下の帯の左の主ボタン：変更なし（薄い・押せない）⇄ 保存（茶色）。入力・チップ操作のたびに呼ぶ */
+    const syncSave = () => {
+      if (sh.preview) return;
+      const b = $('#f-save', sh.foot); if (!b) return;
+      const d = dirty();
+      b.disabled = !d; b.classList.toggle('primary', d); b.textContent = d ? '保存' : '変更なし';
+    };
     const nm = $('#f-name', sh.body);
     nm.addEventListener('input', () => {
       st.name = nm.value;
       if (st.name.trim() && st.confidence === 'unknown') { st.confidence = 'sure'; $$('#f-conf [data-c]', sh.body).forEach(b => b.classList.toggle('on', b.dataset.c === 'sure')); }
+      syncSave();
     });
     attachSuggest(nm);
-    bindSeg($('#f-conf', sh.body), c => st.confidence = c);
-    bindChips($('#f-genre', sh.body), g => st.genreId = g);
-    $('#f-when', sh.body).onchange = ev => st.takenAt = fromLocalInput(ev.target.value, st.takenAt);
-    $('#f-place', sh.body).oninput = ev => st.place = ev.target.value;
+    bindSeg($('#f-conf', sh.body), c => { st.confidence = c; syncSave(); });
+    bindChips($('#f-genre', sh.body), g => { st.genreId = g; syncSave(); });
+    $('#f-when', sh.body).onchange = ev => { st.takenAt = fromLocalInput(ev.target.value, st.takenAt); syncSave(); };
+    $('#f-place', sh.body).oninput = ev => { st.place = ev.target.value; syncSave(); };
     const geo = $('#f-geo', body);
     if (geo) geo.onclick = async () => {
       const box = $('#f-pc', body), pt = {lat:e.lat, lng:e.lng}, cands = [];
@@ -2011,11 +2045,11 @@ function openEntry(id0, list, where){
       box.onclick = ev => {
         const b = ev.target.closest('[data-pc]'); if (!b) return;
         const c = list[+b.dataset.pc]; st.place = c.place; st.pick = c.place; st.pickSrc = c.src;
-        $('#f-place', body).value = c.place;
+        $('#f-place', body).value = c.place; syncSave();
       };
     };
-    $('#f-cand', sh.body).oninput = ev => st.candidates = ev.target.value;
-    $('#f-note', sh.body).oninput = ev => st.note = ev.target.value;
+    $('#f-cand', sh.body).oninput = ev => { st.candidates = ev.target.value; syncSave(); };
+    $('#f-note', sh.body).oninput = ev => { st.note = ev.target.value; syncSave(); };
     const spb = $('#f-sp', sh.body); if (spb) spb.onclick = () => openSpecies(e.speciesId);
     // アップ：表示中の写真がアップのときだけ「消す」を出す
     const gal = $('.gal', body), upd = $('#f-updel', body);
@@ -2056,9 +2090,12 @@ function openEntry(id0, list, where){
       if (!confirm('この出会いを削除しますか？\n（この記録の写真もアプリから消えます。カメラロールの元の写真はそのままです）')) return;
       if (await deleteEntry(id)) { closeSheet(sh, true); pinToast('削除しました'); }
     };
-    pagerFoot(sh, `<button class="btn primary" id="f-save">保存</button>`);
+    pagerFoot(sh, `<button class="btn" id="f-save" disabled>変更なし</button>`);
+    syncSave();
     $('#f-save', sh.foot).onclick = async () => {
-      if (await saveEntryState(id, st)) { closeSheet(sh, true); pinToast('保存しました'); }
+      if (!dirty()) return;
+      const info = {};
+      if (await saveEntryState(id, st, info)) { ed.orig = JSON.stringify(st); closeSheet(sh, true); savedToast(info); }
     };
   }});
 }
