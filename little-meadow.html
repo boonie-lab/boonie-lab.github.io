@@ -182,8 +182,8 @@ var WXK={
   light:[180,480],         // ぽつぽつ 3〜8分
   zPre:[60,120],           // ザーッ（V0.7）：はじめはぽつぽつ1〜2分
   zDark:30,                // そのあと30秒で暗くなる
-  zHeavy:[120,240],        // ザーッ：強めに2〜4分
-  zPost:[50,70],           // 小降りになりながら明るくなって、やむ（約1分）。全部で4〜7分【仮決め】
+  zHeavy:[100,220],        // ザーッ：強めに1分40秒〜3分40秒（V0.7.1で20秒短く）
+  zPost:[70,90],           // 小降り→ぽつぽつになりながら明るくなって、やむ（約1分20秒）。全部で4〜7分【仮決め】
   showerP:0.15,showerMax:3,showerWait:[60,180], // 開いたときのくじ（15%・1日3回まで・1〜3分後）
   dEnd:1200,               // 日照りの終わりの雨：20分（ぽつぽつ中心）
   dEndZ:[300,720],dEndZL:[90,150], // その途中（5〜12分め）に短いザーッ1.5〜2.5分【仮決め】
@@ -402,6 +402,13 @@ function wander(c,f){
   if(S.cr.length>1&&Math.random()<0.15){o=S.cr[pick(S.cr.length)];goNear(c,o,25);return}
   c.tx=clamp(c.x+rnd(-60,60),6,W-6);c.ty=clamp(c.y+rnd(-60,60),6,H-6);c.st='wander';
 }
+// 水たまりの中で休む・眠る・毛づくろいしない（V0.7.1）：中にいたら、先にふちの外へ歩く
+function wetAt(c){var pd=S.pd||[],i,p,r;for(i=0;i<pd.length;i++){p=pd[i];if(p[2]<=0.15)continue;r=pudR(p);if(r>0&&dist(c,{x:p[0],y:p[1]})<r)return p}return null}
+function outOfPuddle(c){
+  var p=wetAt(c),r,a;if(!p)return false;
+  r=pudR(p);a=(c.x===p[0]&&c.y===p[1])?rnd(0,6.2832):Math.atan2(c.y-p[1],c.x-p[0]);
+  c.tx=clamp(p[0]+Math.cos(a)*(r+CELL*0.8),6,W-6);c.ty=clamp(p[1]+Math.sin(a)*(r+CELL*0.8),6,H-6);c.st='wander';return true;
+}
 function decide(c,night){
   var hung=night?30:c.hung,o,f,par=null,juv=c.age<MATURE,d;
   if(juv&&c.lost!==1){par=byId(c.ma)||byId(c.mb)}
@@ -412,7 +419,7 @@ function decide(c,night){
     roam(c);return;
   }
   if(c.lost===1){
-    if(Math.random()<0.55){c.st='rest';c.timer=rnd(6,20)}
+    if(Math.random()<0.55){if(outOfPuddle(c))return;c.st='rest';c.timer=rnd(6,20)}
     else{c.tx=clamp(c.x+rnd(-22,22),6,W-6);c.ty=clamp(c.y+rnd(-16,16),6,H-6);c.st='wander'}
     return;
   }
@@ -423,16 +430,17 @@ function decide(c,night){
   }
   if(night){
     if(f&&dist(c,f)>16&&Math.random()<0.7){goNear(c,f,8);return}
+    if(outOfPuddle(c))return;
     c.st='sleep';return;
   }
   if(eligible(c)){o=findMate(c);if(o){c.st='court';c.tid=o.id;return}}
   if(S.cln>0&&c.e<88&&seekFood(c,true))return;
   if(f&&f.st!=='sleep'&&bondOf(c,f)>0.3&&Math.random()<0.6){
     d=dist(c,f);
-    if(d<16){c.st='groom';c.tid=f.id;c.timer=rnd(60,180);c.h=Math.atan2(f.y-c.y,f.x-c.x);return}
+    if(d<16){if(outOfPuddle(c))return;c.st='groom';c.tid=f.id;c.timer=rnd(60,180);c.h=Math.atan2(f.y-c.y,f.x-c.x);return}
     if(d<70&&Math.random()<0.5){goNear(c,f,8);return}
   }
-  if(Math.random()<0.25+0.5*c.lazy){c.st='rest';c.timer=rnd(60,240)*(0.6+c.lazy)}
+  if(Math.random()<0.25+0.5*c.lazy){if(outOfPuddle(c))return;c.st='rest';c.timer=rnd(60,240)*(0.6+c.lazy)}
   else wander(c,f);
 }
 function mate(a,b){
@@ -616,7 +624,7 @@ var gctx=gc.getContext('2d'),img=gctx.createImageData(COLS,ROWS);
 var tex=new Float32Array(N),hsh=new Float32Array(N);
 (function(){for(var i=0;i<N;i++){tex[i]=0.94+Math.random()*0.12;hsh[i]=Math.random()}})();
 var scale=1,dpr=1,speed=1,busy=false,selId=null,memorial='',sowing=false,dryVis=0;
-var VER='V0.7';
+var VER='V0.7.1';
 // 天気の見た目（画面側だけ・保存しない）：wxVis＝0晴れ〜0.55くもり〜1雨、hvVis＝本降り、woolWet＝ぬれた毛、wetVis＝地面のしめり（草の色）、woolDl＝毛の色の暗さ
 var wxVis=0,hvVis=0,rainVis=0,woolWet=0,wetVis=0,woolDl=0,wxRoll=false,frozen=false;
 var scw=300,sch=170,scx=W/2,scy=H/2,hits=[];
@@ -693,7 +701,7 @@ function wxGoal(){
   if(wxHeavy())return[1,1,1];
   if(w.hs&&S.t<w.hs&&w.hs-S.t<WXK.zDark){b=1-(w.hs-S.t)/WXK.zDark;return[0.4+0.6*b,0.5+0.5*b,b]}
   if(w.he&&S.t>=w.he){
-    e=w.ty===1?[0.25,0.3,0]:[0.4,0.5,0];b=clamp((S.t-w.he)/60,0,1);
+    e=w.ty===1?[0.28,0.38,0]:[0.4,0.5,0];b=clamp((S.t-w.he)/45,0,1);b=b*(2-b); // はじめに早く明るく、あとはゆっくり。そのあとは、ぽつぽつのまま上がる
     return[0.9+(e[0]-0.9)*b,0.8+(e[1]-0.8)*b,0.45*(1-b)];
   }
   return[0.4,0.5,0];
@@ -1244,7 +1252,7 @@ function mixc(a,b,t){return 'rgb('+Math.round(a[0]+(b[0]-a[0])*t)+','+Math.round
 function mixa(a,b,t){return[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t]}
 // 空の雲（くもり・雨のとき。ゆっくり流れる）
 function drawClouds(g,w,hor,T,dk,nk,nn){
-  var i,x,y,s,al=nk!=null?nk:Math.min(1,wxVis*1.6)*0.85,col=mixa(mixa(mixa([236,238,242],[150,158,170],Math.max(0,(wxVis-0.55)/0.45)),[96,104,118],hvVis*0.8),[40,46,70],dk*0.8);
+  var i,x,y,s,al=nk!=null?nk:Math.min(1,wxVis*1.6)*0.85,col=mixa(mixa(mixa([236,238,242],[150,158,170],Math.max(0,(wxVis-0.55)/0.45)),[96,104,118],hvVis*0.6),[40,46,70],dk*0.8);
   g.fillStyle='rgba('+Math.round(col[0])+','+Math.round(col[1])+','+Math.round(col[2])+','+al+')';
   for(i=0;i<(nn||8);i++){
     s=w*(0.1+0.09*hsh[i+90]);
@@ -1301,25 +1309,28 @@ function drawMeteor(g,w,hor,T,a){
   g.restore();
 }
 // 雨つぶ：ななめの細い線。本降りは多く、小雨は少なく。奥は白っぽくかすむ
+var rainP=0,rainLT=0; // 雨つぶの進み（V0.7.1：速さが変わっても逆もどりしないよう、毎フレーム足していく）
 function drawRain(g,w,h,hor,T,dk){
+  var rdt=clamp(T-rainLT,0,0.1);rainLT=T;
   if(rainVis<0.03||speed>=10||busy)return;
+  rainP+=rdt*(1.1+0.4*hvVis);
   var gh=h-hor,i,n,d,x,y,len,sp,al,hz;
   al=(0.3+0.25*hvVis)*rainVis*(1-dk*0.6);
   hz=g.createLinearGradient(0,hor-gh*0.25,0,hor+gh*0.6);
   hz.addColorStop(0,'rgba(215,222,232,0)');hz.addColorStop(0.3,'rgba(215,222,232,'+al+')');hz.addColorStop(1,'rgba(215,222,232,0)');
   g.fillStyle=hz;g.fillRect(0,hor-gh*0.25,w,gh*0.85);
-  g.fillStyle='rgba(44,54,76,'+(0.08*rainVis+0.30*hvVis)+')';g.fillRect(0,0,w,h); // ザーッのときだけ、ぐっと暗く
-  n=Math.round((45+420*hvVis)*rainVis*clamp(w*h/240000,0.5,2.2));
+  g.fillStyle='rgba(44,54,76,'+(0.08*rainVis+0.20*hvVis)+')';g.fillRect(0,0,w,h); // ザーッのときだけ暗く
+  n=Math.round((45+270*hvVis)*rainVis*clamp(w*h/240000,0.5,2.2));
   g.lineCap='round';
   for(i=0;i<n;i++){
     d=hsh[(i*7+3)%N];                     // 0＝奥、1＝手前
-    sp=(0.9+0.5*d)*h*(1.1+0.4*hvVis);     // 落ちる速さ（画面の高さ／秒）
-    len=(6+20*d)*(0.8+0.5*hvVis);
-    y=((hsh[(i*13+5)%N]*h+T*sp)%(h+len))-len;
-    x=((hsh[(i*11+1)%N]*1.2*w+T*sp*0.22)%(w*1.2))-w*0.1;
+    sp=(0.9+0.5*d)*h*rainP;               // 落ちた量（奥はおそく、手前は速く）
+    len=(6+20*d)*(0.8+0.4*hvVis);
+    y=((hsh[(i*13+5)%N]*h+sp)%(h+len))-len;
+    x=((hsh[(i*11+1)%N]*1.2*w+sp*0.22)%(w*1.2))-w*0.1;
     if(y+len<0)continue;
-    al=Math.min(0.95,(0.18+0.42*d)*rainVis*(1+0.6*hvVis))*(1-dk*0.4);
-    g.strokeStyle='rgba('+(d<0.4?'235,240,248':'205,215,232')+','+al+')';g.lineWidth=(0.6+1.1*d)*(0.65+0.8*hvVis); // ぽつぽつは細く、ザーッは太く
+    al=Math.min(0.9,(0.18+0.42*d)*rainVis*(1+0.35*hvVis))*(1-dk*0.4);
+    g.strokeStyle='rgba('+(d<0.4?'235,240,248':'205,215,232')+','+al+')';g.lineWidth=(0.6+1.1*d)*(0.65+0.55*hvVis); // ぽつぽつは細く、ザーッは太く
     g.beginPath();g.moveTo(x,y);g.lineTo(x+len*0.22,y+len);g.stroke();
   }
 }
