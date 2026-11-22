@@ -233,7 +233,7 @@ h4.nzh{font-family:var(--serif);font-size:14px;color:var(--ink2);margin:14px 2px
 .ask{position:fixed;inset:0;z-index:110;background:rgba(40,30,20,.45);display:flex;align-items:center;justify-content:center;padding:20px;animation:rf .15s}
 .ask .box{background:var(--paper2);border-radius:12px;padding:18px 16px 14px;width:100%;max-width:340px;box-shadow:0 8px 30px rgba(0,0,0,.3)}
 .ask .msg{font-family:var(--serif);font-weight:700;font-size:17px;margin:0 4px 6px}
-.ask .sub{font-size:13px;color:var(--ink2);margin:0 4px 12px}
+.ask .sub{font-size:13px;color:var(--ink2);margin:0 4px 12px;white-space:pre-line}
 .ask .btn{display:block;width:100%;margin-top:8px}
 /* 写真の拡大ビューア */
 .viewer{position:fixed;inset:0;z-index:105;background:#000;touch-action:none;overflow:hidden;animation:rf .15s;
@@ -285,16 +285,29 @@ h4.nzh{font-family:var(--serif);font-size:14px;color:var(--ink2);margin:14px 2px
 .fpi.crop{overflow:hidden}
 .fpi .frame{position:absolute;border:2px solid #fff;box-shadow:0 0 0 2px rgba(0,0,0,.35),0 0 0 9999px rgba(20,12,4,.45);pointer-events:none;border-radius:2px}
 input[type=range]{width:100%;min-height:40px;accent-color:var(--accent)}
-.uprow{display:flex;gap:8px;justify-content:space-between;margin:2px 0 4px}
+.uprow{display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 6px}
+.uprow .btn{flex:1 1 auto}
+.ptime{font-family:var(--serif);font-size:13px;color:var(--ink2);text-align:center;min-height:20px;margin:0 0 4px}
 .placebox{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0 2px}
 #f-pc{margin-top:4px}
 #f-pc:empty{display:none}
 label.sw{display:flex;align-items:center;gap:10px;min-height:44px;font-size:16px}
 label.sw input{width:24px;height:24px;accent-color:var(--accent)}
-.gal .upb,.viewer .vb{display:none;position:absolute;left:8px;top:8px;background:rgba(255,253,248,.9);color:var(--ink);border-radius:10px;font-size:12px;padding:1px 8px;pointer-events:none;z-index:2}
-.gal.isdetail .upb{display:block}
-.viewer .vb{top:calc(18px + var(--st))}
-.viewer.isdetail .vb{display:block}
+/* 写真を足す・並べ替え */
+.agrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.agrid .it{position:relative;border-radius:4px;overflow:hidden;background:var(--paper3);aspect-ratio:1/1}
+.agrid .it .ed{display:block;width:100%;height:100%;padding:0;border:0;background:none}
+.agrid .it img{width:100%;height:100%;object-fit:cover;display:block}
+.agrid .it .ld{display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:12px;color:var(--ink2);text-align:center;padding:4px}
+.agrid .it .rmx{position:absolute;top:3px;right:3px;width:32px;height:32px;border-radius:16px;border:1px solid var(--line);background:rgba(255,253,248,.92);font-size:14px;padding:0}
+.agrid .it .zb{position:absolute;left:4px;bottom:4px;background:rgba(255,253,248,.92);border-radius:12px;font-size:14px;line-height:22px;padding:0 5px;box-shadow:0 1px 3px rgba(0,0,0,.3);pointer-events:none}
+.rgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.rt{position:relative;background:var(--paper2);border:1px solid var(--line);border-radius:6px;padding:6px}
+.rt img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;border-radius:3px;background:var(--paper3)}
+.rt .sm{position:absolute;left:10px;top:10px;background:var(--accent);color:#fff;font-size:12px;border-radius:10px;padding:0 8px}
+.rt .mv{display:flex;gap:6px;align-items:center;margin-top:6px}
+.rt .mv .btn{flex:1;min-height:44px;padding:4px;font-size:20px}
+.rt .mv .pos{flex:0 0 28px;text-align:center;font-family:var(--serif);color:var(--ink2)}
 .rcard .ph .ld{display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--ink2);text-align:center;padding:4px}
 .rcard .rm{position:absolute;top:6px;right:6px;width:40px;height:40px;border-radius:20px;border:1px solid var(--line);background:var(--paper);font-size:18px}
 .rcard .ck{position:absolute;top:6px;right:6px;width:40px;height:40px;border-radius:20px;border:2px solid var(--accent);background:#fff;font-size:22px;color:var(--accent);font-weight:700}
@@ -407,15 +420,15 @@ ul.cands{margin:4px 0;padding-left:1.3em;font-family:var(--serif)}
   <button data-tab="settings"><span class="ic">⚙️</span>設定</button>
 </div></nav>
 <input type="file" id="fileIn" accept="image/*" multiple hidden>
-<input type="file" id="upIn" accept="image/*" hidden>
+<input type="file" id="upIn" accept="image/*" multiple hidden>
 <input type="file" id="importIn" accept=".json,application/json" multiple hidden>
 
 <script>
 'use strict';
 /* ============================================================
-   なんでも図鑑 (my-field-guide) v1.2.2
+   なんでも図鑑 (my-field-guide) v1.2.3
    ============================================================ */
-const APP_VERSION = '1.2.2';
+const APP_VERSION = '1.2.3';
 const SCHEMA_VERSION = 1;
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -577,19 +590,57 @@ function toLocalInput(iso){ const d = new Date(iso); return `${d.getFullYear()}-
 function fromLocalInput(v, fallback){ const d = new Date(v); return isNaN(d) ? fallback : d.toISOString(); }
 function daysSince(iso){ return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000); }
 const ymd = () => { const d = new Date(); return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`; };
+const fmtHM = d => `${d.getHours()}:${pad(d.getMinutes())}`;
+const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+/** 出会いの時刻の幅の終わり。takenEnd が takenAt より5分以上あとのときだけ（それ以外は null＝幅を出さない） */
+function spanEnd(e){
+  if (!e.takenEnd) return null;
+  const a = new Date(e.takenAt), b = new Date(e.takenEnd);
+  return b - a >= 5 * 60000 ? b : null;
+}
+/** 時刻だけ。幅があれば「10:12〜10:40」「23:50〜11/22 0:10」 */
+function spanHM(e){
+  const a = new Date(e.takenAt), r = spanEnd(e);
+  if (!r) return fmtHM(a);
+  return fmtHM(a) + '〜' + (sameDay(a, r) ? fmtHM(r) : `${r.getMonth()+1}/${r.getDate()} ${fmtHM(r)}`);
+}
+/** 日付つき。幅がなければ今までの fmtMD と同じ */
+function fmtMDS(e){
+  const a = new Date(e.takenAt);
+  if (!spanEnd(e)) return fmtMD(e.takenAt);
+  return `${a.getMonth()+1}/${a.getDate()}(${WD[a.getDay()]}) ${spanHM(e)}`;
+}
+/** 写真1枚の撮影時刻（出会いの記録の写真の下・拡大ビューア用）。出会いと日付が違うときは日付つき。EXIF から読めなかった写真には「※」。まだ読み込んでいなければ空 */
+function photoTimeText(pid, e){
+  const c = timeCache.get(pid); if (!c || !e) return '';
+  const d = new Date(c.t || e.takenAt);
+  let s = sameDay(d, new Date(e.takenAt)) ? fmtHM(d) : `${d.getMonth()+1}/${d.getDate()} ${fmtHM(d)}`;
+  if (c.ex === false) s += '※';
+  return s;
+}
 
 /* ---------------- 写真の読み込み ---------------- */
 const thumbCache = new Map();
 const fullCache = new Map();
 /** 写真ごとの主役の位置（0〜1）。写真を読んだときに覚える */
 const focusCache = new Map();
-const detailSet = new Set();   // アップ（kind:'detail'）の写真のid
-function noteFocus(p){ if (!p) return; if (p.kind === 'detail' && !p.deleted) detailSet.add(p.id); else detailSet.delete(p.id); if (p.focusX != null && p.focusY != null) focusCache.set(p.id, [p.focusX, p.focusY]); else focusCache.delete(p.id); }
+/** 写真ごとの撮影時刻（takenAt。ないものは null）と、EXIF から読めたか（fromExif）。写真を読んだときに覚える */
+const timeCache = new Map();
+function noteFocus(p){
+  if (!p) return;
+  if (p.focusX != null && p.focusY != null) focusCache.set(p.id, [p.focusX, p.focusY]); else focusCache.delete(p.id);
+  timeCache.set(p.id, {t:p.takenAt || null, ex:p.fromExif});
+}
+/** 写真を書き換えたとき、その写真のキャッシュを捨てる */
+function dropPhotoCache(pid){
+  for (const m of [thumbCache, fullCache]) { const u = m.get(pid); if (u) { URL.revokeObjectURL(u); m.delete(pid); } }
+  focusCache.delete(pid); timeCache.delete(pid);
+}
 /** 切り抜いて見せる写真の中心を主役に合わせる。虫眼鏡カード（.lensable）には位置を渡す */
 function applyFocus(img, pid){
   if (img.closest('.fpick,.fprev')) return;   // 表紙を変える画面は自前で位置を描く
   const g = img.closest('.gal');
-  if (g) { g.classList.toggle('isdetail', detailSet.has(pid)); g.dispatchEvent(new CustomEvent('galshow', {detail:pid})); }
+  if (g) g.dispatchEvent(new CustomEvent('galshow', {detail:pid}));
   const f = focusCache.get(pid);
   img.style.objectPosition = f ? `${(f[0] * 100).toFixed(1)}% ${(f[1] * 100).toFixed(1)}%` : '';
   const ln = img.closest('.lensable');
@@ -777,6 +828,19 @@ function unlockScroll(){
   if (!document.body.classList.contains('noscroll')) return;
   document.body.classList.remove('noscroll'); document.body.style.top = '';
   window.scrollTo(0, lockedY);
+  requestAnimationFrame(() => { realignViewport(); setTimeout(realignViewport, 300); });
+}
+/**
+ * 画面のずれ直し（iPhone で下のメニューが浮く・記録が空枠のままになる症状の対策）。重ねた画面がないときだけ動く
+ * 今の位置へ置き直す／下のメニューに描き直しをさせる／まだ読み込んでいない写真の監視をやり直す
+ */
+function realignViewport(){
+  if (sheets.length || document.querySelector('.ask,.viewer,.reveal,.lensrev')) return;
+  window.scrollTo(0, window.scrollY);
+  const nav = $('nav.tabs');
+  if (nav) { nav.style.transform = 'translateZ(0)'; requestAnimationFrame(() => { nav.style.transform = ''; }); }
+  const v = $('#view');
+  if (v) { $$('img[data-photo]:not([src]),img[data-full]:not([src])', v).forEach(i => io.unobserve(i)); hydrate(v); }
 }
 /* 保険：画面が拡大されたままなら元に戻す（iPhone で効くかは実機で要確認。効かなくても害はない） */
 function resetZoom(){
@@ -1022,16 +1086,24 @@ const allSpeciesByNo = () => live(S.species).sort((a, b) => a.no - b.no).map(s =
 
 /** ✕：2枚以上重なっているときだけ出す（1枚なら「戻る」と同じなので） */
 function syncCloseAll(){ for (const s of sheets) { const b = $('.closeall', s.wrap); if (b) b.hidden = sheets.length < 2; } }
-/** 重なった画面を上から順に閉じる。途中の未保存の確認で「編集を続ける」を選んだら、そこで止まる */
+/** 重なった画面を上から順に、1枚ずつ閉じる動きが終わるのを待って閉じる。途中の未保存の確認で「編集を続ける」を選んだら、そこで止まる
+ *  途中の画面では描き直しをせず、最後の1回だけ render と unlockScroll をする（止まったときは、そこで描き直す） */
 async function closeAllSheets(){
+  let closed = 0;
   while (sheets.length) {
     const top = sheets[sheets.length - 1];
-    await closeSheet(top);
-    if (sheets.includes(top)) return;
+    await closeSheet(top, false, {quiet: sheets.length > 1});
+    if (sheets.includes(top)) break;
+    closed++;
+  }
+  if (closed && sheets.length) {
+    const t = sheets[sheets.length - 1];
+    if (t && !t.opts.form) t.refresh();
+    render();
   }
 }
-/** beforeClose は true/false か、その Promise を返す */
-async function closeSheet(sh, force){
+/** beforeClose は true/false か、その Promise を返す。戻り値の Promise は、閉じる動きが終わったら解決する。opt.quiet：render・unlockScroll をしない（✕で続けて閉じるとき） */
+async function closeSheet(sh, force, opt){
   if (sh.closing) return;
   if (!force && sh.opts.beforeClose) {
     sh.closing = true;
@@ -1042,14 +1114,18 @@ async function closeSheet(sh, force){
   const i = sheets.indexOf(sh); if (i < 0) return;
   sh.closing = true;
   sheets.splice(i, 1); syncCloseAll();
+  let done = Promise.resolve();
   if (reduceMotion()) sh.wrap.remove();
-  else { sh.wrap.classList.add('out'); setTimeout(() => sh.wrap.remove(), 200); }
+  else { sh.wrap.classList.add('out'); done = new Promise(r => setTimeout(() => { sh.wrap.remove(); r(); }, 200)); }
   sh.opts.onClose && sh.opts.onClose();
-  const top = sheets[sheets.length - 1];
-  if (top && !top.opts.form) top.refresh();
-  render();
-  if (!sheets.length) unlockScroll();
-  resetZoom();
+  if (!(opt && opt.quiet)) {
+    const top = sheets[sheets.length - 1];
+    if (top && !top.opts.form) top.refresh();
+    render();
+    if (!sheets.length) unlockScroll();
+    resetZoom();
+  }
+  await done;
 }
 
 /* ================= 画面：メイン ================= */
@@ -1123,7 +1199,7 @@ function logRow(e){
   const name = sp ? h(sp.name) + (e.confidence === 'maybe' ? '<span class="conf">たぶん</span>' : '') : '？ <span class="conf">なぞ</span>';
   return `<button class="lrow" data-entry="${e.id}" style="--gc:${h(g.color)}"><img class="th" data-photo="${e.photoIds[0]}" alt="">
     <div class="m"><div class="nm ${sp?'':'q'}">${name}</div>
-    <div class="sub">${h(g.emoji)} ${h(g.name)}・${fmtMD(e.takenAt)}${e.photoIds.length > 1 ? ` <span class="more-photos">📷${e.photoIds.length}</span>` : ''}</div>
+    <div class="sub">${h(g.emoji)} ${h(g.name)}・${fmtMDS(e)}${e.photoIds.length > 1 ? ` <span class="more-photos">📷${e.photoIds.length}</span>` : ''}</div>
     ${e.note ? `<div class="note">${h(e.note)}</div>` : ''}</div></button>`;
 }
 
@@ -1441,7 +1517,7 @@ function startRegister(files){
       for (const p of c.photos) {
         try { Object.assign(p, await processFile(p.file)); }
         catch(e) { p.err = true; }
-        p.loading = false;   // 原本（p.file）はアップを切り出すために保存まで持っておく
+        p.loading = false;   // 原本（p.file）は切り出しのために保存まで持っておく
         if (!R) return;
         c.takenAt = cardTime(c);
         updateCard(c);
@@ -1454,7 +1530,7 @@ function cardTime(c){ const ts = c.photos.filter(p => p.takenAt).map(p => p.take
 function cardHTML(c){
   const g = genreOf(c.genreId) || NOGENRE;
   const ph = c.photos.map((p, i) => p.loading ? `<div class="ld">読み込み中…</div>` : p.err ? `<div class="ld">読み込めない写真です<br>${h(p.name)}</div>`
-    : `<span class="pw"><img src="${p.thumbUrl}" alt="" data-pi="${i}">${p.crop ? '<b class="zb">🔍</b>' : ''}</span>`).join('');
+    : `<span class="pw"><img src="${p.thumbUrl}" alt="" data-pi="${i}">${p.crop ? '<b class="zb">✂</b>' : ''}</span>`).join('');
   const ok = c.photos.some(p => p.blob), geo = c.photos.some(p => p.lat != null);
   return `<div class="rcard ${c.sel?'sel':''}" data-key="${c.key}" style="--gc:${h(g.color)}">
     <div class="ph">${ph}</div>
@@ -1495,11 +1571,14 @@ function buildRegister(sh){
       const card = ev.target.closest('.rcard');
       if (R.merge) { if (card) toggleSel(card.dataset.key); return; }
       const im = ev.target.closest('img[data-pi]');
-      if (im && card) {   // 写真をタップ → アップを切り出す
+      if (im && card) {   // 写真をタップ → 写真の編集（切る・主役の位置）。切り出しは保存のときに原本（p.file）から
         const c = R.cards.find(x => x.key === card.dataset.key), p = c && c.photos[+im.dataset.pi];
         if (!p || !p.blob) return;
-        const url = URL.createObjectURL(p.blob);
-        openCrop(url, p.crop || null, crop => { URL.revokeObjectURL(url); if (crop) p.crop = crop; else delete p.crop; updateCard(c); });
+        openPhotoEdit(p.blob, {crop:p.crop || null, keep:p.keep, focus:p.focus || null}, r => {
+          if (r.crop) { p.crop = r.crop; p.keep = r.keep; } else { delete p.crop; delete p.keep; }
+          if (r.focusChanged) p.focus = r.focus;
+          updateCard(c);
+        });
       }
       return;
     }
@@ -1563,19 +1642,12 @@ async function saveRegister(){
       const e = {id:uuid(), takenAt:c.takenAt || pics[0].takenAt, photoIds:[], genreId:gid || null, speciesId:spId,
         confidence: spId ? 'sure' : 'unknown', candidates:[], note:c.note.trim(), place:''};
       if (geo) { e.lat = geo.lat; e.lng = geo.lng; }
-      for (const p of pics) {
-        const pr = {id:uuid(), entryId:e.id, blob: await p.blob.arrayBuffer(), thumb: await p.thumb.arrayBuffer(), originalName:p.name};
-        if (p.crop && p.file) {
-          try {
-            const d = await makeDetail(p.file, p.crop);
-            pr.focusX = p.crop.fx; pr.focusY = p.crop.fy;   // 表紙の切り抜きにも効く
-            const dr = {id:uuid(), entryId:e.id, blob: await d.blob.arrayBuffer(), thumb: await d.thumb.arrayBuffer(), originalName:p.name, kind:'detail', parentId:pr.id};
-            e.photoIds.push(pr.id, dr.id); ops.push({store:'photos', rec:Store.stamp(pr)}, {store:'photos', rec:Store.stamp(dr)});
-            continue;
-          } catch(err) { console.warn(err); failedDetails++; }
-        }
-        e.photoIds.push(pr.id); ops.push({store:'photos', rec:Store.stamp(pr)});
+      for (const p of pics) {   // 写真ごとの時刻・位置・切り出し（photoRecsFrom）
+        const r = await photoRecsFrom(p, e.id);
+        if (r.failed) failedDetails++;
+        for (const rec of r.recs) { e.photoIds.push(rec.id); ops.push({store:'photos', rec:Store.stamp(rec)}); }
       }
+      e.takenEnd = pics.map(p => p.takenAt).filter(Boolean).sort().pop() || e.takenAt;   // 写真の中でいちばん遅い時刻
       ops.push({store:'entries', rec:Store.stamp(e)}); newEntries.push(e); count++;
     }
     await Store.write(ops);
@@ -1590,82 +1662,454 @@ async function saveRegister(){
   closeSheet(R.sheet, true);
   S.tab = S.tab === 'settings' ? 'log' : S.tab; render();
   pinToast(`${count}件 留めました`);
-  if (failedDetails) setTimeout(() => alert(`アップを${failedDetails}枚作れませんでした（元の写真は保存しました）。\n出会いの記録の「🔍 アップを足す」から、あとで足せます。`), 400);
+  if (failedDetails) setTimeout(() => alert(`${failedDetails}枚は切り出せませんでした（元の写真は保存しました）。\n出会いの記録の「✏️ この写真を編集」から、あとで切れます。`), 400);
   Place.autoFill(newEntries.map(e => e.id));
 }
 
-/* ================= アップ（主役の切り出し） ================= */
+/* ================= 写真の編集（切る・主役の位置） ================= */
 /**
- * 「アップを切り出す」画面。url：表示用の写真、init：{fx, fy, sz} か null、onDone(crop)：決定で crop、「アップをやめる」で null
- * fx, fy：枠の中心（0〜1）、sz：枠の一辺（写真の短い辺に対する割合 0.15〜0.9）
+ * src：表示する写真（Blob）。init：{crop, keep, focus}
+ *   crop：{fx, fy, sz, shape} か null（fx, fy：枠の中心 0〜1／sz：枠の大きさ 0.15〜0.9／shape：'sq'＝正方形（sz は写真の短い辺に対する割合）、'orig'＝元の形（sz は縦横それぞれに対する割合））
+ *   keep：前に決めた「元の写真も残す」／focus：{x, y} か null（主役の位置）
+ * onDone({crop, keep, focus, focusChanged})：決定のあとに呼ぶ。crop が null なら切らない。
+ *   切ったときは「元の写真も残しますか？」を聞く（「やめる」なら編集画面に戻る）。focusChanged：主役の位置を動かしたか
  */
-function openCrop(url, init, onDone){
-  const c = init ? {...init} : {fx:0.5, fy:0.5, sz:0.45, shown:false};
-  if (init) c.shown = true;
-  openSheet({title:'アップを切り出す', form:true, build(sh){
-    sh.body.innerHTML = `<p class="hint" style="margin-top:0">主役をタップすると、そこを中心に枠が出ます。枠は指で動かせます。</p>
-      <div class="fpick"><div class="fpi crop" id="u-box"><img src="${url}" alt="" draggable="false"><span class="frame" hidden></span></div></div>
-      <label class="fl">枠の大きさ</label><input type="range" id="u-size" min="15" max="90" step="1" value="${Math.round(c.sz * 100)}">`;
-    sh.foot.innerHTML = `${init ? '<button class="btn danger" id="u-del">アップをやめる</button>' : ''}<button class="btn primary" id="u-ok" ${c.shown ? '' : 'disabled'}>決定</button>`;
-    const box = $('#u-box', sh.body), img = $('img', box), fr = $('.frame', box);
-    /** 枠が写真からはみ出さないように中心を寄せて描く */
-    const paint = () => {
-      const W = img.clientWidth, H = img.clientHeight; if (!W || !H) return;
-      const side = c.sz * Math.min(W, H), hx = side / 2 / W, hy = side / 2 / H;
-      c.fx = Math.max(hx, Math.min(1 - hx, c.fx)); c.fy = Math.max(hy, Math.min(1 - hy, c.fy));
-      fr.hidden = !c.shown;
-      Object.assign(fr.style, {width:side + 'px', height:side + 'px', left:(c.fx * W - side / 2) + 'px', top:(c.fy * H - side / 2) + 'px'});
-      $('#u-ok', sh.foot).disabled = !c.shown;
-    };
-    if (img.complete) paint(); else img.onload = paint;
-    let drag = null;
-    box.addEventListener('pointerdown', ev => {
-      const r = img.getBoundingClientRect(); if (!r.width) return;
-      const px = (ev.clientX - r.left) / r.width, py = (ev.clientY - r.top) / r.height;
-      box.setPointerCapture(ev.pointerId);
-      if (c.shown && !fr.hidden) {   // 枠の中からなら、つかんで動かす
-        const fb = fr.getBoundingClientRect();
-        if (ev.clientX >= fb.left && ev.clientX <= fb.right && ev.clientY >= fb.top && ev.clientY <= fb.bottom) { drag = {dx:c.fx - px, dy:c.fy - py}; return; }
+function openPhotoEdit(src, init, onDone){
+  init = init || {};
+  const url = URL.createObjectURL(src);
+  const c = init.crop ? {fx:init.crop.fx, fy:init.crop.fy, sz:init.crop.sz, shape:init.crop.shape || 'sq', shown:true}
+    : {fx:0.5, fy:0.5, sz:0.45, shape:'sq', shown:false};
+  const f = init.focus ? {x:init.focus.x, y:init.focus.y} : {x:0.5, y:0.5};
+  const cropKey = () => c.shown ? [c.fx.toFixed(3), c.fy.toFixed(3), c.sz.toFixed(2), c.shape].join() : '';
+  const focusKey = () => f.x.toFixed(3) + ',' + f.y.toFixed(3);
+  const crop0 = cropKey(), focus0 = focusKey();
+  const changed = () => cropKey() !== crop0 || focusKey() !== focus0;
+  let mode = 'crop';
+  openSheet({title:'写真を編集', form:true,
+    beforeClose: async () => changed() ? (await ask3('変更があります', ['変更を捨てて戻る', '編集を続ける'])) === 0 : true,
+    onClose(){ URL.revokeObjectURL(url); },
+    build(sh){
+      const seg = `<div class="seg" id="pe-mode"><button data-m="crop" class="${mode === 'crop' ? 'on' : ''}">切る</button><button data-m="focus" class="${mode === 'focus' ? 'on' : ''}">主役の位置</button></div>`;
+      sh.foot.innerHTML = `<button class="btn primary" id="pe-ok" disabled>決定</button>`;
+      const ok = $('#pe-ok', sh.foot);
+      if (mode === 'crop') {
+        sh.body.innerHTML = `${seg}<p class="hint" style="margin:0 0 6px">主役をタップすると、そこを中心に枠が出ます。枠は指で動かせます。</p>
+          <div class="fpick"><div class="fpi crop" id="pe-box"><img src="${url}" alt="" draggable="false"><span class="frame" hidden></span></div></div>
+          <label class="fl">枠の大きさ</label><input type="range" id="pe-size" min="15" max="90" step="1" value="${Math.round(c.sz * 100)}">
+          <div class="chips"><button class="chip ${c.shape === 'sq' ? 'on' : ''}" data-sh="sq">正方形</button><button class="chip ${c.shape === 'orig' ? 'on' : ''}" data-sh="orig">元の形</button></div>
+          <div class="row-btns"><button class="btn small danger" id="pe-none" ${c.shown ? '' : 'disabled'}>切らない</button></div>`;
+        const box = $('#pe-box', sh.body), img = $('img', box), fr = $('.frame', box), none = $('#pe-none', sh.body);
+        /** 枠が写真からはみ出さないように中心を寄せて描く */
+        const paint = () => {
+          ok.disabled = !changed();
+          const W = img.clientWidth, H = img.clientHeight; if (!W || !H) return;
+          const fw = c.shape === 'orig' ? c.sz * W : c.sz * Math.min(W, H), fh = c.shape === 'orig' ? c.sz * H : fw;
+          const hx = fw / 2 / W, hy = fh / 2 / H;
+          c.fx = Math.max(hx, Math.min(1 - hx, c.fx)); c.fy = Math.max(hy, Math.min(1 - hy, c.fy));
+          fr.hidden = !c.shown; none.disabled = !c.shown;
+          Object.assign(fr.style, {width:fw + 'px', height:fh + 'px', left:(c.fx * W - fw / 2) + 'px', top:(c.fy * H - fh / 2) + 'px'});
+          ok.disabled = !changed();
+        };
+        if (img.complete && img.naturalWidth) paint(); else img.onload = paint;
+        let drag = null;
+        box.addEventListener('pointerdown', ev => {
+          const r = img.getBoundingClientRect(); if (!r.width) return;
+          const px = (ev.clientX - r.left) / r.width, py = (ev.clientY - r.top) / r.height;
+          box.setPointerCapture(ev.pointerId);
+          if (c.shown && !fr.hidden) {   // 枠の中からなら、つかんで動かす
+            const fb = fr.getBoundingClientRect();
+            if (ev.clientX >= fb.left && ev.clientX <= fb.right && ev.clientY >= fb.top && ev.clientY <= fb.bottom) { drag = {dx:c.fx - px, dy:c.fy - py}; return; }
+          }
+          c.fx = px; c.fy = py; c.shown = true; drag = {dx:0, dy:0}; paint();
+        });
+        box.addEventListener('pointermove', ev => {
+          if (!drag) return;
+          const r = img.getBoundingClientRect();
+          c.fx = (ev.clientX - r.left) / r.width + drag.dx; c.fy = (ev.clientY - r.top) / r.height + drag.dy; paint();
+        });
+        const up = () => { drag = null; };
+        box.addEventListener('pointerup', up); box.addEventListener('pointercancel', up);
+        $('#pe-size', sh.body).oninput = ev => { c.sz = ev.target.value / 100; paint(); };
+        $$('[data-sh]', sh.body).forEach(b => b.onclick = () => { c.shape = b.dataset.sh; $$('[data-sh]', sh.body).forEach(x => x.classList.toggle('on', x === b)); paint(); });
+        none.onclick = () => { c.shown = false; paint(); };
+      } else {
+        sh.body.innerHTML = `${seg}<p class="hint" style="margin:0 0 6px">写真の主役をタップしてください（印は指で動かせます）</p>
+          <div class="fpick"><div class="fpi" id="pe-fp"><img src="${url}" alt="" draggable="false"><span class="mk"></span></div></div>
+          <p class="hint">できあがり</p>
+          <div class="fprev"><div><img class="sq" src="${url}" alt=""><span>図鑑のカード</span></div><div><img class="wd" src="${url}" alt=""><span>表紙</span></div></div>`;
+        const fp = $('#pe-fp', sh.body), mk = $('.mk', fp);
+        const paint = () => {
+          mk.style.left = (f.x * 100) + '%'; mk.style.top = (f.y * 100) + '%';
+          const pos = `${(f.x * 100).toFixed(1)}% ${(f.y * 100).toFixed(1)}%`;
+          $$('.fprev img', sh.body).forEach(i => i.style.objectPosition = pos);
+          ok.disabled = !changed();
+        };
+        paint();
+        const setAt = (x, y) => {
+          const r = $('img', fp).getBoundingClientRect(); if (!r.width) return;
+          f.x = Math.max(0, Math.min(1, (x - r.left) / r.width)); f.y = Math.max(0, Math.min(1, (y - r.top) / r.height)); paint();
+        };
+        let dragging = false;
+        fp.addEventListener('pointerdown', ev => { dragging = true; fp.setPointerCapture(ev.pointerId); setAt(ev.clientX, ev.clientY); });
+        fp.addEventListener('pointermove', ev => { if (dragging) setAt(ev.clientX, ev.clientY); });
+        fp.addEventListener('pointerup', () => { dragging = false; });
+        fp.addEventListener('pointercancel', () => { dragging = false; });
       }
-      c.fx = px; c.fy = py; c.shown = true; drag = {dx:0, dy:0}; paint();
-    });
-    box.addEventListener('pointermove', ev => {
-      if (!drag) return;
-      const r = img.getBoundingClientRect();
-      c.fx = (ev.clientX - r.left) / r.width + drag.dx; c.fy = (ev.clientY - r.top) / r.height + drag.dy; paint();
-    });
-    const up = () => { drag = null; };
-    box.addEventListener('pointerup', up); box.addEventListener('pointercancel', up);
-    $('#u-size', sh.body).oninput = ev => { c.sz = ev.target.value / 100; paint(); };
-    $('#u-ok', sh.foot).onclick = () => { if (!c.shown) return; closeSheet(sh, true); onDone({fx:+c.fx.toFixed(4), fy:+c.fy.toFixed(4), sz:+c.sz.toFixed(3)}); };
-    const del = $('#u-del', sh.foot); if (del) del.onclick = () => { closeSheet(sh, true); onDone(null); };
-  }});
+      $('#pe-mode', sh.body).onclick = ev => { const b = ev.target.closest('[data-m]'); if (!b || b.dataset.m === mode) return; mode = b.dataset.m; sh.refresh(); };
+      ok.onclick = async () => {
+        if (!changed()) return;
+        const crop = c.shown ? {fx:+c.fx.toFixed(4), fy:+c.fy.toFixed(4), sz:+c.sz.toFixed(3), shape:c.shape} : null;
+        let keep = !!init.keep;
+        if (crop && cropKey() !== crop0) {
+          const k = await ask3('元の写真も残しますか？', ['残す（1枚増える）', '残さない（切った写真にする）', 'やめる']);
+          if (k === 2) return;   // 編集画面に戻る
+          keep = k === 0;
+        }
+        if (!crop) keep = false;
+        const fc = focusKey() !== focus0;
+        closeSheet(sh, true);
+        onDone({crop, keep, focus: fc ? {x:+f.x.toFixed(4), y:+f.y.toFixed(4)} : (init.focus ? {x:init.focus.x, y:init.focus.y} : null), focusChanged:fc});
+      };
+    }});
 }
-/** 原本から枠の部分を切り出す。長辺1024px・品質0.8（小さければ拡大しない）＋サムネイル320px */
-async function makeDetail(file, crop){
-  const {img, url} = await decodeImage(file);
+/** 原本（File／Blob）から枠の部分を切り出す。長辺1024px・品質0.8（小さければ拡大しない）＋サムネイル320px。正方形でも元の形でも使える */
+async function makeDetail(src, crop){
+  const {img, url} = await decodeImage(src);
   try {
-    const w = img.naturalWidth, hh = img.naturalHeight;
-    const side = Math.max(1, Math.round(crop.sz * Math.min(w, hh)));
-    const sx = Math.max(0, Math.min(w - side, Math.round(crop.fx * w - side / 2)));
-    const sy = Math.max(0, Math.min(hh - side, Math.round(crop.fy * hh - side / 2)));
-    const enc = async (n, q) => {
-      const cv = document.createElement('canvas'); cv.width = cv.height = n;
-      cv.getContext('2d').drawImage(img, sx, sy, side, side, 0, 0, n, n);
+    const w = img.naturalWidth, hh = img.naturalHeight, orig = crop.shape === 'orig';
+    const cw = Math.max(1, Math.round(crop.sz * (orig ? w : Math.min(w, hh))));
+    const ch = orig ? Math.max(1, Math.round(crop.sz * hh)) : cw;
+    const sx = Math.max(0, Math.min(w - cw, Math.round(crop.fx * w - cw / 2)));
+    const sy = Math.max(0, Math.min(hh - ch, Math.round(crop.fy * hh - ch / 2)));
+    const enc = async (max, q) => {
+      const k = Math.min(1, max / Math.max(cw, ch)), ow = Math.max(1, Math.round(cw * k)), oh = Math.max(1, Math.round(ch * k));
+      const cv = document.createElement('canvas'); cv.width = ow; cv.height = oh;
+      cv.getContext('2d').drawImage(img, sx, sy, cw, ch, 0, 0, ow, oh);
       const b = await new Promise(r => cv.toBlob(r, 'image/jpeg', q)); cv.width = cv.height = 0;
       if (!b) throw new Error('encode'); return b;
     };
-    const out = Math.min(1024, side);
-    return {blob: await enc(out, 0.8), thumb: await enc(Math.min(320, out), 0.7), size:out};
+    return {blob: await enc(1024, 0.8), thumb: await enc(320, 0.7)};
   } finally { URL.revokeObjectURL(url); }
 }
-/** 写真1枚を選ぶ（出会いの記録の「アップを足す」用） */
-function pickOnePhoto(){
+
+/* ---------------- 写真のレコードまわり ---------------- */
+/** 古い写真（takenAt・位置がない）に、出会いの時刻と位置を写す。書き換えたら true */
+function fillFrom(p, e){
+  let ch = false;
+  if (!p.takenAt && e.takenAt) { p.takenAt = e.takenAt; ch = true; }
+  if (p.lat == null && e.lat != null) { p.lat = e.lat; p.lng = e.lng; ch = true; }
+  return ch;
+}
+/** 出会いの時刻の幅の終わり＝写真の中でいちばん遅い撮影時刻（時刻のない写真は出会いの時刻）。pending：まだ保存していない写真のレコード */
+async function calcTakenEnd(e, pending = []){
+  const pm = new Map(pending.map(p => [p.id, p]));
+  let max = '';
+  for (const pid of e.photoIds) {
+    const p = pm.get(pid) || await Store.get('photos', pid);
+    if (!p || p.deleted) continue;
+    const t = p.takenAt || e.takenAt;
+    if (t > max) max = t;
+  }
+  return max || e.takenAt;
+}
+/**
+ * processFile の結果 p（crop・keep・focus つき）から、保存する写真のレコードを作る（登録・写真を足す、共通）
+ * crop があって keep → 元の写真（主役の位置つき）＋切った写真（croppedFrom）／crop があって keep でない → 切った写真だけ／crop なし → 元の写真だけ
+ * 戻り値 {recs, failed}（failed：切り出しに失敗して元の写真だけ保存したとき true）
+ */
+async function photoRecsFrom(p, entryId){
+  const base = () => { const o = {entryId, originalName:p.name, takenAt:p.takenAt, fromExif:!!p.fromExif}; if (p.lat != null) { o.lat = p.lat; o.lng = p.lng; } return o; };
+  const pr = {id:uuid(), ...base(), blob: await p.blob.arrayBuffer(), thumb: await p.thumb.arrayBuffer()};
+  let failed = false;
+  if (p.crop && p.file) {
+    try {
+      const d = await makeDetail(p.file, p.crop);
+      const dr = {id:uuid(), ...base(), blob: await d.blob.arrayBuffer(), thumb: await d.thumb.arrayBuffer()};
+      if (p.keep) {
+        dr.croppedFrom = pr.id;
+        const fc = p.focus || {x:p.crop.fx, y:p.crop.fy};   // 元の写真の主役は、決めていなければ枠の中心
+        pr.focusX = fc.x; pr.focusY = fc.y;
+        return {recs:[pr, dr], failed:false};
+      }
+      return {recs:[dr], failed:false};
+    } catch(err) { console.warn(err); failed = true; }
+  }
+  if (p.focus) { pr.focusX = p.focus.x; pr.focusY = p.focus.y; }
+  return {recs:[pr], failed};
+}
+/** 写真を何枚か選ぶ（出会いの記録の「写真を足す」用）。選ばなければ空の配列 */
+function pickPhotos(){
   return new Promise(res => {
     const inp = $('#upIn');
-    inp.onchange = () => { const f = inp.files[0]; inp.value = ''; res(f || null); };
+    inp.onchange = () => { const fs = [...inp.files]; inp.value = ''; res(fs); };
+    inp.oncancel = () => res([]);
     inp.click();
   });
+}
+
+/* ================= 出会いの記録：写真を足す ================= */
+/** 選んだ写真を、足す前に1枚ずつ切れる小さな画面。保存すると出会いの写真の後ろに足す。onSaved(最初に足した写真のid) */
+function openAddPhotos(files, entryId, onSaved){
+  files = [...files].filter(f => !f.type || f.type.startsWith('image/') || /\.(jpe?g|png|heic|heif|webp|gif)$/i.test(f.name));
+  if (!files.length) return;
+  const A = {items: files.map(f => ({key:uuid(), file:f, name:f.name, loading:true})), saving:false, done:false};
+  const sh = openSheet({title:'写真を足す', form:true,
+    beforeClose: async () => A.saving ? false : A.done ? true : (await ask3('写真を足すのをやめますか？', ['やめる', 'つづける'], '選んだ写真は足されません')) === 0,
+    onClose(){ A.items.forEach(p => p.thumbUrl && URL.revokeObjectURL(p.thumbUrl)); },
+    build(s){
+      const loading = A.items.some(p => p.loading), n = A.items.filter(p => p.blob).length;
+      s.body.innerHTML = `<div class="agrid">${A.items.map(p => `<div class="it">${
+        p.loading ? '<div class="ld">読み込み中…</div>' : p.err ? `<div class="ld">読み込めない写真です<br>${h(p.name)}</div>`
+        : `<button class="ed" data-ed="${p.key}" aria-label="この写真を編集"><img src="${p.thumbUrl}" alt=""></button>${p.crop ? '<b class="zb">✂</b>' : ''}`
+      }<button class="rmx" data-rm="${p.key}" aria-label="外す">✕</button></div>`).join('')}</div>
+        <p class="hint">写真をタップすると、足す前に切れます。</p>`;
+      s.foot.innerHTML = `<button class="btn primary" id="aa-ok" ${loading || !n ? 'disabled' : ''}>${loading ? '写真を準備中…' : `${n}枚を足す`}</button>`;
+      s.foot.style.display = '';
+      s.body.onclick = ev => {
+        const rm = ev.target.closest('[data-rm]');
+        if (rm) {
+          if (A.saving) return;
+          const it = A.items.find(x => x.key === rm.dataset.rm); if (it && it.thumbUrl) URL.revokeObjectURL(it.thumbUrl);
+          A.items = A.items.filter(x => x !== it);
+          if (!A.items.length) { A.done = true; closeSheet(s, true); return; }
+          return s.refresh();
+        }
+        const ed = ev.target.closest('[data-ed]'); if (!ed) return;
+        const p = A.items.find(x => x.key === ed.dataset.ed); if (!p || !p.blob) return;
+        openPhotoEdit(p.blob, {crop:p.crop || null, keep:p.keep, focus:p.focus || null}, r => {
+          if (r.crop) { p.crop = r.crop; p.keep = r.keep; } else { delete p.crop; delete p.keep; }
+          if (r.focusChanged) p.focus = r.focus;
+          if (A.sheet && sheets.includes(A.sheet)) A.sheet.refresh();
+        });
+      };
+      $('#aa-ok', s.foot).onclick = async () => {
+        if (A.saving || A.items.some(p => p.loading)) return;
+        A.saving = true; $('#aa-ok', s.foot).disabled = true;
+        const e2 = S.entries.get(entryId);
+        if (!e2 || e2.deleted) { A.saving = false; return; }
+        const recs = []; let failed = 0;
+        try {
+          for (const p of A.items.filter(x => x.blob)) {
+            const r = await photoRecsFrom(p, entryId); if (r.failed) failed++;
+            recs.push(...r.recs);
+          }
+          e2.photoIds = [...e2.photoIds, ...recs.map(r => r.id)];
+          e2.takenEnd = await calcTakenEnd(e2, recs);   // takenAt（出会いの時刻）は変えない：手で直した値を守るため
+          await Store.putMany([...recs.map(rec => ({store:'photos', rec})), {store:'entries', rec:e2}]);
+        } catch(err) {
+          console.error(err); alert('保存できませんでした。\n' + (err && err.message || err));
+          await loadAll(); A.saving = false; if (sheets.includes(s)) s.refresh(); return;
+        }
+        recs.forEach(noteFocus);
+        A.done = true; A.saving = false;
+        const skipped = A.items.filter(p => p.err).length;
+        closeSheet(s, true);
+        onSaved && onSaved(recs[0].id);
+        pinToast('写真を足しました');
+        if (failed || skipped) setTimeout(() => alert([skipped ? `${skipped}枚は読み込めませんでした。` : '', failed ? `${failed}枚は切り出せなかったので、元の写真のまま足しました。` : ''].filter(Boolean).join('\n')), 400);
+      };
+    }});
+  A.sheet = sh;
+  (async () => {
+    for (const p of A.items.slice()) {
+      try { Object.assign(p, await processFile(p.file)); } catch(e) { p.err = true; }
+      p.loading = false;
+      if (!sheets.includes(sh)) return;
+      sh.refresh();
+    }
+  })();
+}
+
+/* ================= 出会いの記録：この写真を編集（編集画面の結果を保存する） ================= */
+/** 保存してある写真 pid に、編集画面の結果 r を当てる。戻り値 {showId}（このあと見せる写真）か null（失敗・何もしなかった） */
+async function applyPhotoEdit(eid, pid, r){
+  const e = S.entries.get(eid), old = await Store.get('photos', pid);
+  if (!e || e.deleted || !old) return null;
+  const ops = [], pend = [];
+  let showId = pid, dropOld = false;
+  if (r.crop) {
+    let d;
+    try { d = await makeDetail(new Blob([old.blob], {type:'image/jpeg'}), r.crop); }
+    catch(err) { console.warn(err); alert('切り出せませんでした。'); return null; }
+    const nr = {id:uuid(), entryId:eid, blob: await d.blob.arrayBuffer(), thumb: await d.thumb.arrayBuffer(), originalName:old.originalName, croppedFrom:pid, takenAt: old.takenAt || e.takenAt};
+    if (old.fromExif !== undefined) nr.fromExif = old.fromExif;
+    const lat = old.lat != null ? old.lat : e.lat; if (lat != null) { nr.lat = lat; nr.lng = old.lat != null ? old.lng : e.lng; }
+    const at = e.photoIds.indexOf(pid);
+    if (r.keep) {   // 元の写真のすぐ後ろに入れる。元の写真の主役の位置は、決めていなければ枠の中心
+      e.photoIds.splice(at < 0 ? e.photoIds.length : at + 1, 0, nr.id);
+      const fc = r.focusChanged ? r.focus : {x:r.crop.fx, y:r.crop.fy};
+      old.focusX = fc.x; old.focusY = fc.y; fillFrom(old, e);
+      ops.push({store:'photos', rec:old}); pend.push(old);
+    } else {        // 同じ位置で置き換える。元の写真は削除の印。種の表紙だったら付け替える
+      if (at < 0) e.photoIds.push(nr.id); else e.photoIds[at] = nr.id;
+      old.deleted = true; ops.push({store:'photos', rec:old}); dropOld = true;
+      const sp = e.speciesId && S.species.get(e.speciesId);
+      if (sp && sp.coverPhotoId === pid) { sp.coverPhotoId = nr.id; ops.push({store:'species', rec:sp}); }
+    }
+    ops.push({store:'photos', rec:nr}); pend.push(nr); showId = nr.id;
+  } else if (r.focusChanged) {   // 主役の位置だけ
+    old.focusX = r.focus.x; old.focusY = r.focus.y; fillFrom(old, e);
+    ops.push({store:'photos', rec:old}); pend.push(old);
+  } else return {showId};
+  e.takenEnd = await calcTakenEnd(e, pend);
+  ops.push({store:'entries', rec:e});
+  if (!(await safeWrite(() => Store.putMany(ops)))) { await loadAll(); return null; }
+  if (dropOld) dropPhotoCache(pid);
+  pend.forEach(p => { if (!p.deleted) { dropPhotoCache(p.id); noteFocus(p); } });
+  return {showId};
+}
+
+/* ================= 出会いの記録：写真の並べ替え ================= */
+/** 並べ替えの画面：サムネに ‹ ›（前へ・後ろへ）。指のドラッグは使わない。1枚目が「サムネ」（ログ・なぞのカードに使われる写真）。onSaved(pid)：保存したあとに呼ぶ */
+function openReorder(entryId, curPid, onSaved){
+  const e0 = S.entries.get(entryId); if (!e0) return;
+  const order = e0.photoIds.slice(), orig = order.join(',');
+  const dirty = () => order.join(',') !== orig;
+  const save = async () => {
+    const e2 = S.entries.get(entryId); if (!e2 || e2.deleted) return false;
+    e2.photoIds = order.slice();
+    if (await safeWrite(() => Store.put('entries', e2))) return true;
+    await loadAll(); return false;
+  };
+  openSheet({title:'写真の並べ替え', form:true,
+    beforeClose: async () => {
+      if (!dirty()) return true;
+      const k = await ask3('変更があります', ['保存して戻る', '保存しないで戻る', '並べ替えを続ける']);
+      if (k === 2) return false;
+      if (k === 1) return true;
+      const ok = await save(); if (ok) { onSaved && onSaved(curPid); pinToast('並べ替えました'); }
+      return ok;
+    },
+    build(sh){
+      sh.body.innerHTML = `<div class="rgrid">${order.map((pid, i) => `<div class="rt"><img data-photo="${pid}" alt="">${i === 0 ? '<span class="sm">サムネ</span>' : ''}
+        <div class="mv"><button class="btn" data-mv="-1" data-i="${i}" ${i === 0 ? 'disabled' : ''} aria-label="前へ">‹</button><span class="pos">${i + 1}</span><button class="btn" data-mv="1" data-i="${i}" ${i === order.length - 1 ? 'disabled' : ''} aria-label="後ろへ">›</button></div></div>`).join('')}</div>`;
+      sh.foot.innerHTML = `<button class="btn primary" id="ro-ok" ${dirty() ? '' : 'disabled'}>決定</button>`;
+      sh.body.onclick = ev => {
+        const b = ev.target.closest('[data-mv]'); if (!b || b.disabled) return;
+        const i = +b.dataset.i, j = i + (+b.dataset.mv);
+        if (j < 0 || j >= order.length) return;
+        [order[i], order[j]] = [order[j], order[i]];
+        sh.refresh();
+      };
+      $('#ro-ok', sh.foot).onclick = async () => {
+        if (!dirty()) return;
+        if (await save()) { closeSheet(sh, true); onSaved && onSaved(curPid); pinToast('並べ替えました'); }
+      };
+    }});
+}
+
+/* ================= ほかの出会いとまとめる ================= */
+/** 同じ日の続きの確認文などに使う「11/22 0:10」 */
+const fmtMDHM = d => `${d.getMonth() + 1}/${d.getDate()} ${fmtHM(d)}`;
+/**
+ * 出会い2件を1件にまとめる。aId：始めた画面の出会い、bId：選んだ相手。時刻が早いほうを残す（同じなら a）
+ * 名前の食い違い・確認の文を出して、書き込む。残した出会いの id を返す（やめたとき・失敗したときは null）
+ */
+async function mergeEntries(aId, bId){
+  const a = S.entries.get(aId), b = S.entries.get(bId);
+  if (!a || !b || a.deleted || b.deleted || a === b) return null;
+  const [keep, gone] = b.takenAt < a.takenAt ? [b, a] : [a, b];
+  const nameOf = e => { const s = e.speciesId && S.species.get(e.speciesId); return s ? s.name : ''; };
+  // 名前：同じ・両方なぞはそのまま／片方だけ名前あり→名前ありのほう／別の種どうし→選んでもらう
+  let finalSp = keep.speciesId || gone.speciesId || null;
+  let conf = keep.speciesId ? keep.confidence : gone.confidence;
+  if (a.speciesId && b.speciesId && a.speciesId !== b.speciesId) {
+    const k = await ask3('名前が違います', [`「${nameOf(a)}」にする`, `「${nameOf(b)}」にする`, 'やめる']);
+    if (k === 2) return null;
+    const pick = k === 0 ? a : b;
+    finalSp = pick.speciesId; conf = pick.confidence;
+  }
+  // 確認の文（いつも出す。元に戻せないため）
+  const da = new Date(keep.takenAt), db = new Date(gone.takenAt);
+  let msg;
+  if (sameDay(da, db)) msg = 'この2件を1件にまとめますか？';
+  else if (db - da <= 6 * 3600000) msg = `日付をまたいでいます（${fmtMDHM(da)}・${fmtMDHM(db)}）。1件にまとめますか？`;
+  else msg = `日付が違います（${da.getMonth() + 1}/${da.getDate()}・${db.getMonth() + 1}/${db.getDate()}）。まとめると出会いは1回になります`;
+  const sub = [];
+  const now = entriesLive(), after = now.filter(x => x.id !== gone.id).map(x => x.id === keep.id ? {...x, speciesId:finalSp} : x);
+  if (finalSp) {
+    const st = list => {
+      const es = list.filter(x => x.speciesId === finalSp), months = new Set(); let first = null;
+      es.forEach(x => { months.add(new Date(x.takenAt).getMonth()); if (!first || x.takenAt < first) first = x.takenAt; });
+      return {n:es.length, months, first};
+    };
+    const bf = st(now), af = st(after), nm = (S.species.get(finalSp) || {}).name || '';
+    if (bf.n !== af.n) sub.push(`「${nm}」の出会い ${bf.n}回 → ${af.n}回`);
+    const lost = [...bf.months].filter(m => !af.months.has(m)).sort((x, y) => x - y);
+    if (lost.length) sub.push(`会った月から${lost.map(m => (m + 1) + '月').join('・')}が消えます`);
+    if (bf.first && af.first && fmtDate(bf.first) !== fmtDate(af.first)) sub.push(`初めて会った日が ${fmtDate(bf.first)} → ${fmtDate(af.first)} になります`);
+  } else {
+    const bn = now.filter(x => !x.speciesId).length, an = after.filter(x => !x.speciesId).length;
+    if (bn !== an) sub.push(`なぞ ${bn}件 → ${an}件`);
+  }
+  if ((await ask3(msg, ['まとめる', 'やめる'], sub.join('\n'))) !== 0) return null;
+  // 中身をまとめる
+  const ops = [], pend = [];
+  try {
+    for (const pid of keep.photoIds) { const p = await Store.get('photos', pid); if (p && fillFrom(p, keep)) { ops.push({store:'photos', rec:p}); pend.push(p); } }
+    for (const pid of gone.photoIds) {   // 相手の写真を付け替える（写真は消さない）。時刻・位置がなければ相手の出会いの値を入れる
+      const p = await Store.get('photos', pid); if (!p) continue;
+      p.entryId = keep.id; fillFrom(p, gone); ops.push({store:'photos', rec:p}); pend.push(p);
+    }
+    keep.photoIds = [...keep.photoIds, ...gone.photoIds];   // 時刻順には並べ直さない
+    keep.speciesId = finalSp; keep.confidence = finalSp ? (conf || 'sure') : 'unknown';
+    if (!keep.genreId && gone.genreId) keep.genreId = gone.genreId;
+    keep.note = [keep.note, gone.note].map(x => (x || '').trim()).filter(Boolean).join(' / ');
+    keep.candidates = [...new Set([...(keep.candidates || []), ...(gone.candidates || [])])];
+    if (!keep.place && gone.place) { keep.place = gone.place; if (gone.placeSrc) keep.placeSrc = gone.placeSrc; else delete keep.placeSrc; }
+    if (keep.lat == null && gone.lat != null) { keep.lat = gone.lat; keep.lng = gone.lng; }
+    keep.takenEnd = await calcTakenEnd(keep, pend);
+    gone.deleted = true; gone.mergedInto = keep.id;
+    ops.push({store:'entries', rec:keep}, {store:'entries', rec:gone});
+    await Store.putMany(ops);
+  } catch(err) {
+    console.error(err); alert('まとめられませんでした。\n' + (err && err.message || err));
+    await loadAll(); return null;
+  }
+  pend.forEach(p => noteFocus(p));
+  return keep.id;
+}
+/** 候補の1行（ログの行に近い見た目）。違う日のものには「別の日」の印 */
+function mergeRow(x, me){
+  const sp = x.speciesId && S.species.get(x.speciesId), g = entryGenre(x);
+  const name = sp ? h(sp.name) + (x.confidence === 'maybe' ? '<span class="conf">たぶん</span>' : '') : '？ <span class="conf">なぞ</span>';
+  const diff = !sameDay(new Date(x.takenAt), new Date(me.takenAt));
+  return `<button class="lrow" data-mg="${x.id}" style="--gc:${h(g.color)}"><img class="th" data-photo="${x.photoIds[0]}" alt="">
+    <div class="m"><div class="nm ${sp ? '' : 'q'}">${name}${diff ? '<span class="conf">別の日</span>' : ''}</div>
+    <div class="sub">${h(g.emoji)} ${h(g.name)}・${fmtMDS(x)}${x.photoIds.length > 1 ? ` <span class="more-photos">📷${x.photoIds.length}</span>` : ''}${x.place ? '・' + h(x.place) : ''}</div>
+    ${x.note ? `<div class="note">${h(x.note)}</div>` : ''}</div></button>`;
+}
+/** まとめる相手を選ぶ画面。同じ名前→なぞどうし→残り、それぞれ時刻が近い順。違う日も出す。onMerged(残った出会いのid) */
+function openMergePick(selfId, onMerged){
+  let q = '', limit = 30;
+  openSheet({title:'まとめる相手を選ぶ', form:true, build(sh){
+    const me = S.entries.get(selfId);
+    sh.body.innerHTML = `<p class="hint" style="margin-top:0">この出会いと1件にまとめる相手を選んでください。</p>
+      <input type="search" id="mg-q" placeholder="🔍 名前・ひとこと・場所で探す" value="${h(q)}"><div id="mg-list" style="margin-top:8px"></div>`;
+    const draw = () => {
+      const n = normName(q), t0 = new Date(me.takenAt).getTime();
+      const rank = x => me.speciesId && x.speciesId === me.speciesId ? 0 : (!me.speciesId && !x.speciesId ? 1 : 2);
+      let list = entriesLive().filter(x => x.id !== selfId);
+      if (n) list = list.filter(x => { const sp = x.speciesId && S.species.get(x.speciesId); return [sp ? sp.name : '', x.note, (x.candidates || []).join(' '), x.place].some(t => normName(t).includes(n)); });
+      list.sort((x, y) => rank(x) - rank(y) || Math.abs(new Date(x.takenAt) - t0) - Math.abs(new Date(y.takenAt) - t0));
+      const box = $('#mg-list', sh.body);
+      box.innerHTML = list.slice(0, limit).map(x => mergeRow(x, me)).join('')
+        + (list.length > limit ? `<button class="btn block" id="mg-more">もっと見る（残り${list.length - limit}件）</button>` : '')
+        || '<p class="hint">ほかの出会いがありません。</p>';
+      hydrate(box);
+    };
+    $('#mg-q', sh.body).oninput = ev => { q = ev.target.value; limit = 30; draw(); };
+    draw();
+    sh.body.onclick = async ev => {
+      if (ev.target.closest('#mg-more')) { limit += 30; return draw(); }
+      const b = ev.target.closest('[data-mg]'); if (!b || sh.merging) return;
+      sh.merging = true;
+      try {
+        const keepId = await mergeEntries(selfId, b.dataset.mg);
+        if (keepId) { closeSheet(sh, true); onMerged(keepId); render(); }
+      } finally { sh.merging = false; }
+    };
+  }});
 }
 
 /* ================= 場所の名前（写真の位置 → 名前） ================= */
@@ -1761,10 +2205,10 @@ const Place = {
 /* ================= 出会いの詳細 ================= */
 /** 写真は1枚ずつ表示。2枚以上なら端の ‹ › で切り替え */
 /** opt.eids：写真ごとの出会いのid（表紙スライド用。下に「日付・ひとこと」の1行を出す） */
-function galleryHTML(ids, opt = {}){
+function galleryHTML(ids, opt = {}){   // opt.eid：この出会いのid（写真ごとの時刻に使う）
   const many = ids.length > 1, eids = opt.eids;
   const ind = !many ? '' : ids.length <= 8 ? `<div class="dots">${ids.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>` : `<div class="cnt">1 / ${ids.length}</div>`;
-  return `<div class="gal ${eids ? 'cover' : ''}" data-ids="${ids.join(',')}" ${eids ? `data-eids="${eids.join(',')}"` : ''} data-i="0"><div class="gi"><img data-full="${ids[0]}" alt=""><span class="upb">🔍 アップ</span>`
+  return `<div class="gal ${eids ? 'cover' : ''}" data-ids="${ids.join(',')}" ${eids ? `data-eids="${eids.join(',')}"` : ''} ${opt.eid ? `data-eid="${opt.eid}"` : ''} data-i="0"><div class="gi"><img data-full="${ids[0]}" alt="">`
     + (many ? `<button class="ga prev" data-ga="-1" aria-label="前の写真" hidden>‹</button><button class="ga next" data-ga="1" aria-label="次の写真">›</button>` : '')
     + ind + `</div>` + (eids ? `<button class="cap" data-entry="${eids[0]}">${capText(eids[0])}</button>` : '') + `</div>`;
 }
@@ -1775,14 +2219,14 @@ function capText(eid){
 }
 /* ---------------- 写真の拡大ビューア ---------------- */
 /**
- * ids：写真の並び、i0：最初に見せる番号、onIndex(i)：閉じたときに最後に見ていた番号を返す
+ * ids：写真の並び、i0：最初に見せる番号、onIndex(i)：閉じたときに最後に見ていた番号を返す、timeOf(i)：その写真の撮影時刻の文字（上の「1 / 3」の横に出す）
  * 写真は <img> のまま transform で動かす（長押しの「調べる」「コピー」を残すため）
  */
-function openViewer(ids, i0, onIndex){
+function openViewer(ids, i0, onIndex, timeOf){
   if (document.querySelector('.viewer')) return;
   let i = Math.max(0, Math.min(ids.length - 1, i0 || 0));
   const v = document.createElement('div'); v.className = 'viewer';
-  v.innerHTML = `<img alt=""><div class="vc"></div><span class="vb">🔍 アップ</span><button class="vx" aria-label="閉じる">✕</button>`;
+  v.innerHTML = `<img alt=""><div class="vc"></div><button class="vx" aria-label="閉じる">✕</button>`;
   document.body.appendChild(v);
   const img = $('img', v), vc = $('.vc', v);
   let s = 1, tx = 0, ty = 0;   // 拡大率と、ずらす量（px）
@@ -1808,11 +2252,12 @@ function openViewer(ids, i0, onIndex){
     if (s <= 1.001) { s = 1; tx = 0; ty = 0; }
     clamp();
   };
+  const label = () => [ids.length > 1 ? `${i + 1} / ${ids.length}` : '', timeOf ? timeOf(i) : ''].filter(Boolean).join('・');
   const show = async () => {
-    vc.textContent = ids.length > 1 ? `${i + 1} / ${ids.length}` : '';
+    vc.textContent = label();
     s = 1; tx = 0; ty = 0; draw(false);
     const want = i, u = await fullURL(ids[i]);
-    if (!closed && want === i && u) { img.src = u; v.classList.toggle('isdetail', detailSet.has(ids[i])); }
+    if (!closed && want === i && u) { img.src = u; vc.textContent = label(); }
     for (const d of [-1, 1]) if (ids[i + d]) fullURL(ids[i + d]);   // 前後を先に読む
   };
   const go = async d => {
@@ -1936,7 +2381,10 @@ document.addEventListener('click', ev => {
   const b = ev.target.closest('.gal [data-ga]');
   if (b) { ev.stopPropagation(); const g = b.closest('.gal'); setGal(g, +g.dataset.i + (+b.dataset.ga)); return; }
   const im = ev.target.closest('.gal img');
-  if (im) { const g = im.closest('.gal'); openViewer(g.dataset.ids.split(','), +g.dataset.i, i => { if (g.isConnected) setGal(g, i); }); }
+  if (im) {
+    const g = im.closest('.gal'), ids = g.dataset.ids.split(','), eids = g.dataset.eids ? g.dataset.eids.split(',') : null;
+    openViewer(ids, +g.dataset.i, i => { if (g.isConnected) setGal(g, i); }, i => photoTimeText(ids[i], S.entries.get(eids ? eids[i] : g.dataset.eid)));
+  }
 }, true);
 function entryState(id){
   const e = S.entries.get(id), sp = e.speciesId && S.species.get(e.speciesId);
@@ -1990,7 +2438,7 @@ function openEntry(id0, list, where){
   const dirty = () => !!(ed.st && JSON.stringify(ed.st) !== ed.orig);
   /** 変更があるときの3択。kind：'page'（めくる）／'back'（戻る）。進んでよければ true */
   const resolve = async kind => {
-    const verb = kind === 'page' ? 'めくる' : '戻る';
+    const verb = {page:'めくる', back:'戻る', merge:'進む'}[kind];
     const k = await ask3('変更があります', [`保存して${verb}`, `保存しないで${verb}`, '編集を続ける']);
     if (k === 2) return false;
     if (k === 1) { ed.st = null; return true; }
@@ -2013,20 +2461,27 @@ function openEntry(id0, list, where){
     }
     const body = sh.body;
     sh.titleEl.textContent = '出会いの記録';
-    sh.body.innerHTML = `${galleryHTML(e.photoIds)}
-      <div class="uprow"><button class="btn small" id="f-up">🔍 アップを足す</button><button class="btn small danger" id="f-updel" hidden>このアップを消す</button></div>
+    sh.body.innerHTML = `${galleryHTML(e.photoIds, {eid:id})}
+      <div class="ptime" id="f-ptime"></div>
+      <div class="uprow"><button class="btn small" id="f-padd">＋ 写真を足す</button><button class="btn small" id="f-pedit">✏️ この写真を編集</button><button class="btn small danger" id="f-pdel" ${e.photoIds.length < 2 ? 'disabled' : ''}>🗑 この写真を削除</button>${e.photoIds.length > 1 ? '<button class="btn small" id="f-pord">⇄ 並べ替え</button>' : ''}</div>
       <label class="fl">名前</label><div class="sg-wrap"><input id="f-name" value="${h(st.name)}" placeholder="わからなければ空欄（なぞ）" autocomplete="off"></div>
       <div class="seg" id="f-conf">${confSeg(st.confidence)}</div>
       ${e.speciesId ? `<button class="btn" id="f-sp" style="margin:6px 0 0">📖 種のページを見る</button>` : ''}
       <label class="fl">ジャンル</label><div class="chips wrap" id="f-genre">${genreChips(st.genreId, true)}</div>
-      <label class="fl">出会った日時</label><input type="datetime-local" id="f-when" value="${toLocalInput(st.takenAt)}">
+      <label class="fl">出会った日時</label><input type="datetime-local" id="f-when" value="${toLocalInput(st.takenAt)}"><div class="hint" id="f-prange"></div>
       <label class="fl">場所</label><input id="f-place" value="${h(st.place)}" placeholder="例：近所の公園の池">
       ${e.lat != null ? `<div class="placebox"><button class="btn small" id="f-geo">📍 場所を調べる</button><span class="hint">写真の位置情報：${e.lat}, ${e.lng}</span></div><div class="chips wrap" id="f-pc"></div>` : ''}
       <label class="fl">名前の候補メモ（1行に1つ）</label><textarea id="f-cand" rows="3" placeholder="例：シジュウカラかヤマガラ&#10;決め手：お腹の色">${h(st.candidates)}</textarea>
       <label class="fl">ひとこと</label><textarea id="f-note" rows="3">${h(st.note)}</textarea>
       <p class="hint">元の写真：${e.photoIds.length}枚 <span id="f-orig"></span></p>
-      <button class="btn danger block" id="f-del" style="margin-top:18px">この出会いを削除</button>`;
-    Promise.all(e.photoIds.map(p => Store.get('photos', p))).then(ps => { const o = $('#f-orig', body); if (o) o.textContent = ps.filter(Boolean).map(p => p.originalName).join('、'); });
+      <button class="btn block" id="f-merge" style="margin-top:18px">🔗 ほかの出会いとまとめる</button>
+      <button class="btn danger block" id="f-del" style="margin-top:10px">この出会いを削除</button>`;
+    Promise.all(e.photoIds.map(p => Store.get('photos', p))).then(ps => {
+      const o = $('#f-orig', body); if (o) o.textContent = ps.filter(Boolean).map(p => p.originalName).join('、');
+      // 写真の時刻の幅（出会った日時の欄は手で直せるので、写真のほうは別に小さく出す）
+      const ts = ps.filter(p => p && !p.deleted).map(p => p.takenAt || e.takenAt).sort(), pr = $('#f-prange', body);
+      if (pr && ts.length > 1 && new Date(ts[ts.length - 1]) - new Date(ts[0]) >= 5 * 60000) pr.textContent = '写真：' + spanHM({takenAt:ts[0], takenEnd:ts[ts.length - 1]});
+    });
     /** 下の帯の左の主ボタン：変更なし（薄い・押せない）⇄ 保存（茶色）。入力・チップ操作のたびに呼ぶ */
     const syncSave = () => {
       if (sh.preview) return;
@@ -2067,40 +2522,48 @@ function openEntry(id0, list, where){
     $('#f-cand', sh.body).oninput = ev => { st.candidates = ev.target.value; syncSave(); };
     $('#f-note', sh.body).oninput = ev => { st.note = ev.target.value; syncSave(); };
     const spb = $('#f-sp', sh.body); if (spb) spb.onclick = () => openSpecies(e.speciesId);
-    // アップ：表示中の写真がアップのときだけ「消す」を出す
-    const gal = $('.gal', body), upd = $('#f-updel', body);
+    // 写真の操作（その場で保存する。下の帯の「保存」とは別）
+    const gal = $('.gal', body), ptime = $('#f-ptime', body);
     const curPid = () => gal.dataset.ids.split(',')[+gal.dataset.i];
-    gal.addEventListener('galshow', ev => { upd.hidden = !detailSet.has(ev.detail); });
-    $('#f-up', body).onclick = async () => {
-      const file = await pickOnePhoto(); if (!file) return;
-      const parent = curPid(), url = URL.createObjectURL(file);
-      const probe = new Image();
-      const okImg = await new Promise(r => { probe.onload = () => r(true); probe.onerror = () => r(false); probe.src = url; });
-      if (!okImg) { URL.revokeObjectURL(url); return alert('この写真は読み込めませんでした。'); }
-      openCrop(url, null, async crop => {
-        URL.revokeObjectURL(url); if (!crop) return;
-        let d;
-        try { d = await makeDetail(file, crop); } catch(err) { return alert('アップを作れませんでした。'); }
-        const e2 = S.entries.get(id);
-        const dr = {id:uuid(), entryId:id, blob: await d.blob.arrayBuffer(), thumb: await d.thumb.arrayBuffer(), originalName:file.name, kind:'detail', parentId:parent};
-        const at = e2.photoIds.indexOf(parent);
-        e2.photoIds.splice(at < 0 ? e2.photoIds.length : at + 1, 0, dr.id);
-        if (await safeWrite(() => Store.putMany([{store:'photos', rec:dr}, {store:'entries', rec:e2}]))) {
-          detailSet.add(dr.id);
-          if (sh.pager.cur === id) { sh.refresh(); const g2 = $('.gal', sh.body); if (g2) setGal(g2, e2.photoIds.indexOf(dr.id)); }
-          pinToast('アップを足しました');
-        } else await loadAll();
+    gal.addEventListener('galshow', ev => { const e2 = S.entries.get(id); ptime.textContent = e2 ? photoTimeText(ev.detail, e2) : ''; });
+    /** 写真を変えたあと：この画面を描き直して、i 枚目を出す（ed.st は残したまま） */
+    const reshowAt = i => { if (sh.pager.cur !== id) return; sh.refresh(); const g2 = $('.gal', sh.body); if (g2) setGal(g2, Math.max(0, i)); };
+    const reshow = pid => reshowAt(S.entries.get(id).photoIds.indexOf(pid));
+    $('#f-padd', body).onclick = async () => {
+      const fs = await pickPhotos(); if (!fs.length) return;
+      openAddPhotos(fs, id, first => reshow(first));
+    };
+    $('#f-pedit', body).onclick = async () => {
+      const pid = curPid(), p = await Store.get('photos', pid);
+      if (!p || !p.blob) return alert('この写真は編集できません。');
+      openPhotoEdit(new Blob([p.blob], {type:'image/jpeg'}), {focus: p.focusX != null ? {x:p.focusX, y:p.focusY} : null}, async r => {
+        const res = await applyPhotoEdit(id, pid, r);
+        if (res) { reshow(res.showId); if (r.crop || r.focusChanged) pinToast(r.crop ? '写真を編集しました' : '主役の位置を変えました'); }
       });
     };
-    upd.onclick = async () => {
-      const pid = curPid(); if (!detailSet.has(pid)) return;
-      if (!confirm('このアップを消しますか？\n（元の写真はそのままです）')) return;
-      const e2 = S.entries.get(id), p = await Store.get('photos', pid); if (!p) return;
-      p.deleted = true; const i0 = e2.photoIds.indexOf(pid);
-      e2.photoIds = e2.photoIds.filter(x => x !== pid);
+    $('#f-pdel', body).onclick = async () => {
+      const e2 = S.entries.get(id); if (!e2 || e2.photoIds.length < 2) return;   // 最後の1枚は消せない
+      const pid = curPid();
+      if ((await ask3('この写真を削除しますか？', ['削除する', 'やめる'], 'カメラロールの元の写真はそのままです')) !== 0) return;
+      const p = await Store.get('photos', pid); if (!p) return;
+      const i0 = e2.photoIds.indexOf(pid);
+      p.deleted = true; e2.photoIds = e2.photoIds.filter(x => x !== pid);
+      e2.takenEnd = await calcTakenEnd(e2);
       if (await safeWrite(() => Store.putMany([{store:'photos', rec:p}, {store:'entries', rec:e2}]))) {
-        detailSet.delete(pid); sh.refresh(); const g2 = $('.gal', sh.body); if (g2) setGal(g2, Math.max(0, i0 - 1)); pinToast('アップを消しました');
+        dropPhotoCache(pid); reshowAt(Math.max(0, i0 - 1)); pinToast('写真を削除しました');
       } else await loadAll();
+    };
+    const ord = $('#f-pord', body);
+    if (ord) ord.onclick = () => openReorder(id, curPid(), pid => reshow(pid));
+    $('#f-merge', body).onclick = async () => {
+      if (dirty()) { if (!(await resolve('merge'))) return; sh.refresh(); }   // 入力途中なら先に3択。決まったら状態を作り直す
+      openMergePick(id, keepId => {
+        ed.id = null; ed.st = null;
+        const p = sh.pager;
+        if (keepId !== id) { p.ids = p.ids.includes(keepId) ? p.ids.filter(x => x !== id) : p.ids.map(x => x === id ? keepId : x); p.cur = keepId; }
+        sh.refresh(true);
+        pinToast('まとめました');
+      });
     };
     $('#f-del', sh.body).onclick = async () => {
       if (!confirm('この出会いを削除しますか？\n（この記録の写真もアプリから消えます。カメラロールの元の写真はそのままです）')) return;
@@ -2146,7 +2609,7 @@ function openInvestigate(id){
     },
     build(sh){
     const e = S.entries.get(id);
-    sh.body.innerHTML = `${galleryHTML(e.photoIds)}
+    sh.body.innerHTML = `${galleryHTML(e.photoIds, {eid:id})}
       <div id="i-cmp"></div>
       <div class="hint">${fmtDT(e.takenAt)}${e.place ? '・' + h(e.place) : ''}</div>
       <label class="fl">ジャンル</label><div class="chips wrap" id="i-genre">${genreChips(st.genreId, true)}</div>
@@ -2293,7 +2756,7 @@ function openSpecies(id0, list, where){
       <div class="grow-row"><input id="s-lurl" type="url" placeholder="URLを貼る" style="flex:2"><input id="s-lmemo" placeholder="メモ" style="flex:1"><button id="s-ladd" aria-label="追加">＋</button></div>
       <div class="sec">出会いの記録</div>
       ${st ? st.entries.map(e => `<button class="tl" data-entry="${e.id}"><img data-photo="${e.photoIds[0]}" alt="">
-        <div><div class="d">${fmtDate(e.takenAt)}${e.confidence === 'maybe' ? '<span class="conf">たぶん</span>' : ''}</div><div class="hint">${pad(new Date(e.takenAt).getHours())}:${pad(new Date(e.takenAt).getMinutes())}${e.photoIds.length > 1 ? `・📷${e.photoIds.length}` : ''}${e.place ? '・' + h(e.place) : ''}</div>
+        <div><div class="d">${fmtDate(e.takenAt)}${e.confidence === 'maybe' ? '<span class="conf">たぶん</span>' : ''}</div><div class="hint">${spanHM(e)}${e.photoIds.length > 1 ? `・📷${e.photoIds.length}` : ''}${e.place ? '・' + h(e.place) : ''}</div>
         <div class="n">${h(e.note)}</div></div></button>`).join('') : '<p class="hint">出会いの記録はありません。</p>'}
       <div class="row-btns" style="margin-top:20px"><button class="btn" id="s-edit">✏️ 編集</button><button class="btn" id="s-cover" ${st ? '' : 'disabled'}>🖼 表紙を変える</button></div>
       <div class="row-btns"><button class="btn" id="s-merge">🔗 別の種と統合</button>${st ? '' : `<button class="btn danger" id="s-del">このページを消す</button>`}</div>`;
@@ -2330,7 +2793,7 @@ function buildNazoPage(sh, eid){
   const g = entryGenre(e), sp = e.speciesId && S.species.get(e.speciesId);
   sh.body.style.setProperty('--gc', g.color);
   const cands = e.candidates || [];
-  sh.body.innerHTML = `${galleryHTML(e.photoIds)}
+  sh.body.innerHTML = `${galleryHTML(e.photoIds, {eid})}
     ${sp ? `<div class="solved"><div class="t">判明しました</div><div>${noStr(sp.no)} ${h(sp.name)}</div>
       <button class="btn primary block" id="n-sp" style="margin-top:8px">📖 種のページを見る</button></div>` : ''}
     <div class="splabel nz"><div class="no">No.???</div><h2>？？？</h2>
@@ -2720,6 +3183,8 @@ async function init(){
       if (S.tab === 'zukan' && S.zCh) { S.zCh = null; S.zQuery = ''; }
     }
     S.tab = b.dataset.tab; render(); resetZoom(); });
+  document.addEventListener('focusout', ev => { if (ev.target && ev.target.closest && ev.target.closest('input,textarea,select')) setTimeout(realignViewport, 200); });
+  if (window.visualViewport) { let vt = null; window.visualViewport.addEventListener('resize', () => { if (vt) return; vt = setTimeout(() => { vt = null; realignViewport(); }, 150); }); }
   $('#plusBtn').onclick = () => { R && (R.addMode = false); $('#fileIn').click(); };
   $('#fileIn').onchange = ev => {
     const fs = [...ev.target.files]; ev.target.value = '';
