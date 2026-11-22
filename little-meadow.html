@@ -31,6 +31,11 @@ button{font:inherit;color:inherit;background:transparent;border:0;cursor:pointer
 #toast{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100% - 110px);background:rgba(31,42,28,.9);padding:6px 12px;border-radius:16px;font-size:13px;text-align:center;opacity:0;transition:opacity .5s;cursor:pointer;z-index:3}
 #peek{position:absolute;left:50%;bottom:78px;transform:translateX(-50%);width:max-content;max-width:88%;background:rgba(31,42,28,.92);padding:7px 14px;border-radius:12px;font-size:13px;line-height:1.5;text-align:center;opacity:0;transition:opacity .4s;pointer-events:none;z-index:5}
 #fs{position:absolute;right:10px;bottom:10px;z-index:4;width:38px;height:38px;border-radius:50%;background:rgba(31,42,28,.72);border:1px solid rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;color:#fff;padding:0}
+#hdrR{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.wlb{width:36px;height:36px;border-radius:50%;border:1px solid #5d6b55;display:flex;align-items:center;justify-content:center;color:#b9c4a8;padding:0;flex:none}
+.wlb.on{background:#f2d470;border-color:#f2d470;color:#2b3420;box-shadow:0 0 10px rgba(242,212,112,.6)}
+#wl2{position:absolute;right:10px;bottom:56px;z-index:4;width:38px;height:38px;background:rgba(31,42,28,.72);border:1px solid rgba(255,255,255,.45);color:#fff;display:none}
+#wl2.on{background:#f2d470;border-color:#f2d470;color:#2b3420}
 #side{flex:none;padding:6px 12px max(10px,calc(env(safe-area-inset-bottom) - 8px))}
 #panel{height:116px;cursor:pointer;overflow-x:hidden;overflow-y:auto;padding:2px 2px 0;font-size:13px;line-height:1.45}
 #panel .nm{font-size:16px;font-weight:600}
@@ -61,6 +66,8 @@ div.row{cursor:pointer}
 div.row.gone{cursor:default}
 div.row.gone .rn,div.row.gone .chip{opacity:.5}
 .row .chip.fl{border:0;font-size:13px;line-height:18px;text-align:center}
+.rbl{flex:none;width:34px;height:30px;border-radius:15px;border:1px solid #5d6b55;font-size:14px;line-height:1;padding:0;filter:grayscale(1);opacity:.4}
+.rbl.on{filter:none;opacity:1;border-color:#f2c230;background:rgba(242,194,48,.18)}
 .fam{flex:none;padding:5px 10px;border:1px solid #6f7d5e;border-radius:14px;font-size:12px;color:#e9f1d4}
 .fh{margin:12px 0 2px;font-weight:600;color:#f2d470;font-size:13px}
 .cnl{margin-top:12px;text-align:center;font-weight:600;color:#f2d470;font-size:14px}
@@ -113,6 +120,8 @@ table.dy{border-collapse:collapse}
 #app.land #clock .c2{display:inline;margin-left:6px}
 #app.land #clock .lg{display:none}
 #app.land #pgbtn{padding:5px 7px;font-size:11.5px}
+#app.land #hdrR{gap:5px}
+#app.land #wl{width:28px;height:28px}
 #app.land #panel{flex:1;height:auto;min-height:0;font-size:12.5px;line-height:1.42}
 #app.land #panel .nm{font-size:15px}
 #app.land .bar{width:60px}
@@ -123,6 +132,7 @@ table.dy{border-collapse:collapse}
 #app.full #view{margin:0;border-radius:0}
 #app.full #stage{top:calc(8px + var(--sat));right:calc(8px + env(safe-area-inset-right))}
 #app.full #fs{right:calc(10px + env(safe-area-inset-right));bottom:calc(10px + env(safe-area-inset-bottom))}
+#app.full #wl2{display:flex;right:calc(10px + env(safe-area-inset-right));bottom:calc(56px + env(safe-area-inset-bottom))}
 #app.full #toast{bottom:calc(10px + env(safe-area-inset-bottom))}
 #app.full #peek{bottom:calc(78px + env(safe-area-inset-bottom))}
 </style>
@@ -132,7 +142,7 @@ table.dy{border-collapse:collapse}
 <div id="app">
 <header id="hdr">
 <div id="clock"></div>
-<button id="pgbtn">草原のページ</button>
+<div id="hdrR"><button id="wl" class="wlb" aria-label="画面を消さないモード"></button><button id="pgbtn">草原のページ</button></div>
 </header>
 <div id="main">
 <div id="view">
@@ -141,6 +151,7 @@ table.dy{border-collapse:collapse}
 <div id="peek"></div>
 <div id="toast"></div>
 <button id="fs" aria-label="全画面の切り替え"></button>
+<button id="wl2" class="wlb" aria-label="画面を消さないモード"></button>
 </div>
 <div id="side">
 <div id="panel"></div>
@@ -169,10 +180,10 @@ var WXK={
   gap:[12*3600,36*3600],   // 自然に来る通り雨：次まで12〜36時間（1日1回くらい）【仮決め】
   lightP:0.6,              // ぽつぽつ6割・ザーッ4割【仮決め】
   light:[180,480],         // ぽつぽつ 3〜8分
-  zPre:[20,35],            // ザーッ：はじめの30秒ほどで暗くなる
+  zPre:[60,120],           // ザーッ（V0.7）：はじめはぽつぽつ1〜2分
+  zDark:30,                // そのあと30秒で暗くなる
   zHeavy:[120,240],        // ザーッ：強めに2〜4分
-  zPost:[15,50],           // ザーッ：強いのがやんでから、すぐ明るくなるまで
-  zLen:[180,360],          // ザーッ：全部で3〜6分（いちばん長くても10分）
+  zPost:[50,70],           // 小降りになりながら明るくなって、やむ（約1分）。全部で4〜7分【仮決め】
   showerP:0.15,showerMax:3,showerWait:[60,180], // 開いたときのくじ（15%・1日3回まで・1〜3分後）
   dEnd:1200,               // 日照りの終わりの雨：20分（ぽつぽつ中心）
   dEndZ:[300,720],dEndZL:[90,150], // その途中（5〜12分め）に短いザーッ1.5〜2.5分【仮決め】
@@ -538,8 +549,8 @@ function startRain(k,ty){
   if(k===2){
     dur=WXK.dEnd;a=S.t+rnd(WXK.dEndZ[0],WXK.dEndZ[1]);w.hs=a;w.he=a+rnd(WXK.dEndZL[0],WXK.dEndZL[1]);w.add=WXK.pudHeavy;
   }else if(ty===1){
-    a=S.t+rnd(WXK.zPre[0],WXK.zPre[1]);w.hs=a;w.he=a+rnd(WXK.zHeavy[0],WXK.zHeavy[1]);
-    dur=clamp(w.he-S.t+rnd(WXK.zPost[0],WXK.zPost[1]),WXK.zLen[0],WXK.zLen[1]);w.he=Math.min(w.he,S.t+dur-10);w.add=WXK.pudHeavy;
+    a=S.t+rnd(WXK.zPre[0],WXK.zPre[1])+WXK.zDark;w.hs=a;w.he=a+rnd(WXK.zHeavy[0],WXK.zHeavy[1]);
+    dur=w.he-S.t+rnd(WXK.zPost[0],WXK.zPost[1]);w.add=WXK.pudHeavy;
   }else{dur=rnd(WXK.light[0],WXK.light[1]);w.add=WXK.pudLight}
   w.until=S.t+dur;
   S.hist.rn=(S.hist.rn||0)+1;S.hist.dw=(S.hist.dw||0)+1;
@@ -605,7 +616,7 @@ var gctx=gc.getContext('2d'),img=gctx.createImageData(COLS,ROWS);
 var tex=new Float32Array(N),hsh=new Float32Array(N);
 (function(){for(var i=0;i<N;i++){tex[i]=0.94+Math.random()*0.12;hsh[i]=Math.random()}})();
 var scale=1,dpr=1,speed=1,busy=false,selId=null,memorial='',sowing=false,dryVis=0;
-var VER='V0.6';
+var VER='V0.7';
 // 天気の見た目（画面側だけ・保存しない）：wxVis＝0晴れ〜0.55くもり〜1雨、hvVis＝本降り、woolWet＝ぬれた毛、wetVis＝地面のしめり（草の色）、woolDl＝毛の色の暗さ
 var wxVis=0,hvVis=0,rainVis=0,woolWet=0,wetVis=0,woolDl=0,wxRoll=false,frozen=false;
 var scw=300,sch=170,scx=W/2,scy=H/2,hits=[];
@@ -674,13 +685,17 @@ function fmtDur(s){
 function wool(c,dl){return 'hsl('+c.wh+','+c.ws+'%,'+clamp(c.wl+(dl||0)+woolDl,8,97)+'%)'}
 // ===== 天気（画面側）=====
 function wxMark(){var w=S.wx;if(!w)return '';if(w.st==='rain')return '🌦';if(wxBow())return '🌈';return darkness(S.t)>0.6?'🌙':'☀️'}
-// 見た目の目標（空の暗さ・雨つぶ・強い雨）。ぽつぽつは明るいまま。ザーッははじめの30秒で暗くなり、強くふって、すぐ明るくなる
+// 見た目の目標（空の暗さ・雨つぶ・強い雨）。ぽつぽつは明るいまま。
+// ザーッ（V0.7）：ぽつぽつ→30秒で暗くなる→強くふる→小降りになりながら約1分で明るくなる
 function wxGoal(){
-  var w=S.wx,b;
+  var w=S.wx,b,e;
   if(!w||w.st!=='rain')return[0,0,0];
   if(wxHeavy())return[1,1,1];
-  if(w.hs&&S.t<w.hs&&w.hs-S.t<35){b=1-(w.hs-S.t)/35;return[0.42+0.5*b,0.5+0.2*b,0]}
-  if(w.ty===1)return S.t<w.hs?[0.42,0.5,0]:[0.25,0.3,0]; // ザーッのあと：小ぶりになって、すぐやむ
+  if(w.hs&&S.t<w.hs&&w.hs-S.t<WXK.zDark){b=1-(w.hs-S.t)/WXK.zDark;return[0.4+0.6*b,0.5+0.5*b,b]}
+  if(w.he&&S.t>=w.he){
+    e=w.ty===1?[0.25,0.3,0]:[0.4,0.5,0];b=clamp((S.t-w.he)/60,0,1);
+    return[0.9+(e[0]-0.9)*b,0.8+(e[1]-0.8)*b,0.45*(1-b)];
+  }
   return[0.4,0.5,0];
 }
 // 雨あがり：空がいつもより少し澄む（10分ほどかけて元にもどる）
@@ -1228,15 +1243,62 @@ function drawMark(g,px,py,c,T,w){
 function mixc(a,b,t){return 'rgb('+Math.round(a[0]+(b[0]-a[0])*t)+','+Math.round(a[1]+(b[1]-a[1])*t)+','+Math.round(a[2]+(b[2]-a[2])*t)+')'}
 function mixa(a,b,t){return[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t]}
 // 空の雲（くもり・雨のとき。ゆっくり流れる）
-function drawClouds(g,w,hor,T,dk){
-  var i,x,y,s,al=Math.min(1,wxVis*1.6)*0.85,col=mixa(mixa([236,238,242],[150,158,170],Math.max(0,(wxVis-0.55)/0.45)),[40,46,70],dk*0.8);
+function drawClouds(g,w,hor,T,dk,nk,nn){
+  var i,x,y,s,al=nk!=null?nk:Math.min(1,wxVis*1.6)*0.85,col=mixa(mixa(mixa([236,238,242],[150,158,170],Math.max(0,(wxVis-0.55)/0.45)),[96,104,118],hvVis*0.8),[40,46,70],dk*0.8);
   g.fillStyle='rgba('+Math.round(col[0])+','+Math.round(col[1])+','+Math.round(col[2])+','+al+')';
-  for(i=0;i<8;i++){
+  for(i=0;i<(nn||8);i++){
     s=w*(0.1+0.09*hsh[i+90]);
     x=(((hsh[i+40]*1.5+T*0.0035*(0.5+hsh[i+60]))%1.5)-0.25)*w;
     y=hor*(0.12+0.62*hsh[i+80]);
     ell(g,x,y,s,s*0.32);ell(g,x-s*0.45,y+s*0.08,s*0.55,s*0.24);ell(g,x+s*0.5,y+s*0.06,s*0.6,s*0.26);ell(g,x+s*0.1,y-s*0.14,s*0.45,s*0.3);
   }
+}
+// ===== 星空（V0.7）：夜ごとに星の明るさと雲の量が少しちがう。流れ星はたまに（見た目だけ・記録しない）=====
+var NSK={n:-1,cl:1,cloud:0,jit:new Float32Array(45)},MT={next:0,on:null};
+function h2(a,b){var x=Math.sin(a*127.1+b*311.7)*43758.5453;return x-Math.floor(x)}
+function nightOf(t){return Math.floor((t+DAY/2)/DAY)} // 正午で切りかわる（ひと晩が同じ番号）
+function nightSky(){
+  var n=nightOf(S.t),i,r;
+  if(NSK.n!==n){
+    NSK.n=n;NSK.cl=0.55+0.45*h2(n,7);           // 空の澄みぐあい（星全体の明るさ）
+    r=h2(n,13);NSK.cloud=r<0.45?0:0.15+0.6*h2(n,17); // 半分くらいの夜は雲なし、ほかは少し〜まあまあ
+    for(i=0;i<45;i++)NSK.jit[i]=0.7+0.3*h2(i+1,n);  // 星ひとつひとつの明るさのゆらぎ
+  }
+  return NSK;
+}
+function drawNightSky(g,w,hor,T,dk){
+  if(dk<=0.5){MT.on=null;return}
+  var K=nightSky(),a=(dk-0.5)*1.6*Math.max(0,1-wxVis*2)*K.cl*(1-0.6*K.cloud),i,b,sz;
+  if(a>0.01){
+    for(i=0;i<45;i++){
+      b=(0.3+0.7*hsh[400+i])*K.jit[i]*a;if(b<0.05)continue;
+      sz=hsh[400+i]>0.9?2:hsh[400+i]>0.6?1.5:1.1;
+      g.fillStyle='rgba(255,255,240,'+Math.min(1,b).toFixed(3)+')';
+      g.fillRect((hsh[200+i]*w*3.7)%w,hsh[300+i]*hor*0.9,sz,sz);
+    }
+  }
+  drawMeteor(g,w,hor,T,a);
+  if(K.cloud>0&&wxVis<0.3)drawClouds(g,w,hor,T,dk,K.cloud*0.65*clamp((dk-0.3)/0.4,0,1)*(1-wxVis/0.3),Math.ceil(8*K.cloud));
+}
+function drawMeteor(g,w,hor,T,a){
+  var m=MT.on,p,hx,hy,tx,ty,gr,al;
+  if(!MT.next)MT.next=T+rnd(40,160);
+  if(!m&&T>=MT.next){
+    MT.next=T+rnd(90,270); // 見ている間、2〜3分に1回くらい
+    if(a>0.35&&speed<10&&!busy){var dir=Math.random()<0.5?-1:1,ang=rnd(0.35,0.7);
+      MT.on=m={t0:T,x:rnd(0.15,0.85)*w,y:rnd(0.04,0.4)*hor,dx:dir*Math.cos(ang),dy:Math.sin(ang),len:rnd(0.1,0.2)*w,dur:rnd(0.6,1.1)}}
+  }
+  if(!m)return;
+  p=(T-m.t0)/m.dur;if(p>=1||p<0){MT.on=null;return}
+  hx=m.x+m.dx*m.len*1.3*p;hy=m.y+m.dy*m.len*1.3*p;
+  tx=hx-m.dx*m.len*0.45*Math.min(1,p*3);ty=hy-m.dy*m.len*0.45*Math.min(1,p*3);
+  if(hy>hor)return;
+  al=Math.sin(Math.PI*p)*Math.min(1,a*1.4);
+  gr=g.createLinearGradient(tx,ty,hx,hy);gr.addColorStop(0,'rgba(255,255,240,0)');gr.addColorStop(1,'rgba(255,255,240,'+al.toFixed(3)+')');
+  g.save();g.beginPath();g.rect(0,0,w,hor);g.clip();
+  g.strokeStyle=gr;g.lineWidth=1.6;g.lineCap='round';g.beginPath();g.moveTo(tx,ty);g.lineTo(hx,hy);g.stroke();
+  g.fillStyle='rgba(255,255,250,'+al.toFixed(3)+')';ell(g,hx,hy,1.4,1.4);
+  g.restore();
 }
 // 雨つぶ：ななめの細い線。本降りは多く、小雨は少なく。奥は白っぽくかすむ
 function drawRain(g,w,h,hor,T,dk){
@@ -1246,8 +1308,8 @@ function drawRain(g,w,h,hor,T,dk){
   hz=g.createLinearGradient(0,hor-gh*0.25,0,hor+gh*0.6);
   hz.addColorStop(0,'rgba(215,222,232,0)');hz.addColorStop(0.3,'rgba(215,222,232,'+al+')');hz.addColorStop(1,'rgba(215,222,232,0)');
   g.fillStyle=hz;g.fillRect(0,hor-gh*0.25,w,gh*0.85);
-  g.fillStyle='rgba(60,72,96,'+(0.08*rainVis+0.07*hvVis)+')';g.fillRect(0,0,w,h);
-  n=Math.round((45+150*hvVis)*rainVis*clamp(w*h/240000,0.5,2.2));
+  g.fillStyle='rgba(44,54,76,'+(0.08*rainVis+0.30*hvVis)+')';g.fillRect(0,0,w,h); // ザーッのときだけ、ぐっと暗く
+  n=Math.round((45+420*hvVis)*rainVis*clamp(w*h/240000,0.5,2.2));
   g.lineCap='round';
   for(i=0;i<n;i++){
     d=hsh[(i*7+3)%N];                     // 0＝奥、1＝手前
@@ -1256,8 +1318,8 @@ function drawRain(g,w,h,hor,T,dk){
     y=((hsh[(i*13+5)%N]*h+T*sp)%(h+len))-len;
     x=((hsh[(i*11+1)%N]*1.2*w+T*sp*0.22)%(w*1.2))-w*0.1;
     if(y+len<0)continue;
-    al=(0.18+0.42*d)*rainVis*(1-dk*0.4);
-    g.strokeStyle='rgba('+(d<0.4?'235,240,248':'205,215,232')+','+al+')';g.lineWidth=(0.6+1.1*d)*(0.65+0.35*hvVis); // ぽつぽつは細く
+    al=Math.min(0.95,(0.18+0.42*d)*rainVis*(1+0.6*hvVis))*(1-dk*0.4);
+    g.strokeStyle='rgba('+(d<0.4?'235,240,248':'205,215,232')+','+al+')';g.lineWidth=(0.6+1.1*d)*(0.65+0.8*hvVis); // ぽつぽつは細く、ザーッは太く
     g.beginPath();g.moveTo(x,y);g.lineTo(x+len*0.22,y+len);g.stroke();
   }
 }
@@ -1397,7 +1459,7 @@ function drawScope(T){
   if(cvz>0)day=mixa(day,[166,212,250],0.45*cvz); // 雨あがり：少し明るく澄んだ青
   sky=mixc(day,[24,32,66],dk);
   g.fillStyle=sky;g.fillRect(0,0,w,h);
-  if(dk>0.5&&wxVis<0.5){g.fillStyle='rgba(255,255,240,'+(dk-0.5)*1.6*(1-wxVis*2)+')';for(i=0;i<14;i++)g.fillRect((hsh[i]*w*3.7)%w,hsh[i+20]*hor*0.9,1.5,1.5)}
+  drawNightSky(g,w,hor,T,dk);
   if(wxVis>0.02)drawClouds(g,w,hor,T,dk);
   drawRainbow(g,w,hor,dk);
   g.fillStyle=mixc(mixa([104,150,92],[92,112,96],wxVis*0.6),[20,40,40],dk*0.7);
@@ -1710,16 +1772,26 @@ function updateUI(){
   else h='<span class="sub">放っておいても草は育ち、ひつじたちは食べ、出会い、子が生まれ、やがて旅立ちます。</span>';
   if(h!==panelHtml){panelHtml=h;elPanel.innerHTML=h}
 }
-function openRoster(){
-  var list=S.cr.slice().sort(function(a,b){return (b.bell?1:0)-(a.bell?1:0)||b.age-a.age}),h='<h2>みんな（'+list.length+'匹）</h2>',i,c,tt;
+// みんな（V0.7）：年の上の子から順。見出しに鈴の子の数。行の右の🔔で鈴をつけ外し（リストは閉じない）
+function rosterHead(){var nb=S.cr.filter(function(x){return x.bell}).length;return 'みんな（'+S.cr.length+'匹・🔔'+nb+'）'}
+function openRoster(keep){
+  var list=S.cr.slice().sort(function(a,b){return b.age-a.age}),h='<h2 id="rhd">'+rosterHead()+'</h2>',i,c,tt,st=elBox.scrollTop;
   for(i=0;i<list.length;i++){
     c=list[i];
-    h+='<div class="row" data-id="'+c.id+'"><span class="chip" style="background:'+wool(c)+';border-color:'+FACE[c.fc]+'"></span><span class="rn">'+c.name+(c.bell?' 🔔':'')+'</span>'+
+    h+='<div class="row" data-id="'+c.id+'"><span class="chip" style="background:'+wool(c)+';border-color:'+FACE[c.fc]+'"></span><span class="rn">'+c.name+'</span>'+
       '<span class="rs">'+ageDays(c)+'日め・'+stageOf(c)+'　'+(c.e<20?'<span style="color:#ffb38a">弱っている</span>　':'')+((tt=titlesOf(c))?'<span style="color:#f2d470">'+tt+'</span>':statusText(c))+'</span>'+
-      '<button class="fam" data-fam="'+c.id+'">家族</button></div>';
+      '<button class="fam" data-fam="'+c.id+'">家族</button><button class="rbl'+(c.bell?' on':'')+'" data-bl="'+c.id+'" aria-label="鈴">🔔</button></div>';
   }
   h+='<button class="ok" id="mok">とじる</button>';
-  elBox.innerHTML=h;elModal.style.display='flex';elBox.scrollTop=0;
+  elBox.innerHTML=h;elModal.style.display='flex';elBox.scrollTop=keep?st:0;
+  Array.prototype.forEach.call(elBox.querySelectorAll('.rbl'),function(b){
+    b.onclick=function(ev){
+      ev.stopPropagation();var c=byId(+b.getAttribute('data-bl'));if(!c)return;
+      c.bell=!c.bell;c.et=nowT();b.classList.toggle('on',c.bell);
+      document.getElementById('rhd').textContent=rosterHead();updateUI();save();
+      toast(c.bell?c.name+' に鈴をつけました':c.name+' の鈴をはずしました');
+    };
+  });
   document.getElementById('mok').onclick=closeModal;
   Array.prototype.forEach.call(elBox.querySelectorAll('.row'),function(b){
     b.onclick=function(){select(+b.getAttribute('data-id'));closeModal()};
@@ -1781,7 +1853,7 @@ function openFamily(id){
   h+='<button class="ok" id="mok">とじる</button>';
   elBox.innerHTML=h;elModal.style.display='flex';elBox.scrollTop=0;
   document.getElementById('mok').onclick=closeModal;
-  document.getElementById('fback').onclick=openRoster;
+  document.getElementById('fback').onclick=function(){openRoster()};
   bindFam();
 }
 function famGo(id){
@@ -2275,6 +2347,24 @@ elBell.onclick=function(){
   c.bell=!c.bell;c.et=nowT();updateUI();save();
   toast(c.bell?c.name+' に鈴をつけました。遠くにいても見つけられます':c.name+' の鈴をはずしました');
 };
+// ===== 画面を消さないモード（V0.7）=====
+// ボタンで入・切。保存しない。アプリを閉じる・ほかのアプリへ移ると、ふつう（時間で画面が消える）にもどる
+var WL={s:null,on:false,busy:false},elWl=document.getElementById('wl'),elWl2=document.getElementById('wl2');
+var WL_ICON='<svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="8" height="15" rx="1.8"/><path d="M9 15h2"/><path d="M2.5 7v6M17.5 7v6"/></svg>';
+function wlUI(){[elWl,elWl2].forEach(function(b){b.innerHTML=WL_ICON;b.classList.toggle('on',WL.on);b.title=WL.on?'画面を消さない：入':'画面を消さない：切'})}
+function wlOff(quiet){var s=WL.s;WL.s=null;WL.on=false;if(s)try{s.release()}catch(e){}wlUI();if(!quiet)toast('画面を消さないモードを切りました')}
+function wlToggle(){
+  if(WL.busy)return;
+  if(WL.on){wlOff();return}
+  if(!('wakeLock' in navigator)){toast('この端末・ブラウザでは、画面を消さないモードが使えません');return}
+  WL.busy=true;
+  navigator.wakeLock.request('screen').then(function(s){
+    WL.busy=false;WL.s=s;WL.on=true;wlUI();
+    s.addEventListener('release',function(){if(WL.s===s){WL.s=null;WL.on=false;wlUI()}});
+    toast('画面を消さないモードにしました。アプリを離れると元にもどります');
+  }).catch(function(e){WL.busy=false;WL.on=false;wlUI();toast('画面を消さないモードにできませんでした（'+(e&&e.name||'')+'）')});
+}
+elWl.onclick=wlToggle;elWl2.onclick=wlToggle;wlUI();
 elFs.onclick=function(){
   UI.full=!UI.full;saveUI();resize();
   try{if(UI.full&&!localStorage.getItem(KEY+'-hintfs')){localStorage.setItem(KEY+'-hintfs','1');toast('全画面にしました。右下の丸いボタンで戻ります')}}catch(e){}
@@ -2860,7 +2950,7 @@ function wake(){
   if(el>5&&!busy){last=performance.now();catchUp(el,el>180)}
 }
 document.addEventListener('visibilitychange',function(){
-  if(document.hidden){dropNow();save();hiddenAt=Date.now();sndQuiet();ptr={};np=0;gest=null;pinch=null;stopHeld();clearTimeout(holdTimer);clearTimeout(preTimer)}
+  if(document.hidden){if(WL.on)wlOff(true);dropNow();save();hiddenAt=Date.now();sndQuiet();ptr={};np=0;gest=null;pinch=null;stopHeld();clearTimeout(holdTimer);clearTimeout(preTimer)}
   else{wake();resizeSoon();if(AU.ac&&AU.ac.state!=='running'&&AU.ac.state!=='closed')try{var p=AU.ac.resume();if(p&&p.catch)p.catch(function(){})}catch(e){}}
 });
 window.addEventListener('pageshow',wake);
