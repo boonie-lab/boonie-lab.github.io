@@ -136,15 +136,17 @@ h4.nzh{font-family:var(--serif);font-size:14px;color:var(--ink2);margin:14px 2px
 .toc2{margin-top:4px;border-top:1px solid var(--line)}
 .trow{display:flex;align-items:center;border-bottom:1px solid var(--line);background:var(--paper2);border-left:6px solid var(--gc)}
 .trow.dim{opacity:.45}
-/* ＞：行の高さいっぱい・横60px。ここを押すと開閉（ジャンル名は図鑑へ）。名前との間に薄い縦線と余白 */
-.trow .tg{flex:0 0 60px;align-self:stretch;min-height:56px;background:none;border:0;border-right:1px solid var(--line);
-  font-size:24px;line-height:1;color:var(--ink2);font-family:var(--serif);padding:0}
-.trow .tg:active:not(:disabled){background:rgba(120,95,60,.10)}
-.trow .tn{flex:1;min-height:56px;background:none;border:0;text-align:left;font-family:var(--serif);font-weight:700;font-size:18px;padding:0 4px 0 14px;
+/* 行を押すと図鑑へ。右端の山形（横56px・行の高さいっぱい）を押すと種のリストが開閉。開くと上向きに回る */
+.trow .tn{flex:1;min-height:56px;background:none;border:0;text-align:left;font-family:var(--serif);font-weight:700;font-size:18px;padding:0 4px 0 12px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.trow .tc{flex:0 0 auto;font-size:13px;color:var(--ink2);padding-right:12px;white-space:nowrap}
+.trow .tc{flex:0 0 auto;font-size:13px;color:var(--ink2);padding-right:2px;white-space:nowrap}
 .trow .tcz{color:var(--red)}
-.tl2{border-bottom:1px solid var(--line);padding:2px 0 6px 80px;background:var(--paper)}
+.trow .tg{flex:0 0 56px;align-self:stretch;min-height:56px;background:none;border:0;padding:0;display:flex;align-items:center;justify-content:center}
+.trow .tg:active:not(:disabled){background:rgba(120,95,60,.10)}
+.trow .cv2{display:block;width:10px;height:10px;border-right:2px solid var(--ink2);border-bottom:2px solid var(--ink2);
+  transform:translateY(-3px) rotate(45deg);transition:transform .15s}
+.trow.open .cv2{transform:translateY(3px) rotate(-135deg)}
+.tl2{border-bottom:1px solid var(--line);padding:2px 0 6px 18px;background:var(--paper)}
 .tl2 .ts,.tl2 .tz{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;background:none;border:0;border-bottom:1px dotted var(--line);
   text-align:left;padding:4px 10px 4px 0;font-family:var(--serif);font-size:16px}
 .tl2 .ts.zero{opacity:.55}
@@ -218,6 +220,9 @@ h4.nzh{font-family:var(--serif);font-size:14px;color:var(--ink2);margin:14px 2px
 .sheet-head{display:flex;align-items:center;gap:6px;padding:calc(6px + var(--st)) 8px 6px;border-bottom:1px solid var(--line);background:var(--paper2);min-height:52px}
 .sheet-head .back{background:none;border:0;min-width:64px;min-height:44px;font-size:16px;color:var(--accent);text-align:left;padding:0 8px}
 .sheet-title{font-family:var(--serif);font-weight:700;font-size:17px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 画面が2枚以上重なっているときだけ出る ✕（重なった画面を全部閉じて、最初のタブに戻る） */
+.sheet-head .closeall{flex:0 0 auto;min-width:48px;min-height:44px;background:none;border:0;font-size:22px;line-height:1;color:var(--ink2);padding:0 6px}
+.sheet-head .closeall:active{background:rgba(120,95,60,.10);border-radius:8px}
 .sheet-stage{flex:1;position:relative;overflow:hidden;min-height:0}
 .sheet-body{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
   padding:12px 14px 30px;touch-action:pan-y;background-color:var(--paper);
@@ -408,9 +413,9 @@ ul.cands{margin:4px 0;padding-left:1.3em;font-family:var(--serif)}
 <script>
 'use strict';
 /* ============================================================
-   なんでも図鑑 (my-field-guide) v1.2.1
+   なんでも図鑑 (my-field-guide) v1.2.2
    ============================================================ */
-const APP_VERSION = '1.2.1';
+const APP_VERSION = '1.2.2';
 const SCHEMA_VERSION = 1;
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -801,7 +806,7 @@ function ask3(msg, labels, sub){
 function openSheet(opts){
   resetZoom();
   const wrap = document.createElement('div'); wrap.className = 'sheet-wrap';
-  wrap.innerHTML = `<div class="sheet" role="dialog"><div class="sheet-head"><button class="back">‹ 戻る</button><div class="sheet-title"></div></div><div class="sheet-where" hidden></div><div class="sheet-stage"><div class="sheet-body"></div></div><div class="sheet-foot"></div></div>`;
+  wrap.innerHTML = `<div class="sheet" role="dialog"><div class="sheet-head"><button class="back">‹ 戻る</button><div class="sheet-title"></div><button class="closeall" aria-label="すべて閉じて最初の画面へ" hidden>✕</button></div><div class="sheet-where" hidden></div><div class="sheet-stage"><div class="sheet-body"></div></div><div class="sheet-foot"></div></div>`;
   if (reduceMotion()) wrap.style.animation = 'none';
   document.body.appendChild(wrap);
   const sh = {wrap, opts, stage:$('.sheet-stage', wrap), body:$('.sheet-body', wrap), foot:$('.sheet-foot', wrap), titleEl:$('.sheet-title', wrap), whereEl:$('.sheet-where', wrap), preview:false};
@@ -815,7 +820,8 @@ function openSheet(opts){
   };
   if (sh.pager) setupPager(sh);
   $('.back', wrap).onclick = () => closeSheet(sh);
-  sheets.push(sh); lockScroll();
+  $('.closeall', wrap).onclick = () => closeAllSheets();
+  sheets.push(sh); syncCloseAll(); lockScroll();
   sh.refresh();
   if (sh.pager) sh.pager.prefetch();
   return sh;
@@ -1014,6 +1020,16 @@ const entryAlive = id => { const e = S.entries.get(id); return !!(e && !e.delete
 const speciesAlive = id => { const s = S.species.get(id); return !!(s && !s.deleted); };
 const allSpeciesByNo = () => live(S.species).sort((a, b) => a.no - b.no).map(s => s.id);
 
+/** ✕：2枚以上重なっているときだけ出す（1枚なら「戻る」と同じなので） */
+function syncCloseAll(){ for (const s of sheets) { const b = $('.closeall', s.wrap); if (b) b.hidden = sheets.length < 2; } }
+/** 重なった画面を上から順に閉じる。途中の未保存の確認で「編集を続ける」を選んだら、そこで止まる */
+async function closeAllSheets(){
+  while (sheets.length) {
+    const top = sheets[sheets.length - 1];
+    await closeSheet(top);
+    if (sheets.includes(top)) return;
+  }
+}
 /** beforeClose は true/false か、その Promise を返す */
 async function closeSheet(sh, force){
   if (sh.closing) return;
@@ -1025,7 +1041,7 @@ async function closeSheet(sh, force){
   }
   const i = sheets.indexOf(sh); if (i < 0) return;
   sh.closing = true;
-  sheets.splice(i, 1);
+  sheets.splice(i, 1); syncCloseAll();
   if (reduceMotion()) sh.wrap.remove();
   else { sh.wrap.classList.add('out'); setTimeout(() => sh.wrap.remove(), 200); }
   sh.opts.onClose && sh.opts.onClose();
@@ -1260,9 +1276,9 @@ function drawToc(){
         return `<button class="ts ${st ? '' : 'zero'}" data-tsp="${sp.id}" data-tch="${key}">${cv ? `<img data-photo="${cv}" alt="">` : `<span class="ni"></span>`}<span class="tsn">${h(sp.name)}</span><span class="tno">${noStr(sp.no)}</span></button>`;
       }).join('') + (d.total.nz ? `<button class="tz" data-tnz="${key}">❓ なぞ ${d.total.nz}件</button>` : '') + `</div>` : '';
     return `<div class="trow ${empty ? 'dim' : ''} ${open ? 'open' : ''}" style="--gc:${h(m.color || 'var(--ink2)')}">
-      <button class="tg" data-tg="${key}" aria-label="${open ? '閉じる' : '開く'}" ${empty ? 'disabled' : ''}>${open ? '∨' : '＞'}</button>
       <button class="tn" data-ch="${key}">${h(m.emoji)} ${h(m.name)}</button>
-      <span class="tc">${d.total.sps}種${d.total.nz ? `・<span class="tcz">❓${d.total.nz}</span>` : ''}</span></div>${list}`;
+      <span class="tc">${d.total.sps}種${d.total.nz ? `・<span class="tcz">❓${d.total.nz}</span>` : ''}</span>
+      <button class="tg" data-tg="${key}" aria-label="${open ? '閉じる' : '開く'}" aria-expanded="${open}" ${empty ? 'disabled' : ''}><span class="cv2"></span></button></div>${list}`;
   }).join('') + `</div>`;
 }
 function drawChapter(){
