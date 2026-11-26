@@ -429,9 +429,9 @@ ul.cands{margin:4px 0;padding-left:1.3em;font-family:var(--serif)}
 <script>
 'use strict';
 /* ============================================================
-   なんでも図鑑 (my-field-guide) v1.2.4
+   なんでも図鑑 (my-field-guide) v1.2.5
    ============================================================ */
-const APP_VERSION = '1.2.4';
+const APP_VERSION = '1.2.5';
 const SCHEMA_VERSION = 1;
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -518,7 +518,7 @@ const DEFAULT_GENRES = [
 ];
 const S = {
   entries:new Map(), species:new Map(), genres:new Map(), meta:null,
-  tab:'log', logGenre:null, onlyNazo:false, zCh:null, zSort:'no', zRev:false, zSplit:true, zQuery:'', zKeys:[], zOpen:new Set(),
+  tab:'log', logGenre:null, onlyNazo:false, zCh:null, zSort:'name', zRev:false, zSplit:false, zQuery:'', zKeys:[], zOpen:new Set(),
   persisted:null,
 };
 const live = m => [...m.values()].filter(r => !r.deleted);
